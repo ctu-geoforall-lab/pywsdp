@@ -21,7 +21,7 @@ import re
 
 class CtiOs:
 
-    def __init__(self, user, password):
+    def __init__(self, user, password, max_num=10):
         self._user = user
         self._password = password
 
@@ -58,7 +58,7 @@ class CtiOs:
                       'idNadrizenePravnickeOsoby': 'ID_NADRIZENE_PO'}
 
         # Max number of ids inside one request
-        self.max_num = 10
+        self.max_num = max_num
 
     def set_log_file(self, log_path):
         """
