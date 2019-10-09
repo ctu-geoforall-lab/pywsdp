@@ -10,12 +10,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='...')
 
     parser.add_argument('--user', help="Username", required=True)
-    parser.add_argument('--password', help="Password", required=True)
+    parser.add_argument('--password', help="Password", required=False)
     parser.add_argument('--limit', help="Limit", required=False)
     parser.add_argument('--logfile', help="Log File", required=False)
     parser.add_argument('--db', help="Database", required=True)
 
     args = parser.parse_args()
+
+    if not args.password:
+        # TODO: ask for password
+        args.password = getpass.getpass(prompt='Password? ')
 
     # Constructor
     co = CtiOs(args.user, args.password)
