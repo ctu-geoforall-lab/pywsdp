@@ -2,11 +2,12 @@
 
 import argparse
 import getpass
+import sys
 
 from ctios import CtiOs
+from ctios.exceptions import CtiOsError
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(description='...')
 
     parser.add_argument('--user', help="Username", required=True)
@@ -28,13 +29,20 @@ if __name__ == "__main__":
     co.set_log_file(args.logfile)
 
     # Set input
-    co.set_ids(args.limit)
+    if args.limit:
+        try:
+            co.set_ids(args.limit)
+        except CtiOsError as e:
+            sys.exit(e)
 
     # Set output
     co.set_db(args.db)
 
     # Send query
     co.query_service()
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 # ctios.py --user WSTEST --password WSHESLO --limit D:\Projekty\projekty2019\CTI_OS\posidents_1-4.txt --logfile D:\Projekty\projekty2019\CTI_OS --db D:\Projekty\projekty2019\CTI_OS\Export_1-4.db
 

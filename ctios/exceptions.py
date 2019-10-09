@@ -1,0 +1,2 @@
+class CtiOsError(Exception):
+    pass

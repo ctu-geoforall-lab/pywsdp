@@ -6,7 +6,7 @@
 # Copyright:    (C) 2019 Linda Kladivova
 # Email:        l.kladivova@seznam.cz
 ###############################################################################
-#! python3
+#!/usr/bin/env python3
 
 import requests
 import xml.etree.ElementTree as et
@@ -18,6 +18,7 @@ import logging
 from datetime import datetime
 import re
 
+from ctios.exceptions import CtiOsError
 
 class CtiOs:
 
@@ -90,34 +91,29 @@ class CtiOs:
             self.logging = logging
 
             # Initialization of state vector
-            uspesne_stazeno = 0
-            neplatny_identifikator = 0
-            opravneny_subjekt_neexistuje = 0
-            expirovany_identifikator = 0
-            self.state_vector = [neplatny_identifikator, expirovany_identifikator, opravneny_subjekt_neexistuje,
-                                 uspesne_stazeno]
+            self.state_vector = {
+                'neplatny_identifikator' : 0,
+                'expirovany_identifikator' : 0,
+                'opravneny_subjekt_neexistuje' : 0,
+                'uspesne_stazeno' : 0
+            }
 
     def set_ids(self, ids_path):
         """
         Setting of ids list from text file and removing of duplicates in array
         :param ids_path: path to id's text file
         :type ids_path: string
-        :returns response: Exception if cannot find text file
+        :returns response: CtiOsError if cannot find text file
         """
-        if not ids_path:
-            self.logging.info('Zadny textovy soubor nbyl zadan')
-            self.ids = {}
-            self.ids_length = len(self.ids)
-        else:
-            if os.path.exists(ids_path):
-                with open(ids_path) as file:
-                    try:
-                        self.ids = file.read().split('\n')
-                        self.ids_length = len(self.ids)
-                    except Exception:
-                        if self.log_path:
-                            self.logging.exception('CANNOT FIND TEXT FILE {}'.format(ids_path))
-                        raise Exception("CANNOT FIND TEXT FILE {}".format(ids_path))
+        try:
+            with open(ids_path) as file:
+                # TODO: otestovat prazdny soubor
+                self.ids = file.read().split('\n')
+                self.ids_length = len(self.ids)
+                if self.ids_length < 1:
+                    raise CtiOsError("...")
+        except (PermissionError, FileNotFoundError) as e:
+            raise CtiOsError(e)
 
     def set_db(self, db_path):
         """
@@ -205,10 +201,14 @@ class CtiOs:
                 self.logging.info('Rozdeleno do {} pozadavku'.format(divided_into))
 
         if self.log_path:
-            self.logging.info('Pocet uspesne stazenych posidentu: {} '.format(self.state_vector[3]))
-            self.logging.info('Neplatny identifikator: {}x.'.format(self.state_vector[0]))
-            self.logging.info('Expirovany identifikator: {}x.'.format(self.state_vector[1]))
-            self.logging.info('Opravneny subjekt neexistuje: {}x.'.format(self.state_vector[2]))
+            self.logging.info('Pocet uspesne stazenych posidentu: {} '.format(
+                self.state_vector['uspesne_stazeno']))
+            self.logging.info('Neplatny identifikator: {}x.'.format(
+                self.state_vector['neplatny_identifikator']))
+            self.logging.info('Expirovany identifikator: {}x.'.format(
+                self.state_vector['expirovany_identifikator']))
+            self.logging.info('Opravneny subjekt neexistuje: {}x.'.format(
+                self.state_vector['opravneny_subjekt_neexistuje']))
 
     def _draw_up_xml_request(self, ids):
         """
@@ -316,23 +316,23 @@ class CtiOs:
                 posident = os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}pOSIdent').text
 
                 if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "NEPLATNY_IDENTIFIKATOR":
-                    self.state_vector[0] = self.state_vector[0] + 1
+                    self.state_vector['neplatny_identifikator'] += 1
                     if self.log_path:
                         self.logging.error('POSIDENT {} NEPLATNY IDENTIFIKATOR'.format(posident))
                     continue
                 if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "EXPIROVANY_IDENTIFIKATOR":
-                    self.state_vector[1] = self.state_vector[1] + 1
+                    self.state_vector['expirovany_identifikator'] += 1
                     if self.log_path:
                         self.logging.error('POSIDENT {}: EXPIROVANY IDENTIFIKATOR'.format(posident))
                     continue
                 if os.find(
                         '{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
-                    self.state_vector[2] = self.state_vector[2] + 1
+                    self.state_vector['opravneny_subjekt_neexistuje'] += 1
                     if self.log_path:
                         self.logging.error('POSIDENT {}: OPRAVNENY SUBJEKT NEEXISTUJE'.format(posident))
                     continue
             else:
-                self.state_vector[3] = self.state_vector[3] + 1  # no error
+                self.state_vector['uspesne_stazeno'] += 1
 
             # Create the dictionary with XML child attribute names and particular texts
             for child in os:
