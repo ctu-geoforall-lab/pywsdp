@@ -13,202 +13,136 @@ import xml.etree.ElementTree as et
 import sqlite3
 from sqlite3 import Error
 import math
-import os
 import logging
 from datetime import datetime
 import re
-
+import os
+from pathlib import Path
+from string import Template
 from ctios.exceptions import CtiOsError
+import ctios.settings
+import csv
 
-class CtiOs:
 
-    def __init__(self, user, password, max_num=10):
-        self._user = user
+class Templates:
+    TEMPLATES_DIR = None
+
+    def _read_template(self, template_path):
+        with open(os.path.join(self.TEMPLATES_DIR, template_path)) as template:
+            return template.read()
+
+    def render(self, template_path, **kwargs):
+        return Template(
+            self._read_template(template_path)
+        ).substitute(**kwargs)
+
+
+class Csv:
+    CSV_DIR = None
+
+    def read_csv_as_dictionary(self, csv_path):
+        dictionary = {}
+        with open(os.path.join(self.CSV_DIR, csv_path)) as csv_file:
+            rows = csv.reader(csv_file, delimiter=';')
+            for row in rows:
+                [k, v, l] = row
+                dictionary[k] = v
+            return dictionary
+
+
+class CtiOs(Templates, Csv):
+
+    def __init__(self, username, password, max_num=10):
+
+        # CTI_OS authentication
+        self._username = username
         self._password = password
 
         # CTI_OS service parameters
         self.endpoint = 'https://wsdptrial.cuzk.cz/trial/ws/ctios/2.8/ctios'
         self.headers = {'Content-Type': 'text/xml;charset=UTF-8',
-                   'Accept-Encoding': 'gzip,deflate',
-                   'SOAPAction': "http://katastr.cuzk.cz/ctios/ctios",
-                   'Connection': 'Keep-Alive'}
-
-        # XML request for CTI_OS service
-        self.xml = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
-                        xmlns:v2="http://katastr.cuzk.cz/ctios/types/v2.8">
-                          <soapenv:Header> 
-                              <wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"> 
-                                <wsse:UsernameToken wsu:Id="UsernameToken-3"> 
-                                  <wsse:Username>{}</wsse:Username> 
-                                  <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">{}</wsse:Password> 
-                                </wsse:UsernameToken> 
-                              </wsse:Security> 
-                          </soapenv:Header> 
-                          <soapenv:Body> 
-                            <v2:CtiOsRequest> 
-                            </v2:CtiOsRequest> 
-                          </soapenv:Body>
-                        </soapenv:Envelope>""".format(self._user,self._password)
-
-        # Dictionary with relevant names in xml and database
-        self.dictionary = {'priznakKontext': 'PRIZNAK_KONTEXTU',
-                      'partnerBsm1': 'ID_JE_1_PARTNER_BSM',
-                      'partnerBsm2': 'ID_JE_2_PARTNER_BSM',
-                      'charOsType': 'CHAROS_KOD',
-                      'kodAdresnihoMista': 'KOD_ADRM',
-                      'idNadrizenePravnickeOsoby': 'ID_NADRIZENE_PO'}
+                        'Accept-Encoding': 'gzip,deflate',
+                        'SOAPAction': "http://katastr.cuzk.cz/ctios/ctios",
+                        'Connection': 'Keep-Alive'}
 
         # Max number of ids inside one request
         self.max_num = max_num
 
-    def set_log_file(self, log_path):
-        """
-        Create log file - not mandatory
-        :param log_path: path to log file
-        :type log_path: string
-        :returns logging: Logging object
-        :rtype conn: Logging object
-        """
+        # Dir settings
+        self.TEMPLATES_DIR = settings.TEMPLATES_DIR
+        self.CSV_DIR = settings.CSV_DIR
 
-        if log_path:
-            self.log_path = log_path
-            log_filename = datetime.now().strftime('%H_%M_%S_%d_%m_%Y.log')
-            # set up logging to file - see previous section for more details
-            logging.basicConfig(level=logging.INFO,
-                                format='%(asctime)s %(levelname)-8s %(message)s',
-                                datefmt='%m-%d %H:%M',
-                                filename=log_path + '/' + log_filename,
-                                filemode='w')
-            # define a Handler which writes INFO messages or higher to the sys.stderr
-            console = logging.StreamHandler()
-            console.setLevel(logging.INFO)
-            # set a format which is simpler for console use
-            formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-            # tell the handler to use this format
-            console.setFormatter(formatter)
-            # add the handler to the root logger
-            logging.getLogger('').addHandler(console)
-            self.logging = logging
-
-            # Initialization of state vector
-            self.state_vector = {
-                'neplatny_identifikator' : 0,
-                'expirovany_identifikator' : 0,
-                'opravneny_subjekt_neexistuje' : 0,
-                'uspesne_stazeno' : 0
-            }
-
-    def set_ids(self, ids_path):
+    def set_db(self, db_path):
         """
-        Setting of ids list from text file and removing of duplicates in array
+        Setting of database
+        :param db_path: path to db file
+        :type db_path: string
+        :returns response: Exception if ids in the database do not match ids in the text file
+        """
+        my_file = Path(db_path)
+        try:
+            # Control if database file exists
+            my_file.resolve(strict=True)
+            self.db_path = db_path
+
+        except FileNotFoundError as e:
+            raise CtiOsError(e)
+
+    def set_posidents_from_file(self, ids_path):
+        """
+        Setting of input - ids list from text file and removing of duplicates in array
         :param ids_path: path to id's text file
         :type ids_path: string
         :returns response: CtiOsError if cannot find text file
         """
         try:
             with open(ids_path) as file:
-                # TODO: otestovat prazdny soubor
-                self.ids = file.read().split('\n')
-                self.ids_length = len(self.ids)
-                if self.ids_length < 1:
-                    raise CtiOsError("...")
+
+                self.ids = file.read().split('\n')  # Split file
+                self.ids = list(dict.fromkeys(self.ids))  # Remove duplicates
+
+                # Control if not empty
+                if len(self.ids) <= 1:
+                    raise CtiOsError("File with ids is empty!")
         except (PermissionError, FileNotFoundError) as e:
             raise CtiOsError(e)
 
-    def set_db(self, db_path):
-        """
-        Setting of database and if ids.txt exists, control if ids in the database matches ids in the text file
-        :param db_path: path to db file
-        :type db_path: string
-        :returns response: Exception if ids in the database do not match ids in the text file
-        """
+        try:
+            # Select ids from database
+            conn = self._create_connection()
+            conn.row_factory = lambda cursor, row: row[0]
+            cur = conn.cursor()
+            cur.execute('select id from OPSUB')
+            database_ids = cur.fetchall()
 
-        # If ids are not selected, load them from db, else load from file
-        if self.ids_length == 0:
-            self.db_path = db_path
+            # Control if ids in text file match ids in db
+            for row in self.ids:
+                        if row not in database_ids:
+                            raise CtiOsError("Ids in the text file do not match ids in the VFK file!")
+        except sqlite3.Error as e:
+            raise CtiOsError("Database error!")
+
+    def set_posidents_from_db(self):
+        """
+        Setting of input - posidents from db
+        :returns response: CtiOsError if cannot find text file
+        """
+        try:
+            # Select all ids from database
             conn = self._create_connection()
             cur = conn.cursor()
             cur.execute('select id from OPSUB')
             self.ids = cur.fetchall()
-            self.ids_length = len(self.ids)
-        else:
-            if os.path.exists(db_path):
-                try:
-                    self.db_path = db_path
-                    if self.ids:
-                        conn = self._create_connection()
-                        conn.row_factory = lambda cursor, row: row[0]
-                        cur = conn.cursor()
-                        cur.execute('select id from OPSUB')
-                        database_ids = cur.fetchall()
-                        for row in self.ids:
-                            if row in database_ids:
-                                print("Prvek {} existuje".format(row))
-                                self.logging.info('Prvek {} existuje!'.format(row))
-                            else:
-                                if self.log_path:
-                                    self.logging.exception('Ids in the text file do not match ids in the VFK file!')
-                                print("Ids in the text file do not match ids in the VFK file!")
-                except Exception:
-                    if self.log_path:
-                        self.logging.exception('CANNOT FIND DATABASE FILE {}'.format(self.db_path))
-                    raise Exception("CANNOT FIND TEXT FILE {}".format(self.db_path))
 
-    def query_service(self):
-        """
-        Main function which draws up rxml request,
-        call service and save attributes into db using other partial functions
-        """
+            # Remove duplicates
+            self.ids = list(dict.fromkeys(self.ids))
 
-        # Exception unless is defined self.db
-        if not self.db_path:
-            if self.log_path:
-                self.logging.exception('No database selected!')
-            print("No database selected!")
+            # Control if not empty
+            if len(self.ids) <= 1:
+                raise CtiOsError("Database is empty!")
 
-        if self.log_path:
-            self.logging.info('Pocet jedinecnych ID v seznamu: {}'.format(self.ids_length))
-
-        if self.ids_length <= self.max_num:
-            ids = self.ids
-            self._draw_up_xml_request(ids)  # Putting XML request together
-            self._call_service()  # CTI_OS request with upper parameters
-            self._save_attributes_to_db()  # Parse and save attributes into DB
-            if self.log_path:
-                self.logging.info('Zpracovano v ramci 1 pozadavku.')
-        else:
-            full_arrays = math.floor(self.ids_length / self.max_num)  # Floor to number of full posidents arrays
-            rest = self.ids_length % self.max_num  # Left posidents
-            for i in range(0, full_arrays):
-                start = i * self.max_num
-                end = i * self.max_num + self.max_num
-                whole_ids = self.ids[start: end]
-                self._draw_up_xml_request(whole_ids)
-                self._call_service()
-                self._save_attributes_to_db()
-
-            # make a request from the rest of posidents
-            ids_rest = self.ids[self.ids_length - rest: self.ids_length]
-            if ids_rest:
-                self._draw_up_xml_request(ids_rest)
-                self._call_service()
-                self._save_attributes_to_db()
-                divided_into = full_arrays + 1
-            else:
-                divided_into = full_arrays
-
-            if self.log_path:
-                self.logging.info('Rozdeleno do {} pozadavku'.format(divided_into))
-
-        if self.log_path:
-            self.logging.info('Pocet uspesne stazenych posidentu: {} '.format(
-                self.state_vector['uspesne_stazeno']))
-            self.logging.info('Neplatny identifikator: {}x.'.format(
-                self.state_vector['neplatny_identifikator']))
-            self.logging.info('Expirovany identifikator: {}x.'.format(
-                self.state_vector['expirovany_identifikator']))
-            self.logging.info('Opravneny subjekt neexistuje: {}x.'.format(
-                self.state_vector['opravneny_subjekt_neexistuje']))
+        except sqlite3.Error as e:
+                raise CtiOsError("Database error!")
 
     def _draw_up_xml_request(self, ids):
         """
@@ -216,16 +150,27 @@ class CtiOs:
         :returns response: final XML request with all ids attributes
         :rtype response: list
         """
-        j = 0
+
+        posident_array = []
+
         for i in ids:
-            root = et.fromstring(self.xml)
-            body = root.find('.//{http://katastr.cuzk.cz/ctios/types/v2.8}CtiOsRequest')
-            id_tag = et.Element('{http://katastr.cuzk.cz/ctios/types/v2.8}pOSIdent')
-            id_tag.text = i
-            body.insert(1, id_tag)
-            self.xml = et.tostring(root, encoding="unicode")
-            j = j + 1
-        return self.xml
+
+            # Trim id
+            i = str(i)
+            n = i[2:]
+            m = n[:-3]
+
+            # Draw up xml tag
+            row = "<v2:pOSIdent>{}</v2:pOSIdent>".format(m)
+
+            # Add all tags to one list
+            posident_array.append(row)
+
+        # Convert list to one long string
+        pos = ''.join(posident_array)
+
+        # Render XML request
+        self.xml = self.render('request.xml', username=self._username, password=self._password, posidents=pos)
 
     def _call_service(self):
         """
@@ -239,19 +184,24 @@ class CtiOs:
         self.status_code = self.response.status_code
         self.response = self.response.text
 
+        # Errors
         if 300 <= self.status_code < 400:
             if self.log_path:
                 self.logging.fatal('STAVOVY KOD HTTP 3xx: REDIRECT')
-            raise Exception("3xx Redirect\n")
+            raise CtiOsError("STAVOVY KOD HTTP 3xx: REDIRECT!")
+
         elif 400 <= self.status_code < 500:
             if self.log_path:
                 self.logging.fatal('STAVOVY KOD HTTP 4xx: CLIENT ERROR!')
-            raise Exception("4xx Client Error\n")
+            raise CtiOsError("STAVOVY KOD HTTP 4xx: CLIENT ERROR!")
+
         elif 500 <= self.status_code < 600:
             if self.log_path:
                 self.logging.fatal('STAVOVY KOD HTTP 5xx: SERVER ERROR!')
-            raise Exception("5xx Server Error\n")
+            raise CtiOsError("STAVOVY KOD HTTP 5xx: SERVER ERROR!")
+
         else:
+            # Success
             if self.log_path:
                 self.logging.info('STAVOVY KOD HTTP 2xx: SUCCESS!')
             return self.response
@@ -364,10 +314,11 @@ class CtiOs:
                 conn.close()
                 if self.log_path:
                     self.logging.exception('Pripojeni k databazi selhalo')
-                raise Exception("CONNECTION TO DATABSE FAILED")
+                raise Exception("CONNECTION TO DATABASE FAILED")
 
             #  Transform xml_names to database_names
             database_attributes = {}
+            self.dictionary = self.read_csv_as_dictionary("mapovani_atributu.csv")
             for xml_name, xml_value in xml_attributes.items():
                 database_name = self._transform_names(xml_name)
                 if database_name not in col_names:
@@ -390,6 +341,99 @@ class CtiOs:
                 cur.execute("ROLLBACK TRANSACTION")
                 cur.close()
                 conn.close()
-            conn.close()
+            finally:
+                if conn:
+                    conn.close()
         if self.log_path:
             return self.state_vector
+
+    def _query_service(self, ids):
+        """
+        Function which draws up xml request,
+        call service and save attributes into db using other partial functions
+        """
+        self._draw_up_xml_request(ids)  # Putting XML request together
+        self._call_service()  # CTI_OS request with upper parameters
+        self._save_attributes_to_db()
+
+    def query_requests(self):
+        """
+        Main function which divides requests into groups
+        """
+
+        if self.log_path:
+            self.logging.info('Pocet jedinecnych ID v seznamu: {}'.format(len(self.ids)))
+
+        if len(self.ids) <= self.max_num:
+            ids = self.ids
+            self._query_service(ids)  # Query and save response to db
+            if self.log_path:
+                self.logging.info('Zpracovano v ramci 1 pozadavku.')
+        else:
+            full_arrays = math.floor(len(self.ids) / self.max_num)  # Floor to number of full posidents arrays
+            rest = len(self.ids) % self.max_num  # Left posidents
+            for i in range(0, full_arrays):
+                start = i * self.max_num
+                end = i * self.max_num + self.max_num
+                whole_ids = self.ids[start: end]
+                self._query_service(whole_ids)  # Query and save response to db
+
+            # make a request from the rest of posidents
+            ids_rest = self.ids[len(self.ids) - rest: len(self.ids)]
+            if ids_rest:
+                self._query_service(ids_rest)  # Query and save response to db
+                divided_into = full_arrays + 1
+            else:
+                divided_into = full_arrays
+
+            if self.log_path:
+                self.logging.info('Rozdeleno do {} pozadavku'.format(divided_into))
+
+        if self.log_path:
+            self.logging.info('Pocet uspesne stazenych posidentu: {} '.format(
+                self.state_vector['uspesne_stazeno']))
+            self.logging.info('Neplatny identifikator: {}x.'.format(
+                self.state_vector['neplatny_identifikator']))
+            self.logging.info('Expirovany identifikator: {}x.'.format(
+                self.state_vector['expirovany_identifikator']))
+            self.logging.info('Opravneny subjekt neexistuje: {}x.'.format(
+                self.state_vector['opravneny_subjekt_neexistuje']))
+
+    def set_log_file(self, log_path):
+        """
+        Create log file - not mandatory
+        :param log_path: path to log file
+        :type log_path: string
+        :returns logging: Logging object
+        :rtype conn: Logging object
+        """
+        self.log_path = log_path
+        log_filename = datetime.now().strftime('%H_%M_%S_%d_%m_%Y.log')
+        # set up logging to file - see previous section for more details
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s %(levelname)-8s %(message)s',
+                            datefmt='%m-%d %H:%M',
+                            filename=log_path + '/' + log_filename,
+                            filemode='w')
+        # define a Handler which writes INFO messages or higher to the sys.stderr
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        # set a format which is simpler for console use
+        formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+        # tell the handler to use this format
+        console.setFormatter(formatter)
+        # add the handler to the root logger
+        logging.getLogger('').addHandler(console)
+        self.logging = logging
+
+        # Initialization of state vector
+        self.state_vector = {
+            'neplatny_identifikator': 0,
+            'expirovany_identifikator': 0,
+            'opravneny_subjekt_neexistuje': 0,
+            'uspesne_stazeno': 0}
+
+
+
+
+
