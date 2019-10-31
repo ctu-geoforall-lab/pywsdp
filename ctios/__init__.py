@@ -25,7 +25,8 @@ import csv
 
 
 class Templates:
-    TEMPLATES_DIR = None
+    def __init__(self, TEMPLATES_DIR):
+        self.TEMPLATES_DIR = TEMPLATES_DIR
 
     def _read_template(self, template_path):
         with open(os.path.join(self.TEMPLATES_DIR, template_path)) as template:
@@ -38,7 +39,8 @@ class Templates:
 
 
 class Csv:
-    CSV_DIR = None
+    def __init__(self, CSV_DIR):
+        self.CSV_DIR = CSV_DIR
 
     def read_csv_as_dictionary(self, csv_path):
         dictionary = {}
@@ -50,7 +52,7 @@ class Csv:
             return dictionary
 
 
-class CtiOs(Templates, Csv):
+class CtiOs:
 
     def __init__(self, username, password, max_num=10):
 
@@ -67,10 +69,6 @@ class CtiOs(Templates, Csv):
 
         # Max number of ids inside one request
         self.max_num = max_num
-
-        # Dir settings
-        self.TEMPLATES_DIR = settings.TEMPLATES_DIR
-        self.CSV_DIR = settings.CSV_DIR
 
     def set_db(self, db_path):
         """
@@ -170,7 +168,9 @@ class CtiOs(Templates, Csv):
         pos = ''.join(posident_array)
 
         # Render XML request
-        self.xml = self.render('request.xml', username=self._username, password=self._password, posidents=pos)
+        self.xml = Templates(settings.TEMPLATES_DIR).render(
+            'request.xml', username=self._username, password=self._password, posidents=pos
+        )
 
     def _call_service(self):
         """
@@ -318,7 +318,7 @@ class CtiOs(Templates, Csv):
 
             #  Transform xml_names to database_names
             database_attributes = {}
-            self.dictionary = self.read_csv_as_dictionary("mapovani_atributu.csv")
+            self.dictionary = Csv(settings.CSV_DIR).read_csv_as_dictionary("mapovani_atributu.csv")
             for xml_name, xml_value in xml_attributes.items():
                 database_name = self._transform_names(xml_name)
                 if database_name not in col_names:
