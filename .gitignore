@@ -1,4 +1,6 @@
 *~
 __pycache__/
-input_data/*.vfk
-input_data/*.zip
+tests/input_data/*.vfk
+tests/input_data/*.zip
+tests/input_data/*.db
+tests/*.log

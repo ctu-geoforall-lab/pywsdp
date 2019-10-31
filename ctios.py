@@ -9,74 +9,58 @@ from ctios.exceptions import CtiOsError
 
 
 def main():
-    #parser = argparse.ArgumentParser(description='...')
+    parser = argparse.ArgumentParser(description='...')
 
-    #parser.add_argument('--user', help="Username", required=True)
-    #parser.add_argument('--password', help="Password", required=False)
-    #parser.add_argument('--limit', help="Limit", required=False)
-    #parser.add_argument('--logfile', help="Log File", required=False)
-    #parser.add_argument('--db', help="Database", required=True)
+    parser.add_argument(
+        '--user',
+        help="Username",
+        required=True)
+    parser.add_argument(
+        '--password',
+        help="Password",
+        required=False)
+    parser.add_argument(
+        '--posidents',
+        help="Limit posidents (if not specified than all posidents from db are processed)",
+        required=False)
+    parser.add_argument(
+        '--logdir',
+        help="Log directory",
+        required=False)
+    parser.add_argument(
+        '--db',
+        help="Database produced by GDAL from input VFK file",
+        required=True)
 
-    #args = parser.parse_args()
+    args = parser.parse_args()
 
-    #if not args.password:
-    #   args.password = getpass.getpass(prompt='Password? ')
+    if not args.password:
+      args.password = getpass.getpass(prompt='Password? ')
 
-    # Constructor
-    #co = CtiOs(args.user, args.password)
-
-    # Set log file
-    #co.set_log_file(args.logfile)
-
-    # Set input
-    #if args.limit:
-    # try:
-    #        co.set_ids(args.limit)
-            #    except CtiOsError as e:
-    #       sys.exit(e)
-
-    # Set output
-    #co.set_db(args.db)
-
-    # Send query
-    #co.query_service()
-
-    ###########################################POKUS###################################################################
-
-
-    # Constructor
+    # Set up CtiOs reader
     try:
-        co = CtiOs('WSTEST', 'WSHESLO')
+        co = CtiOs(args.user, args.password)
     except CtiOsError as e:
         sys.exit(e)
 
     # Set db
     try:
-        co.set_db('D:\\Projekty\\projekty2019\\CTI_OS\\input_data\\Export_1-4.db')
+        co.set_db(args.db)
     except CtiOsError as e:
         sys.exit(e)
 
-    # Set log file
-    log_path = "D:\Projekty\projekty2019\CTI_OS"
-    if log_path:
-        try:
-            co.set_log_file(log_path)
-        except CtiOsError as e:
-            sys.exit(e)
+    # Set log directory (logs are not generated when no logdir specified)
+    if args.logdir:
+        co.set_log_file(args.logdir)
 
     # Set input posidents from file or db
-    # limit = 'D:\\Projekty\\projekty2019\\CTI_OS\\ctios\\posidents_1-4.txt'
-    limit = ""
-    if limit:
-       try:
-           co.set_posidents_from_file(limit)
-       except CtiOsError as e:
-           sys.exit(e)
-    else:
-        try:
+    try:
+        if args.posidents:
+            co.set_posidents_from_file(args.posidents)
+        else:
             co.set_posidents_from_db()
-        except CtiOsError as e:
-            sys.exit(e)
+    except CtiOsError as e:
+        sys.exit(e)
 
     # Send query
     try:
@@ -84,11 +68,8 @@ def main():
     except CtiOsError as e:
         sys.exit(e)
 
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-# ctios.py --user WSTEST --password WSHESLO --limit D:\Projekty\projekty2019\CTI_OS\posidents_1-4.txt --logfile D:\Projekty\projekty2019\CTI_OS --db D:\Projekty\projekty2019\CTI_OS\Export_1-4.db
-
 

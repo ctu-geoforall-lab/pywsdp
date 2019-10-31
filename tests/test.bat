@@ -1,0 +1,1 @@
+REM ctios.py --user WSTEST --password WSHESLO --posidents D:\Projekty\projekty2019\CTI_OS\posidents_1-4.txt --logfile D:\Projekty\projekty2019\CTI_OS --db D:\Projekty\projekty2019\CTI_OS\Export_1-4.db
