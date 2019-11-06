@@ -86,61 +86,38 @@ class CtiOs:
         except FileNotFoundError as e:
             raise CtiOsError(e)
 
-    def set_posidents_from_file(self, ids_path):
-        """
-        Setting of input - ids list from text file and removing of duplicates in array
-        :param ids_path: path to id's text file
-        :type ids_path: string
-        :returns response: CtiOsError if cannot find text file
-        """
-        try:
-            with open(ids_path) as file:
-
-                self.ids = file.read().split('\n')  # Split file
-                self.ids = list(dict.fromkeys(self.ids))  # Remove duplicates
-
-                # Control if not empty
-                if len(self.ids) <= 1:
-                    raise CtiOsError("File with ids is empty!")
-        except (PermissionError, FileNotFoundError) as e:
-            raise CtiOsError(e)
-
-        try:
-            # Select ids from database
-            conn = self._create_connection()
-            conn.row_factory = lambda cursor, row: row[0]
-            cur = conn.cursor()
-            cur.execute('select id from OPSUB')
-            database_ids = cur.fetchall()
-
-            # Control if ids in text file match ids in db
-            for row in self.ids:
-                        if row not in database_ids:
-                            raise CtiOsError("Ids in the text file do not match ids in the VFK file!")
-        except sqlite3.Error as e:
-            raise CtiOsError("Database error!")
-
-    def set_posidents_from_db(self):
+    def set_posidents_from_db(self, sql=None):
         """
         Setting of input - posidents from db
-        :returns response: CtiOsError if cannot find text file
+        :returns response: CtiOsError if empty result
+        """
+        if sql is None:
+            self._get_posidents_from_db("select ID from OPSUB")
+        else:
+            self._get_posidents_from_db(sql)
+
+        # Control if not empty, if not remove duplicates
+        if len(self.ids) <= 1:
+            raise CtiOsError("Query has an empty result!")
+        else:
+            list(dict.fromkeys(self.ids))
+
+    def _get_posidents_from_db(self, sql):
+        """
+        Send query to database
+        :param sql: sql query
+        :type sql: string
+        :returns response: CtiOsError if cannot find db
         """
         try:
-            # Select all ids from database
             conn = self._create_connection()
             cur = conn.cursor()
-            cur.execute('select id from OPSUB')
+            cur.execute(sql)
             self.ids = cur.fetchall()
-
-            # Remove duplicates
-            self.ids = list(dict.fromkeys(self.ids))
-
-            # Control if not empty
-            if len(self.ids) <= 1:
-                raise CtiOsError("Database is empty!")
-
+            cur.close()
+            conn.close()
         except sqlite3.Error as e:
-                raise CtiOsError("Database error!")
+            raise CtiOsError("Database error!")
 
     def _draw_up_xml_request(self, ids):
         """

@@ -4,3 +4,5 @@ tests/input_data/*.vfk
 tests/input_data/*.zip
 tests/input_data/*.db
 tests/*.log
+venv
+.idea
