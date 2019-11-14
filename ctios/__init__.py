@@ -6,51 +6,22 @@
 # Copyright:    (C) 2019 Linda Kladivova
 # Email:        l.kladivova@seznam.cz
 ###############################################################################
-#!/usr/bin/env python3
 
 import requests
 import xml.etree.ElementTree as et
 import sqlite3
-from sqlite3 import Error
 import math
 import logging
 from datetime import datetime
 import re
 import os
 from pathlib import Path
-from string import Template
+
 from ctios.exceptions import CtiOsError
 import ctios.settings
-import csv
 
-
-class Templates:
-    def __init__(self, TEMPLATES_DIR):
-        self.TEMPLATES_DIR = TEMPLATES_DIR
-
-    def _read_template(self, template_path):
-        with open(os.path.join(self.TEMPLATES_DIR, template_path)) as template:
-            return template.read()
-
-    def render(self, template_path, **kwargs):
-        return Template(
-            self._read_template(template_path)
-        ).substitute(**kwargs)
-
-
-class Csv:
-    def __init__(self, CSV_DIR):
-        self.CSV_DIR = CSV_DIR
-
-    def read_csv_as_dictionary(self, csv_path):
-        dictionary = {}
-        with open(os.path.join(self.CSV_DIR, csv_path)) as csv_file:
-            rows = csv.reader(csv_file, delimiter=';')
-            for row in rows:
-                [k, v, l] = row
-                dictionary[k] = v
-            return dictionary
-
+from ctios.templates import CtiOsTemplate
+from ctios.csv import CtiOsCsv
 
 class CtiOs:
 
@@ -146,7 +117,7 @@ class CtiOs:
         pos = ''.join(posident_array)
 
         # Render XML request
-        self.xml = Templates(settings.TEMPLATES_DIR).render(
+        self.xml = CtiOsTemplate(settings.TEMPLATES_DIR).render(
             'request.xml', username=self._username, password=self._password, posidents=pos
         )
 
@@ -296,7 +267,9 @@ class CtiOs:
 
             #  Transform xml_names to database_names
             database_attributes = {}
-            self.dictionary = Csv(settings.CSV_DIR).read_csv_as_dictionary("mapovani_atributu.csv")
+            self.dictionary = CtiOsCsv(settings.CSV_DIR).read_csv_as_dictionary(
+                settings.ATTRIB_MAP_FILE
+            )
             for xml_name, xml_value in xml_attributes.items():
                 database_name = self._transform_names(xml_name)
                 if database_name not in col_names:
