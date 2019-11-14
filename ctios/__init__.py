@@ -89,18 +89,18 @@ class CtiOs:
     def set_posidents_from_db(self, sql=None):
         """
         Setting of input - posidents from db
-        :returns response: CtiOsError if empty result
+
+        Raise CtiOsError when response ids is empty.
+
+        :param str sql: SQL select statement for filtering or None
         """
         if sql is None:
-            self._get_posidents_from_db("select ID from OPSUB")
-        else:
-            self._get_posidents_from_db(sql)
+            sql = "SELECT ID FROM OPSUB"
+        self.ids = self._get_posidents_from_db(sql)
 
-        # Control if not empty, if not remove duplicates
+        # Control if not empty
         if len(self.ids) <= 1:
             raise CtiOsError("Query has an empty result!")
-        else:
-            list(dict.fromkeys(self.ids))
 
     def _get_posidents_from_db(self, sql):
         """
@@ -110,14 +110,15 @@ class CtiOs:
         :returns response: CtiOsError if cannot find db
         """
         try:
-            conn = self._create_connection()
-            cur = conn.cursor()
-            cur.execute(sql)
-            self.ids = cur.fetchall()
-            cur.close()
-            conn.close()
+            with self._create_connection() as conn:
+                cur = conn.cursor()
+                cur.execute(sql)
+                ids = cur.fetchall()
+                cur.close()
         except sqlite3.Error as e:
             raise CtiOsError("Database error!")
+
+        return list(set(ids))
 
     def _draw_up_xml_request(self, ids):
         """
