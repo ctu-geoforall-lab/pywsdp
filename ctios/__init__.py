@@ -14,8 +14,8 @@ import math
 import logging
 from datetime import datetime
 import re
-import os
 from pathlib import Path
+import configparser
 
 from ctios.exceptions import CtiOsError
 import ctios.settings
