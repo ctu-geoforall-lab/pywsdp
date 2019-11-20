@@ -23,6 +23,7 @@ import ctios.settings
 from ctios.templates import CtiOsTemplate
 from ctios.csv import CtiOsCsv
 
+
 class CtiOs:
 
     def __init__(self, username, password, max_num=10):
