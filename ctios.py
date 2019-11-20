@@ -9,7 +9,7 @@ from ctios.exceptions import CtiOsError
 
 
 def main():
-    parser = argparse.ArgumentParser(description='...')
+    parser = argparse.ArgumentParser(description='Knihovna pyctios umožňuje k předdefinované množině oprávněných subjektů získat osobní údaje. Využívá k tomu službu ČTIOS, která byla vytvořena na základě nařízení Evropské unie o zpracovávání osobních údajů. Upozornění: Získávání osobních údajů skrze službu ČTIOS je ze strany ČÚZK logováno.')
 
     parser.add_argument(
        '--user',
