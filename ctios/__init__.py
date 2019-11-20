@@ -359,8 +359,11 @@ class CtiOs:
         :returns logging: Logging object
         :rtype conn: Logging object
         """
+
+        logger = logging.getLogger('pyctios')
         self.log_path = log_path
         log_filename = datetime.now().strftime('%H_%M_%S_%d_%m_%Y.log')
+
         # set up logging to file - see previous section for more details
         logging.basicConfig(level=logging.INFO,
                             format='%(asctime)s %(levelname)-8s %(message)s',
@@ -370,13 +373,14 @@ class CtiOs:
         # define a Handler which writes INFO messages or higher to the sys.stderr
         console = logging.StreamHandler()
         console.setLevel(logging.INFO)
-        # set a format which is simpler for console use
-        formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-        # tell the handler to use this format
+
+        # Create formatters and add it to handlers
+        formatter = logging.Formatter('%(name)-12s - %(levelname)-8s - %(message)s')
         console.setFormatter(formatter)
-        # add the handler to the root logger
-        logging.getLogger('').addHandler(console)
-        self.logging = logging
+
+        # Add handlers to the logger
+        logger.addHandler(console)
+        self.logging = logger
 
         # Initialization of state vector
         self.state_vector = {

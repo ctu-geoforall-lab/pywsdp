@@ -10,7 +10,9 @@ set VAR_3="select id from opsub limit 10"
 set VAR_4=%parent%tests\
 set VAR_5=%parent%tests\input_data\Export_1-4.db
 
-xcopy %VAR_5% %temp% /e /h
+xcopy %VAR_5% %temp% /t /e /i /y
+
+pause
 
 python %parent%ctios.py --user %VAR_1% --password %VAR_2% --sql %VAR_3% --logdir %VAR_4% --db %temp%\Export_1-4.db
 
