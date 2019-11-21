@@ -97,39 +97,33 @@ class CtiOs:
                 ids = cur.fetchall()
                 cur.close()
         except sqlite3.Error as e:
-            raise CtiOsError("Database error!")
+            raise CtiOsError("Database error: {}".format(e))
 
         return list(set(ids))
 
     def _draw_up_xml_request(self, ids):
         """
         Put together a request in the XML form to CTI_OS service
-        :returns response: final XML request with all ids attributes
+        :returns str request_xml: final XML request with all ids attributes
         :rtype response: list
         """
 
         posident_array = []
 
         for i in ids:
-
-            # Trim id
-            i = str(i)
-            n = i[2:]
-            m = n[:-3]
-
             # Draw up xml tag
-            row = "<v2:pOSIdent>{}</v2:pOSIdent>".format(m)
-
+            # TODO: IndexError?
+            row = "<v2:pOSIdent>{}</v2:pOSIdent>".format(i[0])
             # Add all tags to one list
             posident_array.append(row)
 
-        # Convert list to one long string
-        pos = ''.join(posident_array)
-
         # Render XML request
-        self.xml = CtiOsTemplate(settings.TEMPLATES_DIR).render(
-            'request.xml', username=self._username, password=self._password, posidents=pos
+        request_xml = CtiOsTemplate(settings.TEMPLATES_DIR).render(
+            'request.xml', username=self._username, password=self._password,
+            posidents=''.join(posident_array)
         )
+
+        return request_xml
 
     def _call_service(self):
         """
@@ -138,12 +132,14 @@ class CtiOs:
         :returns response: XML response with all ids attributes
         :rtype response: string
         """
-
+        # TODO: local variables if possible
         self.response = requests.post(self.endpoint, data=self.xml, headers=self.headers)
+        # request: force exception
         self.status_code = self.response.status_code
         self.response = self.response.text
 
-        # Errors
+        # TODO: simplify
+        # Errors 
         if 300 <= self.status_code < 400:
             if self.log_path:
                 self.logging.fatal('STAVOVY KOD HTTP 3xx: REDIRECT')
@@ -313,7 +309,8 @@ class CtiOs:
         Function which draws up xml request,
         call service and save attributes into db using other partial functions
         """
-        self._draw_up_xml_request(ids)  # Putting XML request together
+        # TODO: local variable (?)
+        self.xml = self._draw_up_xml_request(ids)  # Putting XML request together
         self._call_service()  # CTI_OS request with upper parameters
         self._save_attributes_to_db()
 
