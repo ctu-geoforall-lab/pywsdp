@@ -1,14 +1,17 @@
 #!/bin/sh
 
-cp /input_data/Export_1-4.db "$TMPDIR"
+tmpdir=$(mktemp -u)
+mkdir $tmpdir
+cp tests/input_data/Export_1-4.db $tmpdir/
+db=$tmpdir/Export_1-4.db
 
 ./ctios.py \
     --user WSTEST \
     --password WSHESLO \
     --logdir tests/ \
-    --db "$TMPDIR"/Export_1-4.db \
+    --db $db \
     --sql "SELECT ID FROM OPSUB LIMIT 10"
 
- #     --posidents tests/input_data/posidents_1-4.txt \
+rm -r $db
 
 exit 0
