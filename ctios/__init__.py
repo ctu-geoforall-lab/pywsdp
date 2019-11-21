@@ -26,7 +26,8 @@ from ctios.csv import CtiOsCsv
 
 class CtiOs:
 
-    def __init__(self, username, password, max_num=10):
+    def __init__(self, username, password, max_num=10,
+                 config_file=None):
 
         # CTI_OS authentication
         self._username = username
@@ -41,6 +42,14 @@ class CtiOs:
 
         # Max number of ids inside one request
         self.max_num = max_num
+
+        # read configuration
+        if config_file:
+            self.config_file = config
+        else:
+            self.config_file = None # TBD
+
+        self.config = None # configparser
 
     def set_db(self, db_path):
         """
