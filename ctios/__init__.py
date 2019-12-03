@@ -14,11 +14,11 @@ import math
 import logging
 from datetime import datetime
 import re
+import os
 from pathlib import Path
 import configparser
 
 from ctios.exceptions import CtiOsError
-import ctios.settings
 
 from ctios.templates import CtiOsTemplate
 from ctios.csv import CtiOsCsv
@@ -26,30 +26,36 @@ from ctios.csv import CtiOsCsv
 
 class CtiOs:
 
-    def __init__(self, username, password, max_num=10,
-                 config_file=None):
+    def __init__(self, username, password, config_file=None):
 
         # CTI_OS authentication
         self._username = username
         self._password = password
 
-        # CTI_OS service parameters
-        self.endpoint = 'https://wsdptrial.cuzk.cz/trial/ws/ctios/2.8/ctios'
-        self.headers = {'Content-Type': 'text/xml;charset=UTF-8',
-                        'Accept-Encoding': 'gzip,deflate',
-                        'SOAPAction': "http://katastr.cuzk.cz/ctios/ctios",
-                        'Connection': 'Keep-Alive'}
+        config = configparser.ConfigParser()
 
-        # Max number of ids inside one request
-        self.max_num = max_num
-
-        # read configuration
-        if config_file:
-            self.config_file = config
+        # Read configuration
+        if config_file is None:
+            config.read(os.path.join(os.path.dirname(__file__), 'settings.ini'))
         else:
-            self.config_file = None # TBD
+            config.read(config_file)
 
-        self.config = None # configparser
+        # Paths
+        self._base_dir = config['paths']['base_dir']
+        self._template_dir = config['paths']['templates_dir']
+        self._csv_dir = config['paths']['csv_dir']
+        self._attribute_map_file = config['paths']['attribute_map_file']
+
+        # Service headers
+        self._content_type = config['service headers']['Content-Type']
+        self._accept_encoding = config['service headers']['Accept-Encoding']
+        self._SOAP_action = config['service headers']['SOAPAction']
+        self._connection = config['service headers']['Connection']
+        self._endpoint = config['service headers']['Endpoint']
+        self._max_num = int(config['service headers']['Max_num'])
+
+        self._headers = {"Content-Type": self._content_type, "Accept-Encoding": self._accept_encoding,
+                         "SOAPAction": self._SOAP_action, "Connection": self._connection}
 
     def set_db(self, db_path):
         """
@@ -118,7 +124,7 @@ class CtiOs:
             posident_array.append(row)
 
         # Render XML request
-        request_xml = CtiOsTemplate(settings.TEMPLATES_DIR).render(
+        request_xml = CtiOsTemplate(self._template_dir).render(
             'request.xml', username=self._username, password=self._password,
             posidents=''.join(posident_array)
         )
@@ -133,7 +139,7 @@ class CtiOs:
         :rtype response: string
         """
         # TODO: local variables if possible
-        self.response = requests.post(self.endpoint, data=self.xml, headers=self.headers)
+        self.response = requests.post(self._endpoint, data=self.xml, headers=self._headers)
         # request: force exception
         self.status_code = self.response.status_code
         self.response = self.response.text
@@ -273,8 +279,8 @@ class CtiOs:
 
             #  Transform xml_names to database_names
             database_attributes = {}
-            self.dictionary = CtiOsCsv(settings.CSV_DIR).read_csv_as_dictionary(
-                settings.ATTRIB_MAP_FILE
+            self.dictionary = CtiOsCsv(self._csv_dir).read_csv_as_dictionary(
+                self._attribute_map_file
             )
             for xml_name, xml_value in xml_attributes.items():
                 database_name = self._transform_names(xml_name)
@@ -322,17 +328,17 @@ class CtiOs:
         if self.log_path:
             self.logging.info('Pocet jedinecnych ID v seznamu: {}'.format(len(self.ids)))
 
-        if len(self.ids) <= self.max_num:
+        if len(self.ids) <= self._max_num:
             ids = self.ids
             self._query_service(ids)  # Query and save response to db
             if self.log_path:
                 self.logging.info('Zpracovano v ramci 1 pozadavku.')
         else:
-            full_arrays = math.floor(len(self.ids) / self.max_num)  # Floor to number of full posidents arrays
-            rest = len(self.ids) % self.max_num  # Left posidents
+            full_arrays = math.floor(len(self.ids) / self._max_num)  # Floor to number of full posidents arrays
+            rest = len(self.ids) % self._max_num  # Left posidents
             for i in range(0, full_arrays):
-                start = i * self.max_num
-                end = i * self.max_num + self.max_num
+                start = i * self._max_num
+                end = i * self._max_num + self._max_num
                 whole_ids = self.ids[start: end]
                 self._query_service(whole_ids)  # Query and save response to db
 

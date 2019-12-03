@@ -10,7 +10,7 @@ set VAR_3="select id from opsub limit 10"
 set VAR_4=%parent%tests\
 set VAR_5=%parent%tests\input_data\Export_1-4.db
 
-xcopy %VAR_5% %temp% /t /e /i /y
+xcopy %VAR_5% %temp%
 
 pause
 

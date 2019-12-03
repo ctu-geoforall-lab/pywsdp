@@ -31,6 +31,10 @@ def main():
        '--db',
        help="Database produced by GDAL from input VFK file",
        required=True)
+    parser.add_argument(
+        '--config',
+        help="Config file for service and path configuration",
+        required=False)
 
     args = parser.parse_args()
 
@@ -39,7 +43,7 @@ def main():
 
     # Set up CtiOs reader
     try:
-        co = CtiOs(args.user, args.password)
+        co = CtiOs(args.user, args.password, args.config)
     except CtiOsError as e:
         sys.exit(e)
 
