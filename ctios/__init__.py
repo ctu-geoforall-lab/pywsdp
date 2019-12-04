@@ -25,9 +25,19 @@ from ctios.csv import CtiOsCsv
 
 
 class CtiOs:
+    """
+        CTIOS class contains methods for requesting CTIOS service, processing the response and saving it to db
+    """
 
     def __init__(self, username, password, config_file=None):
+        """
+        Constructor of CTIOS class
 
+        Args:
+            username (str): Username for CTIOS service
+            password (str): Password for CTIOS service
+            config_file (str): Configuration file (not mandatory, if not specified, default config file is selected)
+        """
         # CTI_OS authentication
         self._username = username
         self._password = password
@@ -40,13 +50,13 @@ class CtiOs:
         else:
             config.read(config_file)
 
-        # Paths
+        # Directories and path loaded from ini file
         self._base_dir = config['paths']['base_dir']
         self._template_dir = config['paths']['templates_dir']
         self._csv_dir = config['paths']['csv_dir']
-        self._attribute_map_file = config['paths']['attribute_map_file']
+        self._attribute_map_file = config['paths']['attribute_map_file']  # Mapping xml and database attributes
 
-        # Service headers
+        # CTIOS service parameters loaded from ini file
         self._content_type = config['service headers']['Content-Type']
         self._accept_encoding = config['service headers']['Accept-Encoding']
         self._SOAP_action = config['service headers']['SOAPAction']
@@ -54,50 +64,70 @@ class CtiOs:
         self._endpoint = config['service headers']['Endpoint']
         self._max_num = int(config['service headers']['Max_num'])
 
+        # CTIOS headers for service requesting
         self._headers = {"Content-Type": self._content_type, "Accept-Encoding": self._accept_encoding,
                          "SOAPAction": self._SOAP_action, "Connection": self._connection}
 
-    def set_db(self, db_path):
+    @staticmethod
+    def set_db(db_path):
         """
-        Setting of database
-        :param db_path: path to db file
-        :type db_path: string
-        :returns response: Exception if ids in the database do not match ids in the text file
+        Control path to db
+
+        Args:
+            db_path (str): Path to vfk db
+
+        Raises:
+            CtiOsError: FileNotFoundError
         """
+
         my_file = Path(db_path)
+
         try:
             # Control if database file exists
             my_file.resolve(strict=True)
-            self.db_path = db_path
+            return db_path
 
         except FileNotFoundError as e:
             raise CtiOsError(e)
 
-    def set_posidents_from_db(self, sql=None):
+    def _create_connection(self, db_path):
         """
-        Setting of input - posidents from db
+        Create a database connection to the SQLite database specified by the db_file
 
-        Raise CtiOsError when response ids is empty.
+        Args:
+            db_path (str): path to vfk db
 
-        :param str sql: SQL select statement for filtering or None
+        Raises:
+            CtiOsError(SQLite error)
+
+        Returns:
+            conn (Connection object)
         """
-        if sql is None:
-            sql = "SELECT ID FROM OPSUB"
-        self.ids = self._get_posidents_from_db(sql)
 
-        # Control if not empty
-        if len(self.ids) <= 1:
-            raise CtiOsError("Query has an empty result!")
+        try:
+            conn = sqlite3.connect(db_path)
+            return conn
+        except sqlite3.Error as e:
+            if self.log_dir:
+                self.logging.fatal('SQLITE3 ERROR!' + db_path)
+            raise CtiOsError("SQLITE3 ERROR {}".format(e))
 
-    def _get_posidents_from_db(self, sql):
+    def _get_ids_from_db(self, db_path, sql):
         """
-        Send query to database
-        :param sql: sql query
-        :type sql: string
-        :returns response: CtiOsError if cannot find db
+        Get ids from db
+
+        Args:
+            db_path (str): path to vfk db
+            sql (str): SQL select statement for id selection
+
+        Raises:
+            CtiOsError: "Database error"
+
+        Returns:
+            ids (list): pseudo ids from db
         """
         try:
-            with self._create_connection() as conn:
+            with self._create_connection(db_path) as conn:
                 cur = conn.cursor()
                 cur.execute(sql)
                 ids = cur.fetchall()
@@ -107,118 +137,130 @@ class CtiOs:
 
         return list(set(ids))
 
+    def set_ids_from_db(self, db_path, sql=None):
+        """
+        Set ids from db
+
+        Args:
+            db_path (str): path to db
+            sql (str): SQL select statement for filtering or None (if not specified, all ids from db are selected)
+
+        Raises:
+            CtiOsError: Query has an empty result! (Raises when the response is empty)
+
+        Returns:
+            ids (list): pseudo ids from db
+        """
+
+        if sql is None:
+            sql = "SELECT ID FROM OPSUB"
+        ids = self._get_ids_from_db(db_path, sql)
+
+        # Control if not empty
+        if len(ids) <= 1:
+            raise CtiOsError("Query has an empty result!")
+
+        return ids
+
     def _draw_up_xml_request(self, ids):
         """
-        Put together a request in the XML form to CTI_OS service
-        :returns str request_xml: final XML request with all ids attributes
-        :rtype response: list
+        Draw up xml request using ids array and function for rendering from CtiOsTemplate class
+
+        Args:
+            ids (list): pseudo ids from db
+
+        Returns:
+            request_xml (str): xml request for CtiOS service
         """
 
-        posident_array = []
+        ids_array = []
 
         for i in ids:
-            # Draw up xml tag
-            # TODO: IndexError?
             row = "<v2:pOSIdent>{}</v2:pOSIdent>".format(i[0])
-            # Add all tags to one list
-            posident_array.append(row)
+            ids_array.append(row)  # Add all tags to one list
 
-        # Render XML request
+        # Render XML request using request xml template
         request_xml = CtiOsTemplate(self._template_dir).render(
             'request.xml', username=self._username, password=self._password,
-            posidents=''.join(posident_array)
+            posidents=''.join(ids_array)
         )
-
         return request_xml
 
-    def _call_service(self):
+    def _call_service(self, request_xml):
         """
         Send a request in the XML form to CTI_OS service
-        :raises: '3xx Redirect', '4xx Client Error', '5xx Server Error'
-        :returns response: XML response with all ids attributes
-        :rtype response: string
-        """
-        # TODO: local variables if possible
-        self.response = requests.post(self._endpoint, data=self.xml, headers=self._headers)
-        # request: force exception
-        self.status_code = self.response.status_code
-        self.response = self.response.text
 
-        # TODO: simplify
-        # Errors 
-        if 300 <= self.status_code < 400:
-            if self.log_path:
-                self.logging.fatal('STAVOVY KOD HTTP 3xx: REDIRECT')
-            raise CtiOsError("STAVOVY KOD HTTP 3xx: REDIRECT!")
+        Args:
+            request_xml (str): xml for requesting CTIOS service
 
-        elif 400 <= self.status_code < 500:
-            if self.log_path:
-                self.logging.fatal('STAVOVY KOD HTTP 4xx: CLIENT ERROR!')
-            raise CtiOsError("STAVOVY KOD HTTP 4xx: CLIENT ERROR!")
+        Raises:
+            CtiOsError(Service error)
 
-        elif 500 <= self.status_code < 600:
-            if self.log_path:
-                self.logging.fatal('STAVOVY KOD HTTP 5xx: SERVER ERROR!')
-            raise CtiOsError("STAVOVY KOD HTTP 5xx: SERVER ERROR!")
-
-        else:
-            # Success
-            if self.log_path:
-                self.logging.info('STAVOVY KOD HTTP 2xx: SUCCESS!')
-            return self.response
-
-    def _create_connection(self):
-        """
-        Create a database connection to the SQLite database specified by the db_file
-        :raises: 'SQLITE3 ERROR'
-        :returns conn: Connection object
-        :rtype conn: Connection object
+        Returns:
+            response_xml (str): xml response from CtiOS service
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            return conn
-        except Error:
-            if self.log_path:
-                self.logging.fatal('SQLITE3 ERROR!' + self.db_path)
-            raise Exception("SQLITE3 ERROR" + self.db_path)
+            response_xml = requests.post(self._endpoint, data=request_xml, headers=self._headers)
+            response_xml = response_xml.text
+
+        except requests.exceptions.RequestException as e:
+            raise CtiOsError("Service error: {}".format(e))
+
+        return response_xml
 
     @staticmethod
     def _transform_names(xml_name):
         """
         Convert names in XML name to name in database (eg. StavDat to stav_dat)
-        :returns database_name: column names in database
-        :rtype database_name: string
+
+        Args:
+            xml_name (str): tag of xml attribute in xml response
+
+        Returns:
+            database_name (str): column names in database
         """
+
         database_name = re.sub('([A-Z]{1})', r'_\1', xml_name).upper()
         return database_name
 
     def _transform_names_dict(self, xml_name):
         """
-        Convert names in database to name in XML based on special dictionary
-        :returns database_name: column names in database
-        :rtype database_name: string
+            Convert names in XML name to name in database based on special dictionary
+
+            Args:
+                xml_name (str): tag of xml attribute in xml response
+
+            Raises:
+                CtiOsError(XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME)
+
+            Returns:
+                database_name (str): column names in database
         """
-        # key = name in XML
-        # value = name in database
         try:
-            database_name = self.dictionary[xml_name]
+            # Load dictionary with names of XML tags and their relevant database names
+            dictionary = CtiOsCsv(self._csv_dir).read_csv_as_dictionary(
+                self._attribute_map_file
+            )
+            database_name = dictionary[xml_name]
             return database_name
-        except Exception:
-            if self.log_path:
+
+        except Exception as e:
+            if self.log_dir:
                 self.logging.exception('XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME')
-            raise Exception("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME")
+            raise CtiOsError("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
 
-    def _save_attributes_to_db(self):
+    def _save_attributes_to_db(self, response_xml, db_path):
         """
-        1. Parses XML returned by CTI_OS service into desired parts which will represent database table attributes
-        2. Connects to Export_vse.db
-        3. Alters table by adding OS_ID column if not exists
-        4. Updates attributes for all posidents in SQLITE3 table rows
-        Keyword arguments: xml file returned by CTI_OS service, path to the database file and state information vector, logging
-        Returns: failed! if problem appears otherwise updated state vector
-        """
+         1. Parses XML returned by CTI_OS service into desired parts which will represent database table attributes
+         2. Connects to db
+         3. Alters table by adding OS_ID column if not exists
+         4. Updates attributes for all pseudo ids in SQLITE3 table rows
 
-        root = et.fromstring(self.response)
+         Args:
+             response_xml (str): tag of xml attribute in xml response
+             db_path (str): path to vfk db
+        """
+        root = et.fromstring(response_xml)
 
         for os in root.findall('.//{http://katastr.cuzk.cz/ctios/types/v2.8}os'):
 
@@ -228,18 +270,18 @@ class CtiOs:
 
                 if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "NEPLATNY_IDENTIFIKATOR":
                     self.state_vector['neplatny_identifikator'] += 1
-                    if self.log_path:
+                    if self.log_dir:
                         self.logging.error('POSIDENT {} NEPLATNY IDENTIFIKATOR'.format(posident))
                     continue
                 if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "EXPIROVANY_IDENTIFIKATOR":
                     self.state_vector['expirovany_identifikator'] += 1
-                    if self.log_path:
+                    if self.log_dir:
                         self.logging.error('POSIDENT {}: EXPIROVANY IDENTIFIKATOR'.format(posident))
                     continue
                 if os.find(
                         '{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
                     self.state_vector['opravneny_subjekt_neexistuje'] += 1
-                    if self.log_path:
+                    if self.log_dir:
                         self.logging.error('POSIDENT {}: OPRAVNENY SUBJEKT NEEXISTUJE'.format(posident))
                     continue
             else:
@@ -262,7 +304,7 @@ class CtiOs:
 
             # Find out the names of columns in database and if column os_id doesnt exist, add it
             try:
-                conn = self._create_connection()
+                conn = self._create_connection(db_path)
                 cur = conn.cursor()
                 cur.execute("PRAGMA read_committed = true;")
                 cur.execute('select * from OPSUB')
@@ -273,15 +315,12 @@ class CtiOs:
             except conn.Error:
                 cur.close()
                 conn.close()
-                if self.log_path:
+                if self.log_dir:
                     self.logging.exception('Pripojeni k databazi selhalo')
                 raise Exception("CONNECTION TO DATABASE FAILED")
 
             #  Transform xml_names to database_names
             database_attributes = {}
-            self.dictionary = CtiOsCsv(self._csv_dir).read_csv_as_dictionary(
-                self._attribute_map_file
-            )
             for xml_name, xml_value in xml_attributes.items():
                 database_name = self._transform_names(xml_name)
                 if database_name not in col_names:
@@ -297,7 +336,7 @@ class CtiOs:
                 cur.execute("""UPDATE OPSUB SET OS_ID = ? WHERE id = ?""", (osid, posident))
                 cur.execute("COMMIT TRANSACTION")
                 cur.close()
-                if self.log_path:
+                if self.log_dir:
                     self.logging.info('Radky v databazi u POSIdentu {} aktualizovany'.format(posident))
             except conn.Error:
                 print("failed!")
@@ -307,53 +346,57 @@ class CtiOs:
             finally:
                 if conn:
                     conn.close()
-        if self.log_path:
+        if self.log_dir:
             return self.state_vector
 
-    def _query_service(self, ids):
+    def _query_service(self, ids, db_path):
         """
-        Function which draws up xml request,
-        call service and save attributes into db using other partial functions
-        """
-        # TODO: local variable (?)
-        self.xml = self._draw_up_xml_request(ids)  # Putting XML request together
-        self._call_service()  # CTI_OS request with upper parameters
-        self._save_attributes_to_db()
+        Function which draws up xml request, call service and save attributes into db using other partial functions
 
-    def query_requests(self):
+        Args:
+            ids (list): list of pseudo ids
+            db_path (str): path to vfk db
         """
-        Main function which divides requests into groups
+        request_xml = self._draw_up_xml_request(ids)  # Putting XML request together
+        response_xml = self._call_service(request_xml)  # CTI_OS request with upper parameters
+        self._save_attributes_to_db(response_xml, db_path)  # Save attributes to db
+
+    def query_requests(self, ids, db_path):
         """
+        Main function which divides requests into groups and process them
 
-        if self.log_path:
-            self.logging.info('Pocet jedinecnych ID v seznamu: {}'.format(len(self.ids)))
+        Args:
+            ids (list): list of pseudo ids
+            db_path (str): path to vfk db
+        """
+        if self.log_dir:
+            self.logging.info('Pocet jedinecnych ID v seznamu: {}'.format(len(ids)))
 
-        if len(self.ids) <= self._max_num:
-            ids = self.ids
-            self._query_service(ids)  # Query and save response to db
-            if self.log_path:
+        if len(ids) <= self._max_num:
+            self._query_service(ids, db_path)  # Query and save response to db
+            if self.log_dir:
                 self.logging.info('Zpracovano v ramci 1 pozadavku.')
         else:
-            full_arrays = math.floor(len(self.ids) / self._max_num)  # Floor to number of full posidents arrays
-            rest = len(self.ids) % self._max_num  # Left posidents
+            full_arrays = math.floor(len(ids) / self._max_num)  # Floor to number of full posidents arrays
+            rest = len(ids) % self._max_num  # Left posidents
             for i in range(0, full_arrays):
                 start = i * self._max_num
                 end = i * self._max_num + self._max_num
-                whole_ids = self.ids[start: end]
-                self._query_service(whole_ids)  # Query and save response to db
+                whole_ids = ids[start: end]
+                self._query_service(whole_ids, db_path)  # Query and save response to db
 
             # make a request from the rest of posidents
-            ids_rest = self.ids[len(self.ids) - rest: len(self.ids)]
+            ids_rest = ids[len(ids) - rest: len(ids)]
             if ids_rest:
-                self._query_service(ids_rest)  # Query and save response to db
+                self._query_service(ids_rest, db_path)  # Query and save response to db
                 divided_into = full_arrays + 1
             else:
                 divided_into = full_arrays
 
-            if self.log_path:
+            if self.log_dir:
                 self.logging.info('Rozdeleno do {} pozadavku'.format(divided_into))
 
-        if self.log_path:
+        if self.log_dir:
             self.logging.info('Pocet uspesne stazenych posidentu: {} '.format(
                 self.state_vector['uspesne_stazeno']))
             self.logging.info('Neplatny identifikator: {}x.'.format(
@@ -363,24 +406,25 @@ class CtiOs:
             self.logging.info('Opravneny subjekt neexistuje: {}x.'.format(
                 self.state_vector['opravneny_subjekt_neexistuje']))
 
-    def set_log_file(self, log_path):
+    def set_log_file(self, log_dir):
         """
-        Create log file - not mandatory
-        :param log_path: path to log file
-        :type log_path: string
-        :returns logging: Logging object
-        :rtype conn: Logging object
-        """
+        Create pyctios log file
 
+        Args:
+            log_dir (str): path to log directory
+
+        Returns:
+            logging (Logging object)
+        """
         logger = logging.getLogger('pyctios')
-        self.log_path = log_path
+        self.log_dir = log_dir
         log_filename = datetime.now().strftime('%H_%M_%S_%d_%m_%Y.log')
 
         # set up logging to file - see previous section for more details
         logging.basicConfig(level=logging.INFO,
                             format='%(asctime)s %(levelname)-8s %(message)s',
                             datefmt='%m-%d %H:%M',
-                            filename=log_path + '/' + log_filename,
+                            filename=log_dir + '/' + log_filename,
                             filemode='w')
         # define a Handler which writes INFO messages or higher to the sys.stderr
         console = logging.StreamHandler()

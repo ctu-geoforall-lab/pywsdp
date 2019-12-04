@@ -49,7 +49,7 @@ def main():
 
     # Set db
     try:
-        co.set_db(args.db)
+        db_path = co.set_db(args.db)
     except CtiOsError as e:
         sys.exit(e)
 
@@ -59,13 +59,13 @@ def main():
 
     # Set input posidents from file or db
     try:
-        co.set_posidents_from_db(args.sql)
+        ids = co.set_ids_from_db(db_path, args.sql)
     except CtiOsError as e:
         sys.exit(e)
 
     # Send query
     try:
-        co.query_requests()
+        co.query_requests(ids, db_path)
     except CtiOsError as e:
         sys.exit(e)
 
