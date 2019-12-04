@@ -19,6 +19,8 @@ from pathlib import Path
 import configparser
 
 from ctios.exceptions import CtiOsError
+from ctios.exceptions import CtiOsDbError
+from ctios.exceptions import CtiOsRequestError
 
 from ctios.templates import CtiOsTemplate
 from ctios.csv import CtiOsCsv
@@ -98,7 +100,7 @@ class CtiOs:
             db_path (str): path to vfk db
 
         Raises:
-            CtiOsError(SQLite error)
+            CtiOsDbError(SQLite error)
 
         Returns:
             conn (Connection object)
@@ -110,7 +112,7 @@ class CtiOs:
         except sqlite3.Error as e:
             if self.log_dir:
                 self.logging.fatal('SQLITE3 ERROR!' + db_path)
-            raise CtiOsError("SQLITE3 ERROR {}".format(e))
+            raise CtiOsDbError("SQLITE3 ERROR {}".format(e))
 
     def _get_ids_from_db(self, db_path, sql):
         """
@@ -121,7 +123,7 @@ class CtiOs:
             sql (str): SQL select statement for id selection
 
         Raises:
-            CtiOsError: "Database error"
+            CtiOsDbError: "Database error"
 
         Returns:
             ids (list): pseudo ids from db
@@ -133,7 +135,9 @@ class CtiOs:
                 ids = cur.fetchall()
                 cur.close()
         except sqlite3.Error as e:
-            raise CtiOsError("Database error: {}".format(e))
+            if self.log_dir:
+                self.logging.fatal('SQLITE3 ERROR!' + db_path)
+            raise CtiOsDbError("SQLITE3 ERROR!: {}".format(e))
 
         return list(set(ids))
 
@@ -194,7 +198,7 @@ class CtiOs:
             request_xml (str): xml for requesting CTIOS service
 
         Raises:
-            CtiOsError(Service error)
+            CtiOsRequestError(Service error)
 
         Returns:
             response_xml (str): xml response from CtiOS service
@@ -204,7 +208,7 @@ class CtiOs:
             response_xml = response_xml.text
 
         except requests.exceptions.RequestException as e:
-            raise CtiOsError("Service error: {}".format(e))
+            raise CtiOsRequestError("Service error: {}".format(e))
 
         return response_xml
 
@@ -251,14 +255,17 @@ class CtiOs:
 
     def _save_attributes_to_db(self, response_xml, db_path):
         """
-         1. Parses XML returned by CTI_OS service into desired parts which will represent database table attributes
-         2. Connects to db
-         3. Alters table by adding OS_ID column if not exists
-         4. Updates attributes for all pseudo ids in SQLITE3 table rows
+        1. Parses XML returned by CTI_OS service into desired parts which will represent database table attributes
+        2. Connects to db
+        3. Alters table by adding OS_ID column if not exists
+        4. Updates attributes for all pseudo ids in SQLITE3 table rows
 
-         Args:
-             response_xml (str): tag of xml attribute in xml response
-             db_path (str): path to vfk db
+        Args:
+            response_xml (str): tag of xml attribute in xml response
+            db_path (str): path to vfk db
+
+        Raises:
+            CtiOsDbError
         """
         root = et.fromstring(response_xml)
 
@@ -312,12 +319,10 @@ class CtiOs:
                 if 'OS_ID' not in col_names:
                     cur.execute('ALTER TABLE OPSUB ADD COLUMN OS_ID TEXT')
                 cur.close()
-            except conn.Error:
-                cur.close()
-                conn.close()
+            except sqlite3.Error as e:
                 if self.log_dir:
-                    self.logging.exception('Pripojeni k databazi selhalo')
-                raise Exception("CONNECTION TO DATABASE FAILED")
+                    self.logging.fatal('SQLITE3 ERROR!' + db_path)
+                raise CtiOsDbError("SQLITE3 ERROR!: {}".format(e))
 
             #  Transform xml_names to database_names
             database_attributes = {}
@@ -338,11 +343,11 @@ class CtiOs:
                 cur.close()
                 if self.log_dir:
                     self.logging.info('Radky v databazi u POSIdentu {} aktualizovany'.format(posident))
-            except conn.Error:
-                print("failed!")
+            except conn.Error as e:
                 cur.execute("ROLLBACK TRANSACTION")
                 cur.close()
                 conn.close()
+                raise CtiOsDbError("Transaction Failed!: {}".format(e))
             finally:
                 if conn:
                     conn.close()
