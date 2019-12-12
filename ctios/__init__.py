@@ -25,6 +25,7 @@ from ctios.exceptions import CtiOsRequestError
 from ctios.templates import CtiOsTemplate
 from ctios.csv import CtiOsCsv
 
+from ctios.logger import Logger
 
 class CtiOs:
     """
@@ -367,13 +368,11 @@ class CtiOs:
             ids (list): list of pseudo ids
             db_path (str): path to vfk db
         """
-        if self.log_dir:
-            self.logging.info('Pocet jedinecnych ID v seznamu: {}'.format(len(ids)))
+        Logger.info('Pocet jedinecnych ID v seznamu: {}'.format(len(ids)))
 
         if len(ids) <= self._max_num:
             self._query_service(ids, db_path)  # Query and save response to db
-            if self.log_dir:
-                self.logging.info('Zpracovano v ramci 1 pozadavku.')
+            Logger.info('Zpracovano v ramci 1 pozadavku.')
         else:
             full_arrays = math.floor(len(ids) / self._max_num)  # Floor to number of full posidents arrays
             rest = len(ids) % self._max_num  # Left posidents
@@ -414,29 +413,9 @@ class CtiOs:
         Returns:
             logging (Logging object)
         """
-        logger = logging.getLogger('pyctios')
-        self.log_dir = log_dir
-        log_filename = datetime.now().strftime('%H_%M_%S_%d_%m_%Y.log')
+        # Logger.set_directory(log_dir)
 
-        # set up logging to file - see previous section for more details
-        logging.basicConfig(level=logging.INFO,
-                            format='%(asctime)s %(levelname)-8s %(message)s',
-                            datefmt='%m-%d %H:%M',
-                            filename=log_dir + '/' + log_filename,
-                            filemode='w')
-        # define a Handler which writes INFO messages or higher to the sys.stderr
-        console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
-
-        # Create formatters and add it to handlers
-        formatter = logging.Formatter('%(name)-12s - %(levelname)-8s - %(message)s')
-        console.setFormatter(formatter)
-
-        # Add handlers to the logger
-        logger.addHandler(console)
-        self.logging = logger
-
-        # Initialization of state vector
+        # TODO: move to constructor (?)
         self.state_vector = {
             'neplatny_identifikator': 0,
             'expirovany_identifikator': 0,
