@@ -44,27 +44,20 @@ class CtiOs:
         self._username = username
         self._password = password
 
-        config = configparser.ConfigParser()
+        self._config = configparser.ConfigParser()
 
         # Read configuration
         if config_file is None:
-            config.read(os.path.join(os.path.dirname(__file__), 'settings.ini'))
-        else:
-            config.read(config_file)
-
-        # Directories and path loaded from ini file
-        self._base_dir = config['paths']['base_dir']
-        self._template_dir = config['paths']['templates_dir']
-        self._csv_dir = config['paths']['csv_dir']
-        self._attribute_map_file = config['paths']['attribute_map_file']  # Mapping xml and database attributes
+            config_file = os.path.join(os.path.dirname(__file__), 'settings.ini')
+        self._config.read(config_file)
 
         # CTIOS service parameters loaded from ini file
-        self._content_type = config['service headers']['Content-Type']
-        self._accept_encoding = config['service headers']['Accept-Encoding']
-        self._SOAP_action = config['service headers']['SOAPAction']
-        self._connection = config['service headers']['Connection']
-        self._endpoint = config['service headers']['Endpoint']
-        self._max_num = int(config['service headers']['Max_num'])
+        self._content_type = self._config['service headers']['Content-Type']
+        self._accept_encoding = self._config['service headers']['Accept-Encoding']
+        self._SOAP_action = self._config['service headers']['SOAPAction']
+        self._connection = self._config['service headers']['Connection']
+        self._endpoint = self._config['service headers']['Endpoint']
+        self._max_num = int(self._config['service headers']['Max_num'])
 
         # CTIOS headers for service requesting
         self._headers = {"Content-Type": self._content_type, "Accept-Encoding": self._accept_encoding,
@@ -184,7 +177,7 @@ class CtiOs:
             ids_array.append(row)  # Add all tags to one list
 
         # Render XML request using request xml template
-        request_xml = CtiOsTemplate(self._template_dir).render(
+        request_xml = CtiOsTemplate(self._config['paths'].get('template_dir')).render(
             'request.xml', username=self._username, password=self._password,
             posidents=''.join(ids_array)
         )
@@ -242,8 +235,8 @@ class CtiOs:
         """
         try:
             # Load dictionary with names of XML tags and their relevant database names
-            dictionary = CtiOsCsv(self._csv_dir).read_csv_as_dictionary(
-                self._attribute_map_file
+            dictionary = CtiOsCsv(self._config['paths'].get('csv_dir')).read_csv_as_dictionary(
+                self._config['paths']['attribute_map_file']
             )
             database_name = dictionary[xml_name]
             return database_name
