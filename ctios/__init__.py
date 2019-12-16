@@ -11,8 +11,6 @@ import requests
 import xml.etree.ElementTree as et
 import sqlite3
 import math
-import logging
-from datetime import datetime
 import re
 import os
 from pathlib import Path
@@ -27,12 +25,13 @@ from ctios.csv import CtiOsCsv
 
 from ctios.logger import Logger
 
+
 class CtiOs:
     """
         CTIOS class contains methods for requesting CTIOS service, processing the response and saving it to db
     """
 
-    def __init__(self, username, password, config_file=None):
+    def __init__(self, username, password, config_file=None, log_dir=None):
         """
         Constructor of CTIOS class
 
@@ -40,6 +39,7 @@ class CtiOs:
             username (str): Username for CTIOS service
             password (str): Password for CTIOS service
             config_file (str): Configuration file (not mandatory, if not specified, default config file is selected)
+            log_dir (str): Log directory (not mandatory, if not specified, log is not created)
         """
         # CTI_OS authentication
         self._username = username
@@ -64,8 +64,20 @@ class CtiOs:
         self._headers = {"Content-Type": self._content_type, "Accept-Encoding": self._accept_encoding,
                          "SOAPAction": self._SOAP_action, "Connection": self._connection}
 
-    @staticmethod
-    def set_db(db_path):
+        # Statistics
+        self.state_vector = {
+            'neplatny_identifikator': 0,
+            'expirovany_identifikator': 0,
+            'opravneny_subjekt_neexistuje': 0,
+            'uspesne_stazeno': 0}
+
+        # Logger
+        if log_dir:
+            self.Logger = Logger(log_dir=log_dir)
+        else:
+            self.Logger = Logger()
+
+    def set_db(self, db_path):
         """
         Control path to db
 
@@ -84,6 +96,7 @@ class CtiOs:
             return db_path
 
         except FileNotFoundError as e:
+            self.Logger.fatal("{}".format(e))
             raise CtiOsError(e)
 
     def _create_connection(self, db_path):
@@ -104,8 +117,8 @@ class CtiOs:
             conn = sqlite3.connect(db_path)
             return conn
         except sqlite3.Error as e:
-            if self.log_dir:
-                self.logging.fatal('SQLITE3 ERROR!' + db_path)
+            msg = 'SQLITE3 ERROR!' + db_path
+            self.Logger.fatal(msg)
             raise CtiOsDbError("SQLITE3 ERROR {}".format(e))
 
     def _get_ids_from_db(self, db_path, sql):
@@ -129,8 +142,7 @@ class CtiOs:
                 ids = cur.fetchall()
                 cur.close()
         except sqlite3.Error as e:
-            if self.log_dir:
-                self.logging.fatal('SQLITE3 ERROR!' + db_path)
+            self.Logger.fatal('SQLITE3 ERROR!' + db_path)
             raise CtiOsDbError("SQLITE3 ERROR!: {}".format(e))
 
         return list(set(ids))
@@ -156,6 +168,7 @@ class CtiOs:
 
         # Control if not empty
         if len(ids) <= 1:
+            self.Logger.fatal("Query has an empty result!")
             raise CtiOsError("Query has an empty result!")
 
         return ids
@@ -202,6 +215,7 @@ class CtiOs:
             response_xml = response_xml.text
 
         except requests.exceptions.RequestException as e:
+            self.Logger.fatal("Service error: {}".format(e))
             raise CtiOsRequestError("Service error: {}".format(e))
 
         return response_xml
@@ -243,8 +257,7 @@ class CtiOs:
             return database_name
 
         except Exception as e:
-            if self.log_dir:
-                self.logging.exception('XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME')
+            self.Logger.fatal("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
             raise CtiOsError("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
 
     def _save_attributes_to_db(self, response_xml, db_path):
@@ -271,19 +284,16 @@ class CtiOs:
 
                 if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "NEPLATNY_IDENTIFIKATOR":
                     self.state_vector['neplatny_identifikator'] += 1
-                    if self.log_dir:
-                        self.logging.error('POSIDENT {} NEPLATNY IDENTIFIKATOR'.format(posident))
+                    self.Logger.error('POSIDENT {} NEPLATNY IDENTIFIKATOR'.format(posident))
                     continue
                 if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "EXPIROVANY_IDENTIFIKATOR":
                     self.state_vector['expirovany_identifikator'] += 1
-                    if self.log_dir:
-                        self.logging.error('POSIDENT {}: EXPIROVANY IDENTIFIKATOR'.format(posident))
+                    self.Logger.error('POSIDENT {}: EXPIROVANY IDENTIFIKATOR'.format(posident))
                     continue
                 if os.find(
                         '{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
                     self.state_vector['opravneny_subjekt_neexistuje'] += 1
-                    if self.log_dir:
-                        self.logging.error('POSIDENT {}: OPRAVNENY SUBJEKT NEEXISTUJE'.format(posident))
+                    self.Logger.error('POSIDENT {}: OPRAVNENY SUBJEKT NEEXISTUJE'.format(posident))
                     continue
             else:
                 self.state_vector['uspesne_stazeno'] += 1
@@ -314,8 +324,7 @@ class CtiOs:
                     cur.execute('ALTER TABLE OPSUB ADD COLUMN OS_ID TEXT')
                 cur.close()
             except sqlite3.Error as e:
-                if self.log_dir:
-                    self.logging.fatal('SQLITE3 ERROR!' + db_path)
+                self.Logger.fatal('SQLITE3 ERROR!' + db_path)
                 raise CtiOsDbError("SQLITE3 ERROR!: {}".format(e))
 
             #  Transform xml_names to database_names
@@ -335,18 +344,16 @@ class CtiOs:
                 cur.execute("""UPDATE OPSUB SET OS_ID = ? WHERE id = ?""", (osid, posident))
                 cur.execute("COMMIT TRANSACTION")
                 cur.close()
-                if self.log_dir:
-                    self.logging.info('Radky v databazi u POSIdentu {} aktualizovany'.format(posident))
+                self.Logger.info('Radky v databazi u POSIdentu {} aktualizovany'.format(posident))
             except conn.Error as e:
                 cur.execute("ROLLBACK TRANSACTION")
                 cur.close()
                 conn.close()
+                self.Logger.fatal("Transaction Failed!: {}".format(e))
                 raise CtiOsDbError("Transaction Failed!: {}".format(e))
             finally:
                 if conn:
                     conn.close()
-        if self.log_dir:
-            return self.state_vector
 
     def _query_service(self, ids, db_path):
         """
@@ -368,21 +375,21 @@ class CtiOs:
             ids (list): list of pseudo ids
             db_path (str): path to vfk db
         """
-        Logger.info('Pocet jedinecnych ID v seznamu: {}'.format(len(ids)))
+        self.Logger.info('Pocet jedinecnych ID v seznamu: {}'.format(len(ids)))
 
         if len(ids) <= self._max_num:
             self._query_service(ids, db_path)  # Query and save response to db
-            Logger.info('Zpracovano v ramci 1 pozadavku.')
+            self.Logger.info('Zpracovano v ramci 1 pozadavku.')
         else:
-            full_arrays = math.floor(len(ids) / self._max_num)  # Floor to number of full posidents arrays
-            rest = len(ids) % self._max_num  # Left posidents
+            full_arrays = math.floor(len(ids) / self._max_num)  # Floor to number of full ids arrays
+            rest = len(ids) % self._max_num  # Left ids
             for i in range(0, full_arrays):
                 start = i * self._max_num
                 end = i * self._max_num + self._max_num
                 whole_ids = ids[start: end]
                 self._query_service(whole_ids, db_path)  # Query and save response to db
 
-            # make a request from the rest of posidents
+            # make a request from the rest of ids
             ids_rest = ids[len(ids) - rest: len(ids)]
             if ids_rest:
                 self._query_service(ids_rest, db_path)  # Query and save response to db
@@ -390,37 +397,16 @@ class CtiOs:
             else:
                 divided_into = full_arrays
 
-            if self.log_dir:
-                self.logging.info('Rozdeleno do {} pozadavku'.format(divided_into))
+            self.Logger.info('Rozdeleno do {} pozadavku'.format(divided_into))
 
-        if self.log_dir:
-            self.logging.info('Pocet uspesne stazenych posidentu: {} '.format(
-                self.state_vector['uspesne_stazeno']))
-            self.logging.info('Neplatny identifikator: {}x.'.format(
-                self.state_vector['neplatny_identifikator']))
-            self.logging.info('Expirovany identifikator: {}x.'.format(
-                self.state_vector['expirovany_identifikator']))
-            self.logging.info('Opravneny subjekt neexistuje: {}x.'.format(
-                self.state_vector['opravneny_subjekt_neexistuje']))
+        self.Logger.info('Pocet uspesne stazenych posidentu: {} '.format(self.state_vector['uspesne_stazeno']))
+        self.Logger.info('Neplatny identifikator: {}x.'.format(self.state_vector['neplatny_identifikator']))
+        self.Logger.info('Expirovany identifikator: {}x.'.format(self.state_vector['expirovany_identifikator']))
+        self.Logger.info('Opravneny subjekt neexistuje: {}x.'.format(self.state_vector['opravneny_subjekt_neexistuje']))
 
-    def set_log_file(self, log_dir):
-        """
-        Create pyctios log file
 
-        Args:
-            log_dir (str): path to log directory
 
-        Returns:
-            logging (Logging object)
-        """
-        # Logger.set_directory(log_dir)
 
-        # TODO: move to constructor (?)
-        self.state_vector = {
-            'neplatny_identifikator': 0,
-            'expirovany_identifikator': 0,
-            'opravneny_subjekt_neexistuje': 0,
-            'uspesne_stazeno': 0}
 
 
 

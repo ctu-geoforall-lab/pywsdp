@@ -1,6 +1,7 @@
 import os
 from string import Template
 
+
 class CtiOsTemplate:
     def __init__(self, TEMPLATES_DIR):
         if TEMPLATES_DIR and os.path.isabs(TEMPLATES_DIR):

@@ -6,6 +6,7 @@ import sys
 
 from ctios import CtiOs
 from ctios.exceptions import CtiOsError
+from ctios.logger import Logger
 
 
 def main():
@@ -21,7 +22,7 @@ def main():
        required=False)
     parser.add_argument(
        '--sql',
-       help="Limit posidents by sql query (if not specified than all posidents from db are processed)",
+       help="Limit posidents by sql query (if not specified than all ids from db are processed)",
        required=False)
     parser.add_argument(
        '--logdir',
@@ -43,7 +44,7 @@ def main():
 
     # Set up CtiOs reader
     try:
-        co = CtiOs(args.user, args.password, args.config)
+        co = CtiOs(args.user, args.password, args.config, args.logdir)
     except CtiOsError as e:
         sys.exit(e)
 
@@ -53,11 +54,7 @@ def main():
     except CtiOsError as e:
         sys.exit(e)
 
-    # Set log directory (logs are not generated when no logdir specified)
-    if args.logdir:
-        co.set_log_file(args.logdir)
-
-    # Set input posidents from file or db
+    # Set input ids from file or db
     try:
         ids = co.set_ids_from_db(db_path, args.sql)
     except CtiOsError as e:
