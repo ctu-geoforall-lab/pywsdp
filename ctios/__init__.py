@@ -39,7 +39,7 @@ class CtiOs:
             username (str): Username for CTIOS service
             password (str): Password for CTIOS service
             config_file (str): Configuration file (not mandatory, if not specified, default config file is selected)
-            log_dir (str): Log directory (not mandatory, if not specified, log is not created)
+            log_dir (str): Log directory (not mandatory, if not specified, log file is not created)
         """
         # CTI_OS authentication
         self._username = username
@@ -51,18 +51,6 @@ class CtiOs:
         if config_file is None:
             config_file = os.path.join(os.path.dirname(__file__), 'settings.ini')
         self._config.read(config_file)
-
-        # CTIOS service parameters loaded from ini file
-        self._content_type = self._config['service headers']['Content-Type']
-        self._accept_encoding = self._config['service headers']['Accept-Encoding']
-        self._SOAP_action = self._config['service headers']['SOAPAction']
-        self._connection = self._config['service headers']['Connection']
-        self._endpoint = self._config['service headers']['Endpoint']
-        self._max_num = int(self._config['service headers']['Max_num'])
-
-        # CTIOS headers for service requesting
-        self._headers = {"Content-Type": self._content_type, "Accept-Encoding": self._accept_encoding,
-                         "SOAPAction": self._SOAP_action, "Connection": self._connection}
 
         # Statistics
         self.state_vector = {
@@ -191,8 +179,8 @@ class CtiOs:
             ids_array.append(row)  # Add all tags to one list
 
         # Render XML request using request xml template
-        request_xml = CtiOsTemplate(self._config['paths'].get('template_dir')).render(
-            'request.xml', username=self._username, password=self._password,
+        request_xml = CtiOsTemplate(self._config['files'].get('template_dir')).render(
+            self._config['files']['request_xml_file'], username=self._username, password=self._password,
             posidents=''.join(ids_array)
         )
         return request_xml
@@ -210,8 +198,19 @@ class CtiOs:
         Returns:
             response_xml (str): xml response from CtiOS service
         """
+
+        # CTIOS service parameters loaded from ini file
+        _content_type = self._config['service headers']['content_type']
+        _accept_encoding = self._config['service headers']['accept_encoding']
+        _soap_action = self._config['service headers']['soap_action']
+        _connection = self._config['service headers']['connection']
+        _endpoint = self._config['service headers']['endpoint']
+
+        # CTIOS headers for service requesting
+        _headers = {"Content-Type": _content_type, "Accept-Encoding": _accept_encoding,
+                         "SOAPAction": _soap_action, "Connection": _connection}
         try:
-            response_xml = requests.post(self._endpoint, data=request_xml, headers=self._headers)
+            response_xml = requests.post(_endpoint, data=request_xml, headers=_headers)
             response_xml = response_xml.text
 
         except requests.exceptions.RequestException as e:
@@ -250,8 +249,8 @@ class CtiOs:
         """
         try:
             # Load dictionary with names of XML tags and their relevant database names
-            dictionary = CtiOsCsv(self._config['paths'].get('csv_dir')).read_csv_as_dictionary(
-                self._config['paths']['attribute_map_file']
+            dictionary = CtiOsCsv(self._config['files'].get('csv_dir')).read_csv_as_dictionary(
+                self._config['files']['attribute_map_file']
             )
             database_name = dictionary[xml_name]
             return database_name
@@ -377,15 +376,17 @@ class CtiOs:
         """
         self.Logger.info('Pocet jedinecnych ID v seznamu: {}'.format(len(ids)))
 
-        if len(ids) <= self._max_num:
+        _max_num = self._config['service headers'].getint('max_num')
+
+        if len(ids) <= _max_num:
             self._query_service(ids, db_path)  # Query and save response to db
             self.Logger.info('Zpracovano v ramci 1 pozadavku.')
         else:
-            full_arrays = math.floor(len(ids) / self._max_num)  # Floor to number of full ids arrays
-            rest = len(ids) % self._max_num  # Left ids
+            full_arrays = math.floor(len(ids) / _max_num)  # Floor to number of full ids arrays
+            rest = len(ids) % _max_num  # Left ids
             for i in range(0, full_arrays):
-                start = i * self._max_num
-                end = i * self._max_num + self._max_num
+                start = i * _max_num
+                end = i * _max_num + _max_num
                 whole_ids = ids[start: end]
                 self._query_service(whole_ids, db_path)  # Query and save response to db
 

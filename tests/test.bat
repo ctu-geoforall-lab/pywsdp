@@ -14,6 +14,6 @@ xcopy %VAR_5% %temp%
 
 pause
 
-python %parent%ctios.py --user %VAR_1% --password %VAR_2% --sql %VAR_3% --db %temp%\Export_1-4.db
+python %parent%ctios.py --user %VAR_1% --password %VAR_2% --sql %VAR_3% --logdir %VAR_4% --db %temp%\Export_1-4.db
 
 pause
