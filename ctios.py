@@ -46,25 +46,25 @@ def main():
     try:
         co = CtiOs(args.user, args.password, args.config, args.logdir)
     except CtiOsError as e:
-        sys.exit(e)
+        return 1
 
     # Set db
     try:
         db_path = co.set_db(args.db)
     except CtiOsError as e:
-        sys.exit(e)
+        return 1
 
     # Set input ids from file or db
     try:
         ids = co.set_ids_from_db(db_path, args.sql)
-    except CtiOsError as e:
-        sys.exit(e)
+    except (CtiOsError, CtiOsDbError)  as e:
+        return 1
 
     # Send query
     try:
         co.query_requests(ids, db_path)
     except CtiOsError as e:
-        sys.exit(e)
+        return 1
 
     return 0
 

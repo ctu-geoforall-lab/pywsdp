@@ -61,9 +61,7 @@ class CtiOs:
 
         # Logger
         if log_dir:
-            self.Logger = Logger(log_dir=log_dir)
-        else:
-            self.Logger = Logger()
+            Logger.set_directory(log_dir)
 
     def set_db(self, db_path):
         """
@@ -84,7 +82,6 @@ class CtiOs:
             return db_path
 
         except FileNotFoundError as e:
-            self.Logger.fatal("{}".format(e))
             raise CtiOsError(e)
 
     def _create_connection(self, db_path):
@@ -106,7 +103,7 @@ class CtiOs:
             return conn
         except sqlite3.Error as e:
             msg = 'SQLITE3 ERROR!' + db_path
-            self.Logger.fatal(msg)
+            Logger.fatal(msg)
             raise CtiOsDbError("SQLITE3 ERROR {}".format(e))
 
     def _get_ids_from_db(self, db_path, sql):
@@ -130,8 +127,7 @@ class CtiOs:
                 ids = cur.fetchall()
                 cur.close()
         except sqlite3.Error as e:
-            self.Logger.fatal('SQLITE3 ERROR!' + db_path)
-            raise CtiOsDbError("SQLITE3 ERROR!: {}".format(e))
+            raise CtiOsDbError(e)
 
         return list(set(ids))
 
@@ -156,7 +152,7 @@ class CtiOs:
 
         # Control if not empty
         if len(ids) <= 1:
-            self.Logger.fatal("Query has an empty result!")
+            Logger.fatal("Query has an empty result!")
             raise CtiOsError("Query has an empty result!")
 
         return ids
@@ -214,7 +210,7 @@ class CtiOs:
             response_xml = response_xml.text
 
         except requests.exceptions.RequestException as e:
-            self.Logger.fatal("Service error: {}".format(e))
+            Logger.fatal("Service error: {}".format(e))
             raise CtiOsRequestError("Service error: {}".format(e))
 
         return response_xml
@@ -256,7 +252,7 @@ class CtiOs:
             return database_name
 
         except Exception as e:
-            self.Logger.fatal("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
+            Logger.fatal("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
             raise CtiOsError("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
 
     def _save_attributes_to_db(self, response_xml, db_path):
@@ -283,16 +279,16 @@ class CtiOs:
 
                 if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "NEPLATNY_IDENTIFIKATOR":
                     self.state_vector['neplatny_identifikator'] += 1
-                    self.Logger.error('POSIDENT {} NEPLATNY IDENTIFIKATOR'.format(posident))
+                    Logger.error('POSIDENT {} NEPLATNY IDENTIFIKATOR'.format(posident))
                     continue
                 if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "EXPIROVANY_IDENTIFIKATOR":
                     self.state_vector['expirovany_identifikator'] += 1
-                    self.Logger.error('POSIDENT {}: EXPIROVANY IDENTIFIKATOR'.format(posident))
+                    Logger.error('POSIDENT {}: EXPIROVANY IDENTIFIKATOR'.format(posident))
                     continue
                 if os.find(
                         '{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
                     self.state_vector['opravneny_subjekt_neexistuje'] += 1
-                    self.Logger.error('POSIDENT {}: OPRAVNENY SUBJEKT NEEXISTUJE'.format(posident))
+                    Logger.error('POSIDENT {}: OPRAVNENY SUBJEKT NEEXISTUJE'.format(posident))
                     continue
             else:
                 self.state_vector['uspesne_stazeno'] += 1
@@ -323,7 +319,7 @@ class CtiOs:
                     cur.execute('ALTER TABLE OPSUB ADD COLUMN OS_ID TEXT')
                 cur.close()
             except sqlite3.Error as e:
-                self.Logger.fatal('SQLITE3 ERROR!' + db_path)
+                Logger.fatal('SQLITE3 ERROR!' + db_path)
                 raise CtiOsDbError("SQLITE3 ERROR!: {}".format(e))
 
             #  Transform xml_names to database_names
@@ -343,12 +339,12 @@ class CtiOs:
                 cur.execute("""UPDATE OPSUB SET OS_ID = ? WHERE id = ?""", (osid, posident))
                 cur.execute("COMMIT TRANSACTION")
                 cur.close()
-                self.Logger.info('Radky v databazi u POSIdentu {} aktualizovany'.format(posident))
+                Logger.info('Radky v databazi u POSIdentu {} aktualizovany'.format(posident))
             except conn.Error as e:
                 cur.execute("ROLLBACK TRANSACTION")
                 cur.close()
                 conn.close()
-                self.Logger.fatal("Transaction Failed!: {}".format(e))
+                Logger.fatal("Transaction Failed!: {}".format(e))
                 raise CtiOsDbError("Transaction Failed!: {}".format(e))
             finally:
                 if conn:
@@ -374,13 +370,13 @@ class CtiOs:
             ids (list): list of pseudo ids
             db_path (str): path to vfk db
         """
-        self.Logger.info('Pocet jedinecnych ID v seznamu: {}'.format(len(ids)))
+        Logger.info('Pocet jedinecnych ID v seznamu: {}'.format(len(ids)))
 
         _max_num = self._config['service headers'].getint('max_num')
 
         if len(ids) <= _max_num:
             self._query_service(ids, db_path)  # Query and save response to db
-            self.Logger.info('Zpracovano v ramci 1 pozadavku.')
+            Logger.info('Zpracovano v ramci 1 pozadavku.')
         else:
             full_arrays = math.floor(len(ids) / _max_num)  # Floor to number of full ids arrays
             rest = len(ids) % _max_num  # Left ids
@@ -398,12 +394,12 @@ class CtiOs:
             else:
                 divided_into = full_arrays
 
-            self.Logger.info('Rozdeleno do {} pozadavku'.format(divided_into))
+            Logger.info('Rozdeleno do {} pozadavku'.format(divided_into))
 
-        self.Logger.info('Pocet uspesne stazenych posidentu: {} '.format(self.state_vector['uspesne_stazeno']))
-        self.Logger.info('Neplatny identifikator: {}x.'.format(self.state_vector['neplatny_identifikator']))
-        self.Logger.info('Expirovany identifikator: {}x.'.format(self.state_vector['expirovany_identifikator']))
-        self.Logger.info('Opravneny subjekt neexistuje: {}x.'.format(self.state_vector['opravneny_subjekt_neexistuje']))
+        Logger.info('Pocet uspesne stazenych posidentu: {} '.format(self.state_vector['uspesne_stazeno']))
+        Logger.info('Neplatny identifikator: {}x.'.format(self.state_vector['neplatny_identifikator']))
+        Logger.info('Expirovany identifikator: {}x.'.format(self.state_vector['expirovany_identifikator']))
+        Logger.info('Opravneny subjekt neexistuje: {}x.'.format(self.state_vector['opravneny_subjekt_neexistuje']))
 
 
 

@@ -1,13 +1,17 @@
-class CtiOsDbError(Exception):
+from ctios.logger import Logger
+
+class CtiOsError(Exception):
+    """Another exception for errors caused by reading, parsing XML"""
+    def __init__(self, msg):
+        Logger.fatal(msg)
+
+class CtiOsDbError(CtiOsError):
     """Basic exception for errors raised by db"""
-    pass
+    def __init__(self, msg):
+        super(CtiOsDbError, self).__init__('{} - {}'.format('SQLite3 ERROR', msg))
 
-
-class CtiOsRequestError(Exception):
+class CtiOsRequestError(CtiOsError):
     """Basic exception for errors raised by requesting CtiOs service"""
     pass
 
 
-class CtiOsError(Exception):
-    """Another exception for errors caused by reading, parsing XML"""
-    pass
