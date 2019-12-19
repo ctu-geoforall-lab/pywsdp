@@ -12,6 +12,6 @@ class CtiOsDbError(CtiOsError):
 
 class CtiOsRequestError(CtiOsError):
     """Basic exception for errors raised by requesting CtiOs service"""
-    pass
-
+    def __init__(self, msg):
+        super(CtiOsDbError, self).__init__('{} - {}'.format('Service ERROR', msg))
 

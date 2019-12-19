@@ -206,19 +206,17 @@ class CtiOs:
         _headers = {"Content-Type": _content_type, "Accept-Encoding": _accept_encoding,
                          "SOAPAction": _soap_action, "Connection": _connection}
         try:
-            response_xml = requests.post(_endpoint, data=request_xml, headers=_headers)
-            response_xml = response_xml.text
-
+            response_xml = requests.post(_endpoint, data=request_xml, headers=_headers).text
+            Logger.debug(response_xml)
         except requests.exceptions.RequestException as e:
-            Logger.fatal("Service error: {}".format(e))
-            raise CtiOsRequestError("Service error: {}".format(e))
+            raise CtiOsRequestError(e)
 
         return response_xml
 
     @staticmethod
     def _transform_names(xml_name):
         """
-        Convert names in XML name to name in database (eg. StavDat to stav_dat)
+        Convert names in XML name to name in database (eg. StavDat to STAV_DAT)
 
         Args:
             xml_name (str): tag of xml attribute in xml response
@@ -271,40 +269,38 @@ class CtiOs:
         """
         root = et.fromstring(response_xml)
 
-        for os in root.findall('.//{http://katastr.cuzk.cz/ctios/types/v2.8}os'):
+        namespace = '{http://katastr.cuzk.cz/ctios/types/v2.8}'
+
+        # find all tags with 'os' name
+        for os in root.findall('.//{}os'.format(namespace)):
 
             # Check errors of given ids, if error occurs continue back to the function beginning
-            if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent') is not None:
-                posident = os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}pOSIdent').text
+            if os.find('{}chybaPOSIdent'.format(namespace)) is not None:
+                posident = os.find('{}pOSIdent'.format(namespace)).text
+                identifier = os.find('{}chybaPOSIdent'.format(namespace)).text
 
-                if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "NEPLATNY_IDENTIFIKATOR":
-                    self.state_vector['neplatny_identifikator'] += 1
-                    Logger.error('POSIDENT {} NEPLATNY IDENTIFIKATOR'.format(posident))
-                    continue
-                if os.find('{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "EXPIROVANY_IDENTIFIKATOR":
-                    self.state_vector['expirovany_identifikator'] += 1
-                    Logger.error('POSIDENT {}: EXPIROVANY IDENTIFIKATOR'.format(posident))
-                    continue
-                if os.find(
-                        '{http://katastr.cuzk.cz/ctios/types/v2.8}chybaPOSIdent').text == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
-                    self.state_vector['opravneny_subjekt_neexistuje'] += 1
-                    Logger.error('POSIDENT {}: OPRAVNENY SUBJEKT NEEXISTUJE'.format(posident))
-                    continue
+                if identifier not in ("NEPLATNY_IDENTIFIKATOR",
+                                         "EXPIROVANY_IDENTIFIKATOR",
+                                         "OPRAVNENY_SUBJEKT_NEEXISTUJE"):
+                    raise CtiOsResponseError('Unknown chybaPOSIdent')
+
+                self.state_vector[indentikator.lower()] += 1
+                Logger.error('POSIDENT {} {}'.format(posident, identifier.replace('_', ' ')))
             else:
                 self.state_vector['uspesne_stazeno'] += 1
 
             # Create the dictionary with XML child attribute names and particular texts
             for child in os:
                 name = child.tag
-                if name == '{http://katastr.cuzk.cz/ctios/types/v2.8}pOSIdent':
+                if name == '{}pOSIdent'.format(namespace):
                     pos = os.find(name)
                     posident = pos.text
-                if name == '{http://katastr.cuzk.cz/ctios/types/v2.8}osId':
+                if name == '{}osId'.format(namespace):
                     o = os.find(name)
                     osid = o.text
 
             xml_attributes = {}
-            for child in os.find('.//{http://katastr.cuzk.cz/ctios/types/v2.8}osDetail'):
+            for child in os.find('.//{}osDetail'.format(namespace)):
                 name2 = child.tag
                 xml_attributes[child.tag[child.tag.index('}') + 1:]] = os.find('.//{}'.format(name2)).text
 

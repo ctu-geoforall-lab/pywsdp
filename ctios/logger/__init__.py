@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 
 class CtiOsLogger(logging.getLoggerClass()):
-    def __init__(self, name='pyctios', level=logging.INFO):
+    def __init__(self, name='pyctios', level=logging.DEBUG):
         super(CtiOsLogger, self).__init__(name)
 
         self.setLevel(level)
