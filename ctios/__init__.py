@@ -19,6 +19,7 @@ import configparser
 from ctios.exceptions import CtiOsError
 from ctios.exceptions import CtiOsDbError
 from ctios.exceptions import CtiOsRequestError
+from ctios.exceptions import CtiOsResponseError
 
 from ctios.templates import CtiOsTemplate
 from ctios.csv import CtiOsCsv
@@ -102,9 +103,7 @@ class CtiOs:
             conn = sqlite3.connect(db_path)
             return conn
         except sqlite3.Error as e:
-            msg = 'SQLITE3 ERROR!' + db_path
-            Logger.fatal(msg)
-            raise CtiOsDbError("SQLITE3 ERROR {}".format(e))
+            raise CtiOsDbError(e)
 
     def _get_ids_from_db(self, db_path, sql):
         """
@@ -152,8 +151,8 @@ class CtiOs:
 
         # Control if not empty
         if len(ids) <= 1:
-            Logger.fatal("Query has an empty result!")
-            raise CtiOsError("Query has an empty result!")
+            msg = "Query has an empty result!"
+            raise CtiOsError(msg)
 
         return ids
 
@@ -230,16 +229,16 @@ class CtiOs:
 
     def _transform_names_dict(self, xml_name):
         """
-            Convert names in XML name to name in database based on special dictionary
+        Convert names in XML name to name in database based on special dictionary
 
-            Args:
-                xml_name (str): tag of xml attribute in xml response
+        Args:
+            xml_name (str): tag of xml attribute in xml response
 
-            Raises:
-                CtiOsError(XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME)
+        Raises:
+            CtiOsError(XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME)
 
-            Returns:
-                database_name (str): column names in database
+        Returns:
+            database_name (str): column names in database
         """
         try:
             # Load dictionary with names of XML tags and their relevant database names
@@ -250,7 +249,6 @@ class CtiOs:
             return database_name
 
         except Exception as e:
-            Logger.fatal("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
             raise CtiOsError("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
 
     def _save_attributes_to_db(self, response_xml, db_path):
@@ -271,80 +269,74 @@ class CtiOs:
 
         namespace = '{http://katastr.cuzk.cz/ctios/types/v2.8}'
 
-        # find all tags with 'os' name
+        # Find all tags with 'os' name
         for os in root.findall('.//{}os'.format(namespace)):
 
-            # Check errors of given ids, if error occurs continue back to the function beginning
+            # Save posident variable
+            posident = os.find('{}pOSIdent'.format(namespace)).text
+
+            # Check errors of given id
             if os.find('{}chybaPOSIdent'.format(namespace)) is not None:
-                posident = os.find('{}pOSIdent'.format(namespace)).text
+
                 identifier = os.find('{}chybaPOSIdent'.format(namespace)).text
 
                 if identifier not in ("NEPLATNY_IDENTIFIKATOR",
-                                         "EXPIROVANY_IDENTIFIKATOR",
-                                         "OPRAVNENY_SUBJEKT_NEEXISTUJE"):
+                                      "EXPIROVANY_IDENTIFIKATOR",
+                                      "OPRAVNENY_SUBJEKT_NEEXISTUJE"):
                     raise CtiOsResponseError('Unknown chybaPOSIdent')
 
-                self.state_vector[indentikator.lower()] += 1
+                self.state_vector[identifier.lower()] += 1
                 Logger.error('POSIDENT {} {}'.format(posident, identifier.replace('_', ' ')))
+
             else:
-                self.state_vector['uspesne_stazeno'] += 1
 
-            # Create the dictionary with XML child attribute names and particular texts
-            for child in os:
-                name = child.tag
-                if name == '{}pOSIdent'.format(namespace):
-                    pos = os.find(name)
-                    posident = pos.text
-                if name == '{}osId'.format(namespace):
-                    o = os.find(name)
-                    osid = o.text
+                # Create the dictionary with XML child attribute names and particular texts
+                xml_attributes = {}
+                for child in os.find('.//{}osDetail'.format(namespace)):
+                    name = child.tag
+                    xml_attributes[child.tag[child.tag.index('}') + 1:]] = os.find('.//{}'.format(name)).text
 
-            xml_attributes = {}
-            for child in os.find('.//{}osDetail'.format(namespace)):
-                name2 = child.tag
-                xml_attributes[child.tag[child.tag.index('}') + 1:]] = os.find('.//{}'.format(name2)).text
+                # Find out the names of columns in database and if column os_id doesnt exist, add it
+                try:
+                    conn = self._create_connection(db_path)
+                    cur = conn.cursor()
+                    cur.execute("PRAGMA read_committed = true;")
+                    cur.execute('select * from OPSUB')
+                    col_names = list(map(lambda x: x[0], cur.description))
+                    if 'OS_ID' not in col_names:
+                        cur.execute('ALTER TABLE OPSUB ADD COLUMN OS_ID TEXT')
+                    cur.close()
+                except sqlite3.Error as e:
+                    raise CtiOsDbError(e)
 
-            # Find out the names of columns in database and if column os_id doesnt exist, add it
-            try:
-                conn = self._create_connection(db_path)
-                cur = conn.cursor()
-                cur.execute("PRAGMA read_committed = true;")
-                cur.execute('select * from OPSUB')
-                col_names = list(map(lambda x: x[0], cur.description))
-                if 'OS_ID' not in col_names:
-                    cur.execute('ALTER TABLE OPSUB ADD COLUMN OS_ID TEXT')
-                cur.close()
-            except sqlite3.Error as e:
-                Logger.fatal('SQLITE3 ERROR!' + db_path)
-                raise CtiOsDbError("SQLITE3 ERROR!: {}".format(e))
+                #  Transform xml_names to database_names
+                database_attributes = {}
+                for xml_name, xml_value in xml_attributes.items():
+                    database_name = self._transform_names(xml_name)
+                    if database_name not in col_names:
+                        database_name = self._transform_names_dict(xml_name)
+                    database_attributes.update({database_name: xml_value})
 
-            #  Transform xml_names to database_names
-            database_attributes = {}
-            for xml_name, xml_value in xml_attributes.items():
-                database_name = self._transform_names(xml_name)
-                if database_name not in col_names:
-                    database_name = self._transform_names_dict(xml_name)
-                database_attributes.update({database_name: xml_value})
-
-            #  Update table OPSUB by database_attributes items
-            try:
-                cur = conn.cursor()
-                cur.execute("BEGIN TRANSACTION")
-                for dat_name, dat_value in database_attributes.items():
-                    cur.execute("""UPDATE OPSUB SET {0} = ? WHERE id = ?""".format(dat_name), (dat_value, posident))
-                cur.execute("""UPDATE OPSUB SET OS_ID = ? WHERE id = ?""", (osid, posident))
-                cur.execute("COMMIT TRANSACTION")
-                cur.close()
-                Logger.info('Radky v databazi u POSIdentu {} aktualizovany'.format(posident))
-            except conn.Error as e:
-                cur.execute("ROLLBACK TRANSACTION")
-                cur.close()
-                conn.close()
-                Logger.fatal("Transaction Failed!: {}".format(e))
-                raise CtiOsDbError("Transaction Failed!: {}".format(e))
-            finally:
-                if conn:
+                #  Update table OPSUB by database attributes items
+                try:
+                    os_id = os.find('{}osId'.format(namespace)).text
+                    cur = conn.cursor()
+                    cur.execute("BEGIN TRANSACTION")
+                    for dat_name, dat_value in database_attributes.items():
+                        cur.execute("""UPDATE OPSUB SET {0} = ? WHERE id = ?""".format(dat_name), (dat_value, posident))
+                    cur.execute("""UPDATE OPSUB SET OS_ID = ? WHERE id = ?""", (os_id, posident))
+                    cur.execute("COMMIT TRANSACTION")
+                    cur.close()
+                    Logger.info('Radky v databazi u POSIdentu {} aktualizovany'.format(posident))
+                except conn.Error as e:
+                    cur.execute("ROLLBACK TRANSACTION")
+                    cur.close()
                     conn.close()
+                    raise CtiOsDbError("Transaction Failed!: {}".format(e))
+                finally:
+                    self.state_vector['uspesne_stazeno'] += 1
+                    if conn:
+                        conn.close()
 
     def _query_service(self, ids, db_path):
         """
@@ -373,6 +365,7 @@ class CtiOs:
         if len(ids) <= _max_num:
             self._query_service(ids, db_path)  # Query and save response to db
             Logger.info('Zpracovano v ramci 1 pozadavku.')
+
         else:
             full_arrays = math.floor(len(ids) / _max_num)  # Floor to number of full ids arrays
             rest = len(ids) % _max_num  # Left ids

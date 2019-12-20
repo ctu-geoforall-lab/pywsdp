@@ -1,12 +1,21 @@
 import logging
 from datetime import datetime
-import os
+
 
 class CtiOsLogger(logging.getLoggerClass()):
+    """
+    CTIOS class for logging
+    """
     def __init__(self, name='pyctios', level=logging.DEBUG):
+        """
+        Contructor of CtiOsLogger class, format console handler
+
+        Args:
+            level=logging.DEBUG
+        """
         super(CtiOsLogger, self).__init__(name)
 
-        self.setLevel(level)
+        self.level = level
 
         # Define a Stream Console Handler
         console = logging.StreamHandler()
@@ -19,6 +28,13 @@ class CtiOsLogger(logging.getLoggerClass()):
         self.addHandler(console)
 
     def set_directory(self, log_dir):
+        """
+        Set logging directory
+
+        Args:
+            log_dir (str): Log directory
+        """
+
         log_filename = datetime.now().strftime('%H_%M_%S_%d_%m_%Y.log')
 
         file_handler = logging.FileHandler(
@@ -32,6 +48,8 @@ class CtiOsLogger(logging.getLoggerClass()):
         # Add handlers to the logger
         self.addHandler(file_handler)
 
+
+# Global instance
 Logger = CtiOsLogger()
 
 if __name__ == '__main__':
@@ -43,4 +61,4 @@ if __name__ == '__main__':
     Logger.error('error')
     Logger.fatal('fatal')
 
-    
+
