@@ -258,6 +258,8 @@ class CtiOs:
         3. Alters table by adding OS_ID column if not exists
         4. Updates attributes for all pseudo ids in SQLITE3 table rows
 
+        TODO: split into various methods
+
         Args:
             response_xml (str): tag of xml attribute in xml response
             db_path (str): path to vfk db
@@ -268,6 +270,7 @@ class CtiOs:
         root = et.fromstring(response_xml)
 
         namespace = '{http://katastr.cuzk.cz/ctios/types/v2.8}'
+        namespace_length = len(namespace)
 
         # Find all tags with 'os' name
         for os in root.findall('.//{}os'.format(namespace)):
@@ -275,9 +278,8 @@ class CtiOs:
             # Save posident variable
             posident = os.find('{}pOSIdent'.format(namespace)).text
 
-            # Check errors of given id
             if os.find('{}chybaPOSIdent'.format(namespace)) is not None:
-
+                # Errors detected
                 identifier = os.find('{}chybaPOSIdent'.format(namespace)).text
 
                 if identifier not in ("NEPLATNY_IDENTIFIKATOR",
@@ -289,12 +291,13 @@ class CtiOs:
                 Logger.error('POSIDENT {} {}'.format(posident, identifier.replace('_', ' ')))
 
             else:
-
+                # No errors detected
                 # Create the dictionary with XML child attribute names and particular texts
                 xml_attributes = {}
                 for child in os.find('.//{}osDetail'.format(namespace)):
+                    # key: remove namespace from element name
                     name = child.tag
-                    xml_attributes[child.tag[child.tag.index('}') + 1:]] = os.find('.//{}'.format(name)).text
+                    xml_attributes[name[namespace_length:]] = os.find('.//{}'.format(name)).text
 
                 # Find out the names of columns in database and if column os_id doesnt exist, add it
                 try:
@@ -309,21 +312,16 @@ class CtiOs:
                 except sqlite3.Error as e:
                     raise CtiOsDbError(e)
 
-                #  Transform xml_names to database_names
-                database_attributes = {}
-                for xml_name, xml_value in xml_attributes.items():
-                    database_name = self._transform_names(xml_name)
-                    if database_name not in col_names:
-                        database_name = self._transform_names_dict(xml_name)
-                    database_attributes.update({database_name: xml_value})
-
                 #  Update table OPSUB by database attributes items
                 try:
                     os_id = os.find('{}osId'.format(namespace)).text
                     cur = conn.cursor()
                     cur.execute("BEGIN TRANSACTION")
-                    for dat_name, dat_value in database_attributes.items():
-                        cur.execute("""UPDATE OPSUB SET {0} = ? WHERE id = ?""".format(dat_name), (dat_value, posident))
+                    for xml_name, value in xml_attributes.items():
+                        dat_name = self._transform_names(xml_name)
+                        if dat_name not in col_names:
+                            dat_name = self._transform_names_dict(xml_name)
+                        cur.execute("""UPDATE OPSUB SET {0} = ? WHERE id = ?""".format(dat_name), (value, posident))
                     cur.execute("""UPDATE OPSUB SET OS_ID = ? WHERE id = ?""", (os_id, posident))
                     cur.execute("COMMIT TRANSACTION")
                     cur.close()
