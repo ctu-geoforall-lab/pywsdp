@@ -50,7 +50,7 @@ class CtiOs:
 
         # Read configuration
         if config_file is None:
-            config_file = os.path.join(os.path.dirname(__file__), 'settings.ini')
+            config_file = os.path.join(os.path.abspath('ctios'), 'settings.ini')
         self._config.read(config_file)
 
         # Statistics
