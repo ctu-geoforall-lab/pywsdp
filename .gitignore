@@ -7,3 +7,4 @@ tests/*.log
 tests/logy/*.log
 venv
 .idea
+.ipynb_checkpoints/
