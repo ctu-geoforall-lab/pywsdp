@@ -1,3 +1,11 @@
+###############################################################################
+# Name:         CtiOSParser
+# Purpose:      Class for reading and writing to csv
+# Date:         March 2021
+# Copyright:    (C) 2021 Linda Kladivova
+# Email:        l.kladivova@seznam.cz
+###############################################################################
+
 import csv
 import os
 
@@ -39,3 +47,17 @@ class CtiOsCsv:
                 [k, v, l] = row
                 dictionary[k] = v
             return dictionary
+
+    def write_dictionary_to_csv(self, dictionary):
+        """
+        Write nested dictionary as csv
+
+        Args:
+            dictionary (nested dictonary): parsed  attributes
+        """
+        with open (self.csv_dir) as csv_file:
+            writer = csv.writer(csv_file)
+            fields = dictionary.values()[0].keys()
+            for key in dictionary.keys():
+                writer.writerow([key] + [dictionary[key][field] for field in fields])
+
