@@ -1,2 +1,4 @@
-# pyctios
-Python CTI OS Library (WIP)
+# pywsdp
+Python CUZK WSDP Library
+
+Library for communication with WSDP CUZK services.
