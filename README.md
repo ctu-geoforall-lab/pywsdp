@@ -1,2 +1,2 @@
-# pywsdp
-Python CUZK WSDP Library
+# pyctios
+Python CTIOS Library
