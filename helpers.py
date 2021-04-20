@@ -4,8 +4,6 @@
 @brief Base script for general classes needed for WSDP services
 
 Classes:
- - base::WSDPDbManager
- - base::WSDPCsvManager
  - base::WSDPTemplate
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
@@ -13,29 +11,7 @@ This library is free under the GNU General Public License.
 """
 
 import os
-import csv
 from string import Template
-
-
-class WSDPCsvManager():
-    """
-    General WSDP class which writes parsed XML (dictionary) as csv
-    """
-    def __init__(self, csv_dir):
-        self.csv_dir = csv_dir
-
-    def write_dictionary_to_csv(self, dictionary):
-        """
-        Write nested dictionary as csv
-
-        Args:
-            dictionary (nested dictonary): parsed  attributes
-        """
-        with open (self.csv_dir) as csv_file:
-            writer = csv.writer(csv_file)
-            fields = dictionary.values()[0].keys()
-            for key in dictionary.keys():
-                writer.writerow([key] + [dictionary[key][field] for field in fields])
 
 
 class WSDPTemplate():
