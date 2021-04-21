@@ -19,7 +19,7 @@ import csv
 import configparser
 import xml.etree.ElementTree as et
 
-from base.exceptions import CtiOsError, CtiOsResponseError
+from ctios.exceptions import CtiOsError, CtiOsResponseError
 
 
 

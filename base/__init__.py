@@ -16,8 +16,9 @@ import abc
 import requests
 import configparser
 
-from base.exceptions import WSDPRequestError
-from base.logger import WSDPLogger
+from pywsdp.exceptions import WSDPRequestError
+from pywsdp.logger import WSDPLogger
+
 
 
 class WSDPBase(object):

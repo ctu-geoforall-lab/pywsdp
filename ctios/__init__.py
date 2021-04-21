@@ -16,10 +16,10 @@ import csv
 import sqlite3
 from pathlib import Path
 
-from pywsdp.ctios import CtiOs
-from ctios.base import CtiOsConverter
-from base.helpers import WSDPCsvManager
-from ctios.exceptions import CtiOsError, CtiOsGdalError, CtiOsInfo
+from ctios.base import CtiOs
+from helpers import CtiOsConverter
+from exceptions import CtiOsError, CtiOsGdalError, CtiOsInfo
+from pywsdp.helpers import WSDPCsvManager
 
 
 

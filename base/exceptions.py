@@ -11,7 +11,7 @@ Classes:
 This library is free under the GNU General Public License.
 """
 
-from base.logger import WSDPLogger
+from pywsdp.logger import WSDPLogger
 
 
 class WSDPError(Exception):
