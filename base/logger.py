@@ -1,5 +1,5 @@
 """
-@package pywsdp.base
+@package base.logger
 
 @brief General logging class for WSDP services
 
@@ -59,18 +59,18 @@ class WSDPLogger(logging.getLoggerClass()):
 
         # Add handlers to the logger
         self.addHandler(file_handler)
-
-
-# Global instance
-Logger = WSDPLogger()
-
-if __name__ == '__main__':
-    # Logger.set_directory('/tmp')
-
-    Logger.debug('debug')
-    Logger.info('info')
-    Logger.warning('warning')
-    Logger.error('error')
-    Logger.fatal('fatal')
+#
+#
+## Global instance
+#Logger = WSDPLogger(__name__)
+#
+#if __name__ == '__main__':
+#    # Logger.set_directory('/tmp')
+#
+#    Logger.debug('debug')
+#    Logger.info('info')
+#    Logger.warning('warning')
+#    Logger.error('error')
+#    Logger.fatal('fatal')
 
 

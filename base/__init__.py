@@ -1,5 +1,5 @@
 """
-@package pywsdp.base
+@package base
 
 @brief Base abstract class creating the interface for WSDP services
 
@@ -16,8 +16,7 @@ import abc
 import requests
 import configparser
 
-from pywsdp.exceptions import WSDPRequestError
-from pywsdp.logger import WSDPLogger
+from base.exceptions import WSDPRequestError
 
 
 
@@ -25,46 +24,62 @@ class WSDPBase(object):
     """Base abstract class creating the interface for WSDP services"""
     __metaclass__ = abc.ABCMeta # Declares class as abstract
 
-    def __init__(self, user, password, log_dir=None, config_dir=None):
-        self.user = user
-        self.password = password
+    def __init__(self, username, password, config_path=None):
+        self._username = username
+        self._password = password
 
-        if config_dir:
-            config_dir = self.get_config_dir()
-
-        if log_dir:
-            name = self.define_log_name()
-            self.logger = WSDPLogger(name=name)
-            self.logger.set_directory(log_dir)
-            self.log_dir = log_dir
+        if not config_path:
+            config_path = self.get_config_path()
 
         # Read configuration from config file
         self._config = configparser.ConfigParser()
-        self._config.read(config_dir)
+        self._config.read(config_path)
 
-        self.service_headers = self.get_service_headers()
-        self.template_dir = self.get_template_dir()
+        self.get_service_headers()
+        self.template_path = self.get_template_path()
 
     @abc.abstractmethod
-    def define_service_name(self):
-        """Abstract method for defining service name - must be redefined in subclass"""
+    def get_service_name(self):
+        """Abstract method for for getting service name"""
         pass
 
     @abc.abstractmethod
-    def define_log_name(self):
-        """Abstract method for defining logger name according to service - must be redefined in subclass"""
+    def get_default_log_dir(self):
+        """Abstract method for getting a default service log dir"""
         pass
 
     @abc.abstractmethod
-    def get_config_file(self):
+    def get_default_out_dir(self):
+        """Abstract method for getting a default output dir"""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def logger(self):
+        """A logger object to log messages to - must be redefined in subclass"""
+        pass
+
+    def get_config_path(self):
         """
-        Abstract method for service headers that must be redefined in subclass
+        Method for service headers that must be redefined in subclass
         Returns:
-            service headers (dictionary): parameters for calling a service:
-                content_type, accept_encoding, soap_action, connection, endpoint
+            config_dir (string)
         """
-        config_dir = os.path.join(os.path.abspath(self.define_service_name()), 'settings.ini')
-        return config_dir
+        config_path = os.path.join(os.path.abspath(self.get_service_name()),
+                                     'config',
+                                     'settings.ini')
+        return config_path
+
+    def get_template_path(self):
+        """
+        Get XML template path needed for rendering XML request
+        Returns:
+            template path (string):  path for rendered XML request
+        """
+        template_path = os.path.join(os.path.abspath(self.get_service_name()),
+                                     'config',
+                                     self._config['files']['request_xml_file'])
+        return template_path
 
     def get_service_headers(self):
         """
@@ -73,21 +88,12 @@ class WSDPBase(object):
             service headers (dictionary):  parameters for calling WSDP service
         """
         # CTIOS service parameters loaded from ini file
-        service_headers = {}
-        service_headers['content_type'] = self._config['service headers']['content_type']
-        service_headers['accept_encoding'] = self._config['service headers']['accept_encoding']
-        service_headers['soap_action'] = self._config['service headers']['soap_action']
-        service_headers['connection'] = self._config['service headers']['connection']
-        service_headers['endpoint'] = self._config['service headers']['endpoint']
-        return service_headers
-
-    def get_template_dir(self):
-        """
-        Get XML template dir needed for rendering XML request
-        Returns:
-            template dir (string):  parameter for rendering XML request
-        """
-        return self._config['files'].get('template_dir')
+        self.service_headers = {}
+        self.service_headers['content_type'] = self._config['service headers']['content_type']
+        self.service_headers['accept_encoding'] = self._config['service headers']['accept_encoding']
+        self.service_headers['soap_action'] = self._config['service headers']['soap_action']
+        self.service_headers['connection'] = self._config['service headers']['connection']
+        self.service_headers['endpoint'] = self._config['service headers']['endpoint']
 
     def call_service(self, xml):
         """Send a request in the XML form to WSDP service
@@ -107,31 +113,25 @@ class WSDPBase(object):
             response_xml = requests.post(self.service_headers['endpoint'],
                                          data=xml,
                                          headers=_headers).text
-            if self.log_dir:
-                self.logger.debug(response_xml)
+            #if self.log_dir:
+            #    self.logger.debug(response_xml)
         except requests.exceptions.RequestException as e:
-            raise WSDPRequestError(e)
+            raise WSDPRequestError(self.logger, e)
         return response_xml
 
     @abc.abstractmethod
     def renderXML(self):
-        """
-        Abstract method rendering XML must be redefined in subclass
-        """
+        """Abstract method rendering XML"""
         pass
 
     @abc.abstractmethod
     def parseXML(self):
-        """
-        Abstract method for service headers that must be redefined in subclass
-        """
+        """Abstract method for service headers"""
         pass
 
     @abc.abstractmethod
     def getXMLresponse(self):
-        """
-        Abstract method for rendering, getting and parsing XML - must be redefined in subclass
-        """
+        """Abstract method for rendering, getting and parsing XML"""
         pass
 
 

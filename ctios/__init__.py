@@ -1,5 +1,5 @@
 """
-@package ctios
+@package ctios.core
 @brief Base abstract class creating the interface for CTIOS services
 
 Classes:
@@ -12,28 +12,37 @@ Classes:
 This library is free under the GNU General Public License.
 """
 
+import os
 import csv
 import sqlite3
 from pathlib import Path
 
-from ctios.base import CtiOs
-from helpers import CtiOsConverter
-from exceptions import CtiOsError, CtiOsGdalError, CtiOsInfo
-from pywsdp.helpers import WSDPCsvManager
+from ctios.core import CtiOs
+from ctios.helpers import CtiOsConverter
+from ctios.exceptions import CtiOsError, CtiOsGdalError, CtiOsCsvError, CtiOsInfo
 
 
 
 class CtiOsGdal(CtiOs):
     """A class that completed VFK db by adding all personal data."""
 
-    def __init__(self, user, password, log_dir, config_dir, db_path, sql=None):
-        super().__init__(user, password, log_dir, config_dir)
+    def __init__(self, username, password, db_path, sql=None, out_dir=None, config_path=None, log_dir=None):
+        super().__init__(username, password, config_path=None)
         self.db_path = db_path
+        if out_dir:
+            self.out_dir = out_dir
+        else:
+            self.log_dir = self.get_default_out_dir()
+        if log_dir:
+            self.log_dir = log_dir
+        else:
+            self.log_dir = self.get_default_log_dir()
+        self.logger.set_directory(self.log_dir)
 
         # Connection to db
-        self.db = CtiOsGdalManager(db_path)
+        self.db = CtiOsGdalManager(db_path, self.logger)
         # XML to DB converter
-        self.converter = CtiOsConverter()
+        self.converter = CtiOsConverter(self.logger)
 
         self.schema = "OPSUB"
 
@@ -44,6 +53,7 @@ class CtiOsGdal(CtiOs):
         for i in ids:
             row = "<v2:pOSIdent>{}</v2:pOSIdent>".format(i[0])
             ids_array.append(row)
+        #print(ids_array)
         return ids_array
 
     def save_dictionary_to_db(self, dictionary):
@@ -57,31 +67,45 @@ class CtiOsGdal(CtiOs):
 class CtiOsCsv(CtiOs):
     """A class that supposes the input as array and output in the form of csv."""
 
-    def __init__(self, user, password, log_dir, config_dir, txt_path, csv_path):
-        super().__init__(user, password, log_dir, config_dir)
+    def __init__(self, username, password, txt_path, out_dir=None, config_path=None, log_dir=None):
+        super().__init__(username, password, config_path=None)
         self.txt_path = txt_path
-        self.csv_path = csv_path
+        if out_dir:
+            self.out_dir = out_dir
+        else:
+            self.out_dir = self.get_default_out_dir()
+        self.csv_path = os.path.join(self.out_dir, 'ctios.csv')
+        if log_dir:
+            self.log_dir = log_dir
+        else:
+            self.log_dir = self.get_default_log_dir()
+        self.logger.set_directory(self.log_dir)
 
     def get_posident_array(self):
         """Get posident array from text file (delimiter is ',')."""
         with open(self.txt_path) as f:
-            ids_array = f.read().split(',')
+            ids = f.read().split(',')
+        ids_array = []
+        for i in ids:
+            row = "<v2:pOSIdent>{}</v2:pOSIdent>".format(i)
+            ids_array.append(row)
         return ids_array
 
     def save_dictionary_to_csv(self, dictionary):
         """Save personal data to CSV"""
-        output_csv = WSDPCsvManager(self.csv_path)
-        output_csv.write_dictionary_to_csv(dictionary)
+        output_csv = CtiOsCsvManager(self.csv_path)
+        output_csv.write_dictionary_to_csv(dictionary, self.logger)
 
 
 class CtiOsGdalManager:
     """
     CTIOS class for managing VFK SQLite database created based on Gdal
     """
-    def __init__(self, db_path):
+    def __init__(self, db_path, logger):
         self.conn = self._create_connection()
         self.cursor = self.conn.cursor()
         self.db_path = self._check_db(db_path)
+        self.logger = logger
 
     def _check_db(self, db_path):
         """
@@ -98,7 +122,7 @@ class CtiOsGdalManager:
             return db_path
 
         except FileNotFoundError as e:
-            raise CtiOsError(e)
+            raise CtiOsError(self.logger, e)
 
     def _create_connection(self):
         """
@@ -113,7 +137,7 @@ class CtiOsGdalManager:
             conn = sqlite3.connect(self.db_path)
             return conn
         except sqlite3.Error as e:
-            raise CtiOsGdalError(e)
+            raise CtiOsGdalError(self.logger, e)
 
     def get_ids_from_db(self, sql=None):
         """
@@ -131,12 +155,12 @@ class CtiOsGdalManager:
             ids = self.query(sql)
             self.close()
         except sqlite3.Error as e:
-            raise CtiOsGdalError(e)
+            raise CtiOsGdalError(self.logger, e)
 
         # Control if not empty
         if len(ids) <= 1:
             msg = "Query has an empty result!"
-            raise CtiOsGdalError(msg)
+            raise CtiOsGdalError(self.logger, msg)
         return ids
 
     def get_columns_names(self, schema):
@@ -153,7 +177,7 @@ class CtiOsGdalManager:
             col_names = list(map(lambda x: x[0], self.cursor.description))
             self.cursor.close()
         except sqlite3.Error as e:
-            raise CtiOsGdalError(e)
+            raise CtiOsGdalError(self.logger, e)
         return col_names
 
     def add_column_to_db(self, schema, name, datatype):
@@ -172,7 +196,7 @@ class CtiOsGdalManager:
                 self.cursor.execute("""ALTER TABLE {0} ADD COLUMN {1} {2}""".format(schema, name, datatype))
             self.cursor.close()
         except sqlite3.Error as e:
-            raise CtiOsGdalError(e)
+            raise CtiOsGdalError(self.logger, e)
 
     def save_attributes_to_db(self, schema, dictionary, counter):
         """
@@ -191,11 +215,11 @@ class CtiOsGdalManager:
                     self.execute("""UPDATE OPSUB SET {0} = ? WHERE id = ?""".format(dat_name), (posident_info[dat_name], posident_id))
                 self.execute("COMMIT TRANSACTION")
                 self.cursor.close()
-                CtiOsInfo('Radky v databazi u POSIdentu {} aktualizovany'.format(posident_id))
+                CtiOsInfo(self.logger, 'Radky v databazi u POSIdentu {} aktualizovany'.format(posident_id))
         except self.conn.Error as e:
             self.execute("ROLLBACK TRANSACTION")
             self.close(commit=True)
-            raise CtiOsGdalError("Transaction Failed!: {}".format(e))
+            raise CtiOsGdalError(self.logger, "Transaction failed!: {}".format(e))
         finally:
             self.counter.add_uspesne_stazeno()
             if self.conn:
@@ -222,18 +246,22 @@ class CtiOsCsvManager():
     """
     General WSDP class which writes parsed XML (dictionary) as csv
     """
-    def __init__(self, csv_dir):
-        self.csv_dir = csv_dir
+    def __init__(self, csv_path):
+        self.csv_path = csv_path
 
-    def write_dictionary_to_csv(self, dictionary):
+    def write_dictionary_to_csv(self, dictionary, logger):
         """
         Write nested dictionary as csv
 
         Args:
             dictionary (nested dictonary): parsed  attributes
         """
-        with open (self.csv_dir) as csv_file:
-            writer = csv.writer(csv_file)
-            fields = dictionary.values()[0].keys()
-            for key in dictionary.keys():
-                writer.writerow([key] + [dictionary[key][field] for field in fields])
+        if not dictionary:
+            raise CtiOsCsvError(logger, "Writing to CSV failed! No values for output file.")
+
+        header = sorted(set(i for b in map(dict.keys, dictionary.values()) for i in b))
+        with open(self.csv_path, 'w', newline="") as f:
+          write = csv.writer(f)
+          write.writerow(['posident', *header])
+          for a, b in dictionary.items():
+             write.writerow([a]+[b.get(i, '') for i in header])

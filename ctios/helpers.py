@@ -1,5 +1,5 @@
 """
-@package ctios.base
+@package ctios.helpers
 
 @brief Base script for general classes needed for CtiOs service
 
@@ -24,31 +24,29 @@ from ctios.exceptions import CtiOsError, CtiOsResponseError
 
 
 class CtiOsXMLParser():
-
-    def __call__(self, xml_content, counter, logger=None):
+    """Class parsing CtiOs Xml response into a dictionary"""
+    def __call__(self, content, counter, logger):
         """
         Read content from XML and parses it
 
         Args:
-            xml_content (str): content of XML response
-            namespace (str): XML CtiOs namespace
+            content (str): content of XML response
             counter (class): counts posident errors
-
+            logger (class): log class
         Returns:
             xml_attributes (nested dictonary): parsed XML attributes
         """
-        root = et.fromstring(xml_content)
-        namespace = self._get_xml_namespace(xml_content)
+        root = et.fromstring(content)
+        namespace = self._get_xml_namespace()
         namespace_length = len(namespace)
         xml_dict = {}
 
         # Find all tags with 'os' name
         for os_tag in root.findall('.//{}os'.format(namespace)):
 
-            xml_dict[os_tag] = {}
-
             # Save posident variable
             posident = os_tag.find('{}pOSIdent'.format(namespace)).text
+            xml_dict[posident] = {}
 
             if os_tag.find('{}chybaPOSIdent'.format(namespace)) is not None:
 
@@ -62,16 +60,15 @@ class CtiOsXMLParser():
                 elif identifier == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
                     counter.add_opravneny_subjekt_neexistuje()
                 else:
-                    raise CtiOsResponseError('Unknown chybaPOSIdent')
-                if logger:
-                    logger.error('POSIDENT {} {}'.format(posident, identifier.replace('_', ' ')))
+                    raise CtiOsResponseError(logger, 'POSIDENT {} {}'.format(posident, identifier.replace('_', ' ')))
             else:
                 # No errors detected
                 # Create the dictionary with XML child attribute names and particular texts
                 for child in os_tag.find('.//{}osDetail'.format(namespace)):
                     # key: remove namespace from element name
                     name = child.tag
-                    xml_dict[os][name[namespace_length:]] = os_tag.find('.//{}'.format(name)).text
+                    xml_dict[posident][name[namespace_length:]] = os_tag.find('.//{}'.format(name)).text
+
         return xml_dict
 
     def _get_xml_namespace(self):
@@ -82,8 +79,9 @@ class CtiOsConverter():
     """
     CTIOS class for converting XML attribute names to DB attribute names
     """
-    def __init__(self, input_dictionary):
+    def __init__(self, input_dictionary,logger):
         self.input_dictonary = input_dictionary
+        self.logger = logger
 
     def _get_mapping_attributes_dir(self, csv_dir):
         """
@@ -158,7 +156,7 @@ class CtiOsConverter():
             return database_name
 
         except Exception as e:
-            raise CtiOsError("XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
+            raise CtiOsError(self.logger, "XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
 
     def convert_attributes(self, db_columns):
         """

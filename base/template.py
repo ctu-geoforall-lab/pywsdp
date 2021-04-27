@@ -1,5 +1,5 @@
 """
-@package pywsdp.base
+@package base.template
 
 @brief Base script for general classes needed for WSDP services
 
@@ -10,7 +10,6 @@ Classes:
 This library is free under the GNU General Public License.
 """
 
-import os
 from string import Template
 
 
@@ -19,21 +18,16 @@ class WSDPTemplate():
     WSDPTemplate class reads XML template and prepare it for given service
     """
 
-    def __init__(self, template_dir=None):
+    def __init__(self, template_path):
         """
         Constructor of Templates class
 
         Args:
-          template_dir (str): Template directory has to be absolute path, relative paths are not supported
+          template_path (str): path to template XML file
         """
-        if template_dir and os.path.isabs(template_dir):
-            self.template_dir = template_dir
-        else:
-            self.template_dir = os.path.join(
-                os.path.dirname(__file__)
-            )
+        self.template_path = template_path
 
-    def _read_template(self, template_name):
+    def _read_template(self):
         """
         Read template
 
@@ -43,20 +37,18 @@ class WSDPTemplate():
         Returns:
             template.read()
         """
-        with open(os.path.join(self.template_dir, template_name)) as template:
+        with open(self.template_path) as template:
             return template.read()
 
-    def render(self, template_name, **kwargs):
+    def render(self,  **kwargs):
         """
         Render template using arguments
 
         Args:
-            template_name (str): name of template xml file
+            template_name (str): path to template XML file
             **kwargs: keyword arguments
 
         Returns:
             Template()
         """
-        return Template(
-            self._read_template(template_name)
-        ).substitute(**kwargs)
+        return Template(self._read_template()).substitute(**kwargs)
