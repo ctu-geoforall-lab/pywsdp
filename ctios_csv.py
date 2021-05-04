@@ -4,7 +4,7 @@ This library is free under the GNU General Public License.
 """
 import os
 import sys
-from ctios import CtiOsCsv
+from ctios.csv import CtiOsCsv
 
 def main():
     username = "WSTEST"

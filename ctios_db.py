@@ -4,7 +4,7 @@ This library is free under the GNU General Public License.
 """
 import os
 import sys
-from ctios import CtiOsGdal
+from ctios.gdal import CtiOsGdal
 
 def main():
     username = "WSTEST"

@@ -90,7 +90,7 @@ class WSDPBase(object):
         """
         template_path = os.path.join(os.path.abspath(self.get_service_name()),
                                      'config',
-                                     self._config['files']['request_xml_file'])
+                                     self._config['files']['xml_template'])
         return template_path
 
     def get_service_headers(self):
