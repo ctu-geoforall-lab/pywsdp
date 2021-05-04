@@ -12,9 +12,8 @@ This library is free under the GNU General Public License.
 
 import os
 
-from ctios.helpers import CtiOsXMLParser, CtiOsCounter
+from ctios.helpers import CtiOsXMLParser
 from base import WSDPBase
-from base.template import WSDPTemplate
 from base.logger import WSDPLogger
 
 
@@ -38,25 +37,9 @@ class CtiOs(WSDPBase):
         """Method for getting default output dir"""
         return os.path.join(os.path.abspath('tests'), 'output_data')
 
-    def renderXML(self, ids_array):
-        """Render xml request from ids array."""
-        request_xml = WSDPTemplate(self.template_path).render(username=self._username, password=self._password,
-            posidents=''.join(ids_array)
-        )
-        return request_xml
-
     def parseXML(self, content, counter):
         """Call CtiOs XML parser"""
         return CtiOsXMLParser()(content=content,
-                           counter=counter,
+                           counter=self.counter,
                            logger=self.logger)
-
-    def getXMLresponse(self, ids_array):
-        """Call service, render XML response and parse it to dictionary"""
-        counter = CtiOsCounter()
-        xml = self.renderXML(ids_array)
-        response_xml = self.call_service(xml)
-        dictionary = self.parseXML(response_xml, counter)
-        print(dictionary)
-        return dictionary
 

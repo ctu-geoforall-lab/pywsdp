@@ -17,6 +17,7 @@ import requests
 import configparser
 
 from base.exceptions import WSDPRequestError
+from base.template import WSDPTemplate
 
 
 
@@ -24,9 +25,19 @@ class WSDPBase(object):
     """Base abstract class creating the interface for WSDP services"""
     __metaclass__ = abc.ABCMeta # Declares class as abstract
 
-    def __init__(self, username, password, config_path=None):
+    def __init__(self, username, password, config_path=None, out_dir=None, log_dir=None):
         self._username = username
         self._password = password
+
+        # Get user-defined or default output dir
+        if not out_dir:
+            out_dir = self.get_default_out_dir()
+        self.out_dir = out_dir
+
+        # Get user-defined or default log dir
+        if not log_dir:
+            log_dir = self.get_default_log_dir()
+        self.log_dir = log_dir
 
         if not config_path:
             config_path = self.get_config_path()
@@ -35,6 +46,7 @@ class WSDPBase(object):
         self._config = configparser.ConfigParser()
         self._config.read(config_path)
 
+        # Set headers
         self.get_service_headers()
         self.template_path = self.get_template_path()
 
@@ -119,19 +131,14 @@ class WSDPBase(object):
             raise WSDPRequestError(self.logger, e)
         return response_xml
 
-    @abc.abstractmethod
-    def renderXML(self):
+    def renderXML(self, **kwargs):
         """Abstract method rendering XML"""
-        pass
+        request_xml = WSDPTemplate(self.template_path).render(username=self._username, password=self._password, **kwargs)
+        return request_xml
 
     @abc.abstractmethod
     def parseXML(self):
-        """Abstract method for service headers"""
-        pass
-
-    @abc.abstractmethod
-    def getXMLresponse(self):
-        """Abstract method for rendering, getting and parsing XML"""
+        """Abstract method for parsing XML"""
         pass
 
 

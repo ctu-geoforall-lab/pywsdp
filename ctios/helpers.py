@@ -14,9 +14,7 @@ This library is free under the GNU General Public License.
 """
 
 import re
-import os
 import csv
-import configparser
 import xml.etree.ElementTree as et
 
 from ctios.exceptions import CtiOsError, CtiOsResponseError
@@ -79,24 +77,12 @@ class CtiOsConverter():
     """
     CTIOS class for converting XML attribute names to DB attribute names
     """
-    def __init__(self, input_dictionary,logger):
-        self.input_dictonary = input_dictionary
+    def __init__(self, input_dictionary, mapping_attributes_path, logger):
+        self.input_dictionary = input_dictionary
         self.logger = logger
+        self.mapping_attributes_path = mapping_attributes_path
 
-    def _get_mapping_attributes_dir(self, csv_dir):
-        """
-        Args:
-          csv_dir (str): Csv directory has to be absolute path, relative paths are not supported
-        """
-        if csv_dir and os.path.isabs(csv_dir):
-            self.csv_dir = csv_dir
-        else:
-            # relative paths are not supported
-            self.csv_dir = os.path.join(
-                os.path.dirname(__file__)
-            )
-
-    def _read_mapping_attributes_dir(self, csv_name):
+    def _read_mapping_attributes_dir(self):
         """
         Read csv attributes as dictionary
 
@@ -107,14 +93,14 @@ class CtiOsConverter():
             dictionary (dict): (1.column:2.column)
         """
         dictionary = {}
-        with open(os.path.join(self.mapping_attributes_dir, csv_name)) as csv_file:
+        with open(self.mapping_attributes_path) as csv_file:
             rows = csv.reader(csv_file, delimiter=';')
             for row in rows:
                 [k, v, l] = row
                 dictionary[k] = v
-            return dictionary
+        return dictionary
 
-    def _transform_names(xml_name):
+    def _transform_names(self, xml_name):
         """
         Convert names in XML name to name in database (eg. StavDat to STAV_DAT)
 
@@ -128,7 +114,7 @@ class CtiOsConverter():
         database_name = re.sub('([A-Z]{1})', r'_\1', xml_name).upper()
         return database_name
 
-    def _transform_names_dict(self, xml_name, config_file=None):
+    def _transform_names_dict(self, xml_name):
         """
         Convert names in XML name to name in database based on special dictionary
 
@@ -143,15 +129,8 @@ class CtiOsConverter():
             database_name (str): column names in database
         """
         try:
-            # Read configuration
-            self._config = configparser.ConfigParser()
-            if config_file is None:
-                config_file = os.path.join(os.path.abspath('ctios'), 'settings.ini')
-            self._config.read(config_file)
-
             # Load dictionary with names of XML tags and their relevant database names
-            self.mapping_attributes_dir = self._get_mapping_attributes_dir(self._config['files'].get('csv_dir'))
-            mapping_attributes_dict = self._read_mapping_attributes_dir(self._config['files']['attribute_map_file'])
+            mapping_attributes_dict = self._read_mapping_attributes_dir()
             database_name = mapping_attributes_dict[xml_name]
             return database_name
 
@@ -168,12 +147,12 @@ class CtiOsConverter():
         Returns:
             dictionary (nested dictonary): converted DB attributes
         """
-        for posident_id, posident_info in self.input_dictonary.items():
+        for posident_id, posident_info in self.input_dictionary.items():
             #  Convert attributes
-            for dat_name in posident_info:
-                dat_name = self._transform_names(dat_name)
+            for xml_name in posident_info:
+                dat_name = self._transform_names(xml_name)
                 if dat_name not in db_columns:
-                    dat_name = self._transform_names_dict(dat_name)
+                    dat_name = self._transform_names_dict(xml_name)
 
 
 class CtiOsCounter():
