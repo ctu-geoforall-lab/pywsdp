@@ -15,58 +15,48 @@ import sqlite3
 import shutil
 from pathlib import Path
 
-from ctios import CtiOs
-from ctios.helpers import CtiOsCounter
+from ctios import CtiOsBase
 from ctios.gdal.converter import Xml2DbConverter
 
-from ctios.exceptions import CtiOsError
-from ctios.gdal.exceptions import CtiOsGdalError, CtiOsInfo
+from ctios.exceptions import CtiOsError, CtiOsInfo
+from ctios.gdal.exceptions import CtiOsGdalError
 
 
 
-class CtiOsGdal(CtiOs):
-    """A class that completed VFK db by adding all personal data."""
+class CtiOsGdal(CtiOsBase):
+    """A concrete creator that implements concrete methods for CtiOsGdal class"""
 
     def __init__(self, username, password, db_path, sql=None, config_path=None, out_dir=None, log_dir=None):
         super().__init__(username, password, config_path=None, out_dir=None, log_dir=None)
-        self.logger.set_directory(self.log_dir)
-        self.db_path = db_path
         self.sql = sql
-        self.counter = CtiOsCounter()
+        self.db_in_path = db_path
 
-        # Copy input db to out dir
-        input_dir, db_name = os.path.split(self.db_path)
-        db_out_path = os.path.join(self.out_dir, db_name)
-        shutil.copyfile(self.db_path, db_out_path)
-
-        self.db = DbManager(db_out_path, self.logger)
-
-    def _get_posident_array(self, sql=None):
+    def get_input(self):
         """Get posident array from db."""
-        with self.db._create_connection() as conn:
-            ids_array = self.db.get_ids_array_from_db(conn, sql)
-        return ids_array
+        self.db_in = DbManager(self.db_in_path, self.logger)
+        with self.db_in._create_connection() as conn:
+            return self.db_in.get_ids_array_from_db(conn, self.sql)
 
-    def process(self):
-        schema = "OPSUB"
+    def create_output(self):
+        """Copy input db to out dir"""
+        input_dir, db_name = os.path.split(self.db_in_path)
+        self.db_out_path = os.path.join(self.out_dir, db_name)
+        shutil.copyfile(self.db_in_path, self.db_out_path)
+
+    def write_output(self, dictionary):
+        """Write requested values to output database"""
+        # Load mapping xml to db attributes csv
         mapping_attributes_path = os.path.join(os.path.abspath(self.get_service_name()),
-                                     'gdal',
-                                     'attributes_mapping.csv')
-        print(mapping_attributes_path)
-
-        ids_array = self._get_posident_array(self.sql)
-        xml = self.renderXML(posidents=''.join(ids_array))
-        response_xml = self.call_service(xml)
-        dictionary = self.parseXML(response_xml, self.counter)
-        print(dictionary)
-
+                             'gdal',
+                             'attributes_mapping.csv')
         # Save personal data to VFK db
-        with self.db._create_connection() as conn:
-            self.db.add_column_to_db(conn, schema, "OS_ID", "text")
-            columns = self.db.get_columns_names(conn, schema)
-            print(columns)
-            dictionary = Xml2DbConverter(dictionary, mapping_attributes_path, self.logger).convert_attributes(columns)
-            self.db.save_attributes_to_db(conn, schema, dictionary, self.counter)
+        self.db_out = DbManager(self.db_out_path, self.logger)
+        with self.db_out._create_connection() as conn:
+            schema = "OPSUB"
+            self.db_out.add_column_to_db(conn, schema, "OS_ID", "text")
+            columns = self.db_out.get_columns_names(conn, schema) # for check
+            dictionary = Xml2DbConverter(mapping_attributes_path, self.logger).convert_attributes(columns, dictionary)
+            self.db_out.save_attributes_to_db(conn, schema, dictionary)
 
 
 class DbManager():
@@ -122,7 +112,7 @@ class DbManager():
             ids_array (list): pseudo ids from db
         """
         if not sql:
-            sql = "SELECT ID FROM OPSUB"
+            sql = "SELECT ID FROM OPSUB ORDER BY ID"
         try:
             cur = conn.cursor()
             cur.execute(sql)
@@ -182,7 +172,7 @@ class DbManager():
         except sqlite3.Error as e:
             raise CtiOsGdalError(self.logger, e)
 
-    def save_attributes_to_db(self, conn, schema, dictionary, counter):
+    def save_attributes_to_db(self, conn, schema, dictionary):
         """
         Save dictionary attributes to db
         Args:
@@ -200,8 +190,8 @@ class DbManager():
                 #  Update table OPSUB by database attributes items
                 for dat_name in posident_info:
                     cur.execute("""UPDATE OPSUB SET {0} = ? WHERE id = ?""".format(dat_name), (posident_info[dat_name], posident_id))
-            cur.execute("COMMIT TRANSACTION")
-            CtiOsInfo(self.logger, 'Radky v databazi u POSIdentu {} aktualizovany'.format(posident_id))
+                cur.execute("COMMIT TRANSACTION")
+                CtiOsInfo(self.logger, 'Radky v databazi u POSIdentu {} aktualizovany'.format(posident_id))
         except conn.Error as e:
             cur.execute("ROLLBACK TRANSACTION")
             cur.close()

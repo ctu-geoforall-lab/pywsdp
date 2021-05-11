@@ -12,18 +12,17 @@ This library is free under the GNU General Public License.
 
 
 import os
-import abc
 import requests
 import configparser
+from abc import ABC, abstractmethod
 
 from base.exceptions import WSDPRequestError
 from base.template import WSDPTemplate
 
 
 
-class WSDPBase(object):
+class WSDPBase(ABC):
     """Base abstract class creating the interface for WSDP services"""
-    __metaclass__ = abc.ABCMeta # Declares class as abstract
 
     def __init__(self, username, password, config_path=None, out_dir=None, log_dir=None):
         self._username = username
@@ -37,7 +36,7 @@ class WSDPBase(object):
         # Get user-defined or default log dir
         if not log_dir:
             log_dir = self.get_default_log_dir()
-        self.log_dir = log_dir
+        self.logger.set_directory(log_dir)
 
         if not config_path:
             config_path = self.get_config_path()
@@ -50,26 +49,26 @@ class WSDPBase(object):
         self.get_service_headers()
         self.template_path = self.get_template_path()
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_service_name(self):
         """Abstract method for for getting service name"""
-        pass
+        raise NotImplementedError
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_default_log_dir(self):
         """Abstract method for getting a default service log dir"""
-        pass
+        raise NotImplementedError
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_default_out_dir(self):
         """Abstract method for getting a default output dir"""
-        pass
+        raise NotImplementedError
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def logger(self):
-        """A logger object to log messages to - must be redefined in subclass"""
-        pass
+        """A logger object to log messages to"""
+        raise NotImplementedError
 
     def get_config_path(self):
         """
@@ -136,10 +135,10 @@ class WSDPBase(object):
         request_xml = WSDPTemplate(self.template_path).render(username=self._username, password=self._password, **kwargs)
         return request_xml
 
-    @abc.abstractmethod
+    @abstractmethod
     def parseXML(self):
         """Abstract method for parsing XML"""
-        pass
+        raise NotImplementedError
 
 
 

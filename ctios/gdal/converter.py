@@ -7,7 +7,7 @@ Classes:
  - gdal::Xml2DbConverter
 
 
-(C) 2021 Linda Kladivova l.kladivova@seznam.cz
+(C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the GNU General Public License.
 """
 
@@ -22,8 +22,7 @@ class Xml2DbConverter():
     """
     CTIOS class for converting XML attribute names to DB attribute names
     """
-    def __init__(self, input_dictionary, mapping_attributes_path, logger):
-        self.input_dictionary = input_dictionary
+    def __init__(self, mapping_attributes_path, logger):
         self.logger = logger
         self.mapping_attributes_path = mapping_attributes_path
 
@@ -82,19 +81,26 @@ class Xml2DbConverter():
         except Exception as e:
             raise CtiOsError(self.logger, "XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
 
-    def convert_attributes(self, db_columns):
+    def convert_attributes(self, db_columns, input_dictionary):
         """
         Convert XML attribute names to db attributes names
 
         Args:
-            dictionary (nested dictonary): original XML attributes
+            columns: list of columns in db
+            input dictionary (nested dictonary): original XML attributes
 
         Returns:
-            dictionary (nested dictonary): converted DB attributes
+            output dictionary (nested dictonary): converted DB attributes
         """
-        for posident_id, posident_info in self.input_dictionary.items():
-            #  Convert attributes
-            for xml_name in posident_info:
-                dat_name = self._transform_names(xml_name)
-                if dat_name not in db_columns:
-                    dat_name = self._transform_names_dict(xml_name)
+        output_dictionary = {}
+
+        for posident_id, input_nested_dictionary in input_dictionary.items():
+            output_nested_dictionary = {}
+            for xml_key, value in input_nested_dictionary.items():
+                db_key = self._transform_names(xml_key)
+                if db_key not in db_columns:
+                    db_key = self._transform_names_dict(xml_key)
+                output_nested_dictionary[db_key] = value
+            output_dictionary[posident_id] = output_nested_dictionary
+        return output_dictionary
+

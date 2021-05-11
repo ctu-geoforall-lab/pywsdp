@@ -8,13 +8,13 @@ Classes:
  - ctios::CtiOsCounter
 
 
-(C) 2021 Linda Kladivova l.kladivova@seznam.cz
+(C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the GNU General Public License.
 """
 
 import xml.etree.ElementTree as et
 
-from ctios.exceptions import CtiOsResponseError
+from ctios.exceptions import CtiOsResponseError, CtiOsInfo
 
 
 
@@ -41,7 +41,6 @@ class CtiOsXMLParser():
 
             # Save posident variable
             posident = os_tag.find('{}pOSIdent'.format(namespace)).text
-            xml_dict[posident] = {}
 
             if os_tag.find('{}chybaPOSIdent'.format(namespace)) is not None:
 
@@ -54,16 +53,25 @@ class CtiOsXMLParser():
                     counter.add_expirovany_identifikator()
                 elif identifier == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
                     counter.add_opravneny_subjekt_neexistuje()
+
+                # Write to log
+                if identifier in ("NEPLATNY_IDENTIFIKATOR", "EXPIROVANY_IDENTIFIKATOR","OPRAVNENY_SUBJEKT_NEEXISTUJE"):
+                    CtiOsInfo(logger, 'POSIDENT {} {}'.format(posident, identifier.replace('_', ' ')))
                 else:
                     raise CtiOsResponseError(logger, 'POSIDENT {} {}'.format(posident, identifier.replace('_', ' ')))
             else:
                 # No errors detected
+                xml_dict[posident] = {}
+                counter.add_uspesne_stazeno()
+                CtiOsInfo(logger, 'POSIDENT {} USPESNE STAZEN'.format(posident))
+
                 # Create the dictionary with XML child attribute names and particular texts
                 for child in os_tag.find('.//{}osDetail'.format(namespace)):
                     # key: remove namespace from element name
                     name = child.tag
                     xml_dict[posident][name[namespace_length:]] = os_tag.find('.//{}'.format(name)).text
-
+                os_id = os_tag.find('{}osId'.format(namespace)).text
+                xml_dict[posident]['osId'] = os_id
         return xml_dict
 
     def _get_xml_namespace(self):
@@ -92,3 +100,5 @@ class CtiOsCounter():
 
     def add_uspesne_stazeno(self):
         self.uspesne_stazeno += 1
+
+counter = CtiOsCounter()

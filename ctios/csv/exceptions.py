@@ -4,12 +4,13 @@
 @brief Exception classes for CTIOS services
 
 Classes:
- - csv::CtiOsCsvError
+ - exceptions::CtiOsCsvError
 
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the GNU General Public License.
 """
+
 
 from ctios.exceptions import CtiOsError
 
