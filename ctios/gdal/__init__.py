@@ -12,7 +12,6 @@ This library is free under the GNU General Public License.
 
 import os
 import sqlite3
-import shutil
 from pathlib import Path
 
 from ctios import CtiOsBase
@@ -26,22 +25,15 @@ from ctios.gdal.exceptions import CtiOsGdalError
 class CtiOsGdal(CtiOsBase):
     """A concrete creator that implements concrete methods for CtiOsGdal class"""
 
-    def __init__(self, username, password, db_path, sql=None, config_path=None, out_dir=None, log_dir=None):
-        super().__init__(username, password, config_path=None, out_dir=None, log_dir=None)
-        self.sql = sql
-        self.db_in_path = db_path
+    def __init__(self, username, password, db_path):
+        super().__init__(username, password)
+        self.db_path = db_path
+        self.db = DbManager(self.db_path, self.logger)
 
-    def get_input(self):
+    def get_posidents_from_db(self, sql=None):
         """Get posident array from db."""
-        self.db_in = DbManager(self.db_in_path, self.logger)
-        with self.db_in._create_connection() as conn:
-            return self.db_in.get_ids_array_from_db(conn, self.sql)
-
-    def create_output(self):
-        """Copy input db to out dir"""
-        input_dir, db_name = os.path.split(self.db_in_path)
-        self.db_out_path = os.path.join(self.out_dir, db_name)
-        shutil.copyfile(self.db_in_path, self.db_out_path)
+        with self.db._create_connection() as conn:
+            return self.db.get_ids_array_from_db(conn, sql)
 
     def write_output(self, dictionary):
         """Write requested values to output database"""
@@ -50,13 +42,12 @@ class CtiOsGdal(CtiOsBase):
                              'gdal',
                              'attributes_mapping.csv')
         # Save personal data to VFK db
-        self.db_out = DbManager(self.db_out_path, self.logger)
-        with self.db_out._create_connection() as conn:
+        with self.db._create_connection() as conn:
             schema = "OPSUB"
-            self.db_out.add_column_to_db(conn, schema, "OS_ID", "text")
-            columns = self.db_out.get_columns_names(conn, schema) # for check
+            self.db.add_column_to_db(conn, schema, "OS_ID", "text")
+            columns = self.db.get_columns_names(conn, schema) # for check
             dictionary = Xml2DbConverter(mapping_attributes_path, self.logger).convert_attributes(columns, dictionary)
-            self.db_out.save_attributes_to_db(conn, schema, dictionary)
+            self.db.save_attributes_to_db(conn, schema, dictionary)
 
 
 class DbManager():

@@ -24,24 +24,19 @@ from base.template import WSDPTemplate
 class WSDPBase(ABC):
     """Base abstract class creating the interface for WSDP services"""
 
-    def __init__(self, username, password, config_path=None, out_dir=None, log_dir=None):
+    def __init__(self, username, password):
         self._username = username
         self._password = password
 
-        # Get user-defined or default output dir
-        if not out_dir:
-            out_dir = self.get_default_out_dir()
-        self.out_dir = out_dir
+        # Set default output dir
+        self.out_dir = self.get_default_out_dir()
 
-        # Get user-defined or default log dir
-        if not log_dir:
-            log_dir = self.get_default_log_dir()
+        # Set default log dir and
+        log_dir = self.get_default_log_dir()
         self.logger.set_directory(log_dir)
 
-        if not config_path:
-            config_path = self.get_config_path()
-
         # Read configuration from config file
+        config_path = self.get_config_path()
         self._config = configparser.ConfigParser()
         self._config.read(config_path)
 
@@ -91,6 +86,23 @@ class WSDPBase(ABC):
                                      'config',
                                      self._config['files']['xml_template'])
         return template_path
+
+    def set_log_dir(self, log_dir):
+        """User can set log dir"""
+        self.log_dir = log_dir
+        self.logger.set_directory(log_dir)
+
+    def set_out_dir(self, out_dir):
+        """User can set output dir"""
+        self.out_dir = out_dir
+
+    def get_log_dir(self):
+        """User can get log dir"""
+        return self.log_dir
+
+    def get_out_dir(self):
+        """User can get output dir"""
+        return self.out_dir
 
     def get_service_headers(self):
         """

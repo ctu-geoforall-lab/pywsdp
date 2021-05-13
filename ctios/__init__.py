@@ -53,29 +53,28 @@ class CtiOsWSDP(WSDPBase):
 class CtiOsBase(CtiOsWSDP):
     """A abstract class that defines interface and main logic used for CtiOs service."""
 
-    def __init__(self, username, password, config_path=None, out_dir=None, log_dir=None):
-        super().__init__(username, password, config_path=None, out_dir=None, log_dir=None)
+    def __init__(self, username, password):
+        super().__init__(username, password)
+
+    def get_posidents_from_txt(self, txt_path):
+        """Get posident array from text file (delimiter is ',')."""
+        with open(txt_path) as f:
+            ids = f.read().split(',')
+        ids_array = []
+        for i in ids:
+            row = "<v2:pOSIdent>{}</v2:pOSIdent>".format(i)
+            ids_array.append(row)
+        return ids_array
 
     @abstractmethod
-    def get_input(self):
-        """Abstract method for for getting service name"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def create_output(self):
-        """Abstract method for creating output file"""
+    def get_posidents_from_db(self):
+        """Get posident array from db."""
         raise NotImplementedError
 
     @abstractmethod
     def write_output(self):
         """Abstract method for writing results to output file"""
         raise NotImplementedError
-
-    def process_input(self, ids_array):
-        xml = self.renderXML(posidents=''.join(ids_array))
-        response_xml = self.call_service(xml)
-        dictionary = self.parseXML(response_xml)
-        return dictionary
 
     def write_stats(self):
         """Abstract method for for getting service name"""
@@ -86,10 +85,8 @@ class CtiOsBase(CtiOsWSDP):
         CtiOsInfo(self.logger, 'Expirovany identifikator: {}x.'.format(counter.expirovany_identifikator))
         CtiOsInfo(self.logger, 'Opravneny subjekt neexistuje: {}x.'.format(counter.opravneny_subjekt_neexistuje))
 
-    def process(self):
+    def process(self, ids_array):
         """Main wrapping method"""
-        ids_array = self.get_input()
-        self.create_output()
         self.number_of_posidents = len(ids_array)
         self.number_of_chunks = math.ceil(len(ids_array)/posidents_per_request)
 
@@ -100,7 +97,9 @@ class CtiOsBase(CtiOsWSDP):
 
         ids_chunks = create_chunks(ids_array, posidents_per_request)
         for chunk in ids_chunks:
-            dictionary = self.process_input(chunk)
+            xml = self.renderXML(posidents=''.join(chunk))
+            response_xml = self.call_service(xml)
+            dictionary = self.parseXML(response_xml)
             if dictionary:
                 self.write_output(dictionary)
         self.write_stats()
