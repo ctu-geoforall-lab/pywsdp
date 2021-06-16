@@ -15,18 +15,8 @@ This library is free under the GNU General Public License.
 from ctios.exceptions import CtiOsError
 
 
-
 class CtiOsCsvError(CtiOsError):
     """Basic exception for errors in rows in CtiOs response VFK Gdal db"""
+
     def __init__(self, logger, msg):
-        super().__init__(logger, '{} - {}'.format('CTIOS CSV ERROR', msg))
-
-
-
-
-
-
-
-
-
-
+        super().__init__(logger, "{} - {}".format("CTIOS CSV ERROR", msg))

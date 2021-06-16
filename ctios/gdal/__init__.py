@@ -22,7 +22,6 @@ from ctios.exceptions import CtiOsError, CtiOsInfo
 from ctios.gdal.exceptions import CtiOsGdalError
 
 
-
 class CtiOsGdal(CtiOsBase):
     """A concrete creator that implements concrete methods for CtiOsGdal class"""
 
@@ -39,22 +38,25 @@ class CtiOsGdal(CtiOsBase):
     def write_output(self, dictionary):
         """Write requested values to output database"""
         # Load mapping xml to db attributes csv
-        mapping_attributes_path = os.path.join(os.path.abspath(self.get_service_name()),
-                             'gdal',
-                             'attributes_mapping.csv')
+        mapping_attributes_path = os.path.join(
+            os.path.abspath(self.get_service_name()), "gdal", "attributes_mapping.csv"
+        )
         # Save personal data to VFK db
         with self.db._create_connection() as conn:
             schema = "OPSUB"
             self.db.add_column_to_db(conn, schema, "OS_ID", "text")
-            columns = self.db.get_columns_names(conn, schema) # for check
-            dictionary = Xml2DbConverter(mapping_attributes_path, self.logger).convert_attributes(columns, dictionary)
+            columns = self.db.get_columns_names(conn, schema)  # for check
+            dictionary = Xml2DbConverter(
+                mapping_attributes_path, self.logger
+            ).convert_attributes(columns, dictionary)
             self.db.save_attributes_to_db(conn, schema, dictionary)
 
 
-class DbManager():
+class DbManager:
     """
     CTIOS class for managing VFK SQLite database created based on Gdal
     """
+
     def __init__(self, db_path, logger):
         self.logger = logger
         self.db_path = self._check_db(db_path)
@@ -160,7 +162,11 @@ class DbManager():
         try:
             cur = conn.cursor()
             if name not in col_names:
-                cur.execute("""ALTER TABLE {0} ADD COLUMN {1} {2}""".format(schema, name, datatype))
+                cur.execute(
+                    """ALTER TABLE {0} ADD COLUMN {1} {2}""".format(
+                        schema, name, datatype
+                    )
+                )
         except sqlite3.Error as e:
             raise CtiOsGdalError(self.logger, e)
 
@@ -181,9 +187,15 @@ class DbManager():
             for posident_id, posident_info in dictionary.items():
                 #  Update table OPSUB by database attributes items
                 for dat_name in posident_info:
-                    cur.execute("""UPDATE OPSUB SET {0} = ? WHERE id = ?""".format(dat_name), (posident_info[dat_name], posident_id))
+                    cur.execute(
+                        """UPDATE OPSUB SET {0} = ? WHERE id = ?""".format(dat_name),
+                        (posident_info[dat_name], posident_id),
+                    )
                 cur.execute("COMMIT TRANSACTION")
-                CtiOsInfo(self.logger, 'Radky v databazi u POSIdentu {} aktualizovany'.format(posident_id))
+                CtiOsInfo(
+                    self.logger,
+                    "Radky v databazi u POSIdentu {} aktualizovany".format(posident_id),
+                )
         except conn.Error as e:
             cur.execute("ROLLBACK TRANSACTION")
             cur.close()

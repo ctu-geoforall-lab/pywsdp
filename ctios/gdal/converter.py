@@ -17,11 +17,11 @@ import csv
 from ctios.exceptions import CtiOsError
 
 
-
-class Xml2DbConverter():
+class Xml2DbConverter:
     """
     CTIOS class for converting XML attribute names to DB attribute names
     """
+
     def __init__(self, mapping_attributes_path, logger):
         self.logger = logger
         self.mapping_attributes_path = mapping_attributes_path
@@ -38,7 +38,7 @@ class Xml2DbConverter():
         """
         dictionary = {}
         with open(self.mapping_attributes_path) as csv_file:
-            rows = csv.reader(csv_file, delimiter=';')
+            rows = csv.reader(csv_file, delimiter=";")
             for row in rows:
                 [k, v, l] = row
                 dictionary[k] = v
@@ -55,7 +55,7 @@ class Xml2DbConverter():
             database_name (str): column names in database
         """
 
-        database_name = re.sub('([A-Z]{1})', r'_\1', xml_name).upper()
+        database_name = re.sub("([A-Z]{1})", r"_\1", xml_name).upper()
         return database_name
 
     def _transform_names_dict(self, xml_name):
@@ -79,7 +79,12 @@ class Xml2DbConverter():
             return database_name
 
         except Exception as e:
-            raise CtiOsError(self.logger, "XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(e))
+            raise CtiOsError(
+                self.logger,
+                "XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(
+                    e
+                ),
+            )
 
     def convert_attributes(self, db_columns, input_dictionary):
         """
@@ -103,4 +108,3 @@ class Xml2DbConverter():
                 output_nested_dictionary[db_key] = value
             output_dictionary[posident_id] = output_nested_dictionary
         return output_dictionary
-
