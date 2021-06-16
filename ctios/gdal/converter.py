@@ -6,10 +6,10 @@
 Classes:
  - gdal::Xml2DbConverter
 
-
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the GNU General Public License.
 """
+
 
 import re
 import csv

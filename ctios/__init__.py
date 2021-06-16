@@ -4,7 +4,6 @@
 @brief Base class creating the interface for CTIOS services
 
 Classes:
- - ctios::CtiOsWSDP
  - ctios::CtiOsBase
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
@@ -12,11 +11,9 @@ This library is free under the GNU General Public License.
 """
 
 import os
-from abc import abstractmethod
 import math
 
-from ctios.helpers import CtiOsXMLParser
-from ctios.helpers import counter
+from ctios.helpers import CtiOsXMLParser, CtiOsCounter
 from ctios.exceptions import CtiOsInfo
 from base import WSDPBase
 from base.logger import WSDPLogger
@@ -26,10 +23,18 @@ logger = ctios_logger = WSDPLogger("pyctios")
 posidents_per_request = 10
 
 
-class CtiOsWSDP(WSDPBase):
-    """A concrete creator that implements concrete WSDP atributes for CtiOs class"""
+class CtiOsBase(WSDPBase):
+    """A abstract class that defines interface and main logic used for CtiOs service.
 
+    Several methods has to be overridden or
+    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
+
+    Derived class must override get_posidents_from_db(), write_output() methods.
+    """
     logger = ctios_logger
+
+    def __init__(self, username, password):
+        super().__init__(username, password)
 
     def get_service_name(self):
         """Method for getting service name"""
@@ -46,15 +51,8 @@ class CtiOsWSDP(WSDPBase):
     def parseXML(self, content):
         """Call CtiOs XML parser"""
         return CtiOsXMLParser()(content=content,
-                                counter=counter,
+                                counter=self.counter,
                                 logger=self.logger)
-
-
-class CtiOsBase(CtiOsWSDP):
-    """A abstract class that defines interface and main logic used for CtiOs service."""
-
-    def __init__(self, username, password):
-        super().__init__(username, password)
 
     def get_posidents_from_txt(self, txt_path):
         """Get posident array from text file (delimiter is ',')."""
@@ -66,27 +64,27 @@ class CtiOsBase(CtiOsWSDP):
             ids_array.append(row)
         return ids_array
 
-    @abstractmethod
     def get_posidents_from_db(self):
         """Get posident array from db."""
-        raise NotImplementedError
+        raise NotImplementedError(self.__class__.__name__+ "get_posidents_from_db")
 
-    @abstractmethod
     def write_output(self):
         """Abstract method for writing results to output file"""
-        raise NotImplementedError
+        raise NotImplementedError(self.__class__.__name__+ "write_output")
 
     def write_stats(self):
         """Abstract method for for getting service name"""
         CtiOsInfo(self.logger, 'Pocet dotazovanych posidentu: {}.'.format(self.number_of_posidents))
         CtiOsInfo(self.logger, 'Pocet pozadavku do ktereho byl dotaz rozdelen: {}.'.format(self.number_of_chunks))
-        CtiOsInfo(self.logger, 'Pocet uspesne stazenych posidentu: {}'.format(counter.uspesne_stazeno))
-        CtiOsInfo(self.logger, 'Neplatny identifikator: {}x.'.format(counter.neplatny_identifikator))
-        CtiOsInfo(self.logger, 'Expirovany identifikator: {}x.'.format(counter.expirovany_identifikator))
-        CtiOsInfo(self.logger, 'Opravneny subjekt neexistuje: {}x.'.format(counter.opravneny_subjekt_neexistuje))
+        CtiOsInfo(self.logger, 'Pocet uspesne stazenych posidentu: {}'.format(self.counter.uspesne_stazeno))
+        CtiOsInfo(self.logger, 'Neplatny identifikator: {}x.'.format(self.counter.neplatny_identifikator))
+        CtiOsInfo(self.logger, 'Expirovany identifikator: {}x.'.format(self.counter.expirovany_identifikator))
+        CtiOsInfo(self.logger, 'Opravneny subjekt neexistuje: {}x.'.format(self.counter.opravneny_subjekt_neexistuje))
 
     def process(self, ids_array):
         """Main wrapping method"""
+        self.counter = CtiOsCounter()
+
         self.number_of_posidents = len(ids_array)
         self.number_of_chunks = math.ceil(len(ids_array)/posidents_per_request)
 
@@ -103,12 +101,4 @@ class CtiOsBase(CtiOsWSDP):
             if dictionary:
                 self.write_output(dictionary)
         self.write_stats()
-
-
-
-
-
-
-
-
 

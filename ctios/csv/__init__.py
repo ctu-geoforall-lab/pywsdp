@@ -29,8 +29,10 @@ class CtiOsCsv(CtiOsBase):
         raise NotImplementedError(self.__class__.__name__+ '.get_posidents_from_db')
 
     def write_output(self, dictionary):
+        """Write output in the form of nested dictionary to csv."""
         if not dictionary:
             raise CtiOsCsvError(self.logger, "Writing to CSV failed! No values for output file.")
+
         # Write dictionary to csv
         header = sorted(set(i for b in map(dict.keys, dictionary.values()) for i in b))
         with open(self.csv_path, 'w', newline="") as f:

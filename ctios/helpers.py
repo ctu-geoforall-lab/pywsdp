@@ -12,10 +12,10 @@ Classes:
 This library is free under the GNU General Public License.
 """
 
+
 import xml.etree.ElementTree as et
 
 from ctios.exceptions import CtiOsResponseError, CtiOsInfo
-
 
 
 class CtiOsXMLParser():
@@ -100,5 +100,3 @@ class CtiOsCounter():
 
     def add_uspesne_stazeno(self):
         self.uspesne_stazeno += 1
-
-counter = CtiOsCounter()
