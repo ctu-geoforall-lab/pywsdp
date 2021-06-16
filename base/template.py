@@ -13,7 +13,7 @@ This library is free under the GNU General Public License.
 from string import Template
 
 
-class WSDPTemplate():
+class WSDPTemplate:
     """
     WSDPTemplate class reads XML template and prepare it for given service
     """
@@ -40,7 +40,7 @@ class WSDPTemplate():
         with open(self.template_path) as template:
             return template.read()
 
-    def render(self,  **kwargs):
+    def render(self, **kwargs):
         """
         Render template using arguments
 

@@ -14,15 +14,20 @@ This library is free under the GNU General Public License.
 import os
 import requests
 import configparser
-from abc import ABC, abstractmethod
 
 from base.exceptions import WSDPRequestError
 from base.template import WSDPTemplate
 
 
+class WSDPBase(object):
+    """Base abstract class creating the interface for WSDP services
 
-class WSDPBase(ABC):
-    """Base abstract class creating the interface for WSDP services"""
+    Several methods has to be overridden or
+    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
+
+    Derived class must override get_service_name(), get_default_log_dir(),
+    get_default_out_dir(), logger(), parse_xml() methods.
+    """
 
     def __init__(self, username, password):
         self._username = username
@@ -44,36 +49,32 @@ class WSDPBase(ABC):
         self.get_service_headers()
         self.template_path = self.get_template_path()
 
-    @abstractmethod
     def get_service_name(self):
         """Abstract method for for getting service name"""
-        raise NotImplementedError
+        raise NotImplementedError(self.__class__.__name__ + "get_service_name")
 
-    @abstractmethod
     def get_default_log_dir(self):
         """Abstract method for getting a default service log dir"""
-        raise NotImplementedError
+        raise NotImplementedError(self.__class__.__name__ + "get_default_log_dir")
 
-    @abstractmethod
     def get_default_out_dir(self):
         """Abstract method for getting a default output dir"""
-        raise NotImplementedError
+        raise NotImplementedError(self.__class__.__name__ + "get_default_out_dir")
 
     @property
-    @abstractmethod
     def logger(self):
         """A logger object to log messages to"""
         raise NotImplementedError
 
     def get_config_path(self):
         """
-        Method for service headers that must be redefined in subclass
+        Get config path needed for getting headers for given service
         Returns:
             config_dir (string)
         """
-        config_path = os.path.join(os.path.abspath(self.get_service_name()),
-                                     'config',
-                                     'settings.ini')
+        config_path = os.path.join(
+            os.path.abspath(self.get_service_name()), "config", "settings.ini"
+        )
         return config_path
 
     def get_template_path(self):
@@ -82,9 +83,11 @@ class WSDPBase(ABC):
         Returns:
             template path (string):  path for rendered XML request
         """
-        template_path = os.path.join(os.path.abspath(self.get_service_name()),
-                                     'config',
-                                     self._config['files']['xml_template'])
+        template_path = os.path.join(
+            os.path.abspath(self.get_service_name()),
+            "config",
+            self._config["files"]["xml_template"],
+        )
         return template_path
 
     def set_log_dir(self, log_dir):
@@ -112,11 +115,19 @@ class WSDPBase(ABC):
         """
         # CTIOS service parameters loaded from ini file
         self.service_headers = {}
-        self.service_headers['content_type'] = self._config['service headers']['content_type']
-        self.service_headers['accept_encoding'] = self._config['service headers']['accept_encoding']
-        self.service_headers['soap_action'] = self._config['service headers']['soap_action']
-        self.service_headers['connection'] = self._config['service headers']['connection']
-        self.service_headers['endpoint'] = self._config['service headers']['endpoint']
+        self.service_headers["content_type"] = self._config["service headers"][
+            "content_type"
+        ]
+        self.service_headers["accept_encoding"] = self._config["service headers"][
+            "accept_encoding"
+        ]
+        self.service_headers["soap_action"] = self._config["service headers"][
+            "soap_action"
+        ]
+        self.service_headers["connection"] = self._config["service headers"][
+            "connection"
+        ]
+        self.service_headers["endpoint"] = self._config["service headers"]["endpoint"]
 
     def call_service(self, xml):
         """Send a request in the XML form to WSDP service
@@ -128,15 +139,17 @@ class WSDPBase(ABC):
             response_xml (str): xml response from WSDP service
         """
         # WSDP headers for service requesting
-        _headers = {"Content-Type": self.service_headers['content_type'],
-                    "Accept-Encoding": self.service_headers['accept_encoding'],
-                    "SOAPAction": self.service_headers['soap_action'],
-                    "Connection": self.service_headers['connection']}
+        _headers = {
+            "Content-Type": self.service_headers["content_type"],
+            "Accept-Encoding": self.service_headers["accept_encoding"],
+            "SOAPAction": self.service_headers["soap_action"],
+            "Connection": self.service_headers["connection"],
+        }
         try:
-            response_xml = requests.post(self.service_headers['endpoint'],
-                                         data=xml,
-                                         headers=_headers).text
-            #if self.log_dir:
+            response_xml = requests.post(
+                self.service_headers["endpoint"], data=xml, headers=_headers
+            ).text
+            # if self.log_dir:
             #    self.logger.debug(response_xml)
         except requests.exceptions.RequestException as e:
             raise WSDPRequestError(self.logger, e)
@@ -144,16 +157,11 @@ class WSDPBase(ABC):
 
     def renderXML(self, **kwargs):
         """Abstract method rendering XML"""
-        request_xml = WSDPTemplate(self.template_path).render(username=self._username, password=self._password, **kwargs)
+        request_xml = WSDPTemplate(self.template_path).render(
+            username=self._username, password=self._password, **kwargs
+        )
         return request_xml
 
-    @abstractmethod
     def parseXML(self):
         """Abstract method for parsing XML"""
-        raise NotImplementedError
-
-
-
-
-
-
+        raise NotImplementedError(self.__class__.__name__ + "parseXML")
