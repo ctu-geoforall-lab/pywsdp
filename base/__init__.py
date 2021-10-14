@@ -7,7 +7,7 @@ Classes:
  - base::WSDPBase
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
-This library is free under the GNU General Public License.
+This library is free under the MIT License.
 """
 
 
@@ -33,6 +33,9 @@ class WSDPBase(object):
         self._username = username
         self._password = password
 
+        # Set modules directory
+        self.modules_dir = os.path.abspath(os.path.join('../../', 'services'))
+
         # Set default output dir
         self.out_dir = self.get_default_out_dir()
 
@@ -52,6 +55,10 @@ class WSDPBase(object):
     def get_service_name(self):
         """Abstract method for for getting service name"""
         raise NotImplementedError(self.__class__.__name__ + "get_service_name")
+
+    def get_service_path(self):
+        """Abstract method for for getting service path"""
+        raise NotImplementedError(self.__class__.__name__ + "get_service_path")
 
     def get_default_log_dir(self):
         """Abstract method for getting a default service log dir"""
@@ -73,7 +80,7 @@ class WSDPBase(object):
             config_dir (string)
         """
         config_path = os.path.join(
-            os.path.abspath(self.get_service_name()), "config", "settings.ini"
+            self.get_service_path(), "config", "settings.ini"
         )
         return config_path
 
@@ -84,7 +91,7 @@ class WSDPBase(object):
             template path (string):  path for rendered XML request
         """
         template_path = os.path.join(
-            os.path.abspath(self.get_service_name()),
+            self.get_service_path(),
             "config",
             self._config["files"]["xml_template"],
         )

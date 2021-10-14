@@ -8,7 +8,7 @@ Classes:
  - base::WSDPRequestError
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
-This library is free under the GNU General Public License.
+This library is free under the MIT License.
 """
 
 
