@@ -1,0 +1,17 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                        xmlns:typ="http://katastr.cuzk.cz/sestavy/types/"
+                        xmlns:v2="http://katastr.cuzk.cz/sestavy/types/2.9">
+                          <soapenv:Header>
+                              <wsse:Security xmlns:wsse="http://docs.oasis-open.org/…xsd" xmlns:wsu="http://docs.oasis-open.org/…xsd" soapenv:mustUnderstand="1">
+                                <wsse:UsernameToken wsu:Id="UsernameToken-2">
+                                  <wsse:Username>WSTEST</wsse:Username>
+                                  <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">WSHESLO</wsse:Password>
+                                </wsse:UsernameToken>
+                              </wsse:Security>
+                          </soapenv:Header>
+                          <soapenv:Body>
+                            <v2:GenerujVystupZeSbirkyListinRequest>
+                              <v2:listidaId>$</v2:listidaId>
+                            </v2:GenerujVystupZeSbirkyListinRequest>
+                          </soapenv:Body>
+                        </soapenv:Envelope>

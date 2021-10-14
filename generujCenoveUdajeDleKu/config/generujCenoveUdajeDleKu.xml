@@ -1,0 +1,20 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                        xmlns:typ="http://katastr.cuzk.cz/sestavy/types/"
+                        xmlns:v2="http://katastr.cuzk.cz/sestavy/types/2.9">
+                          <soapenv:Header>
+                              <wsse:Security xmlns:wsse="http://docs.oasis-open.org/…xsd" xmlns:wsu="http://docs.oasis-open.org/…xsd" soapenv:mustUnderstand="1">
+                                <wsse:UsernameToken wsu:Id="UsernameToken-2">
+                                  <wsse:Username>WSTEST</wsse:Username>
+                                  <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">WSHESLO</wsse:Password>
+                                </wsse:UsernameToken>
+                              </wsse:Security>
+                          </soapenv:Header>
+                          <soapenv:Body>
+                            <v2:GenerujCenoveUdajeDleKuRequest>
+                              <v2:katastrUzemiKod>689297</v2:katastrUzemiKod>
+                              <v2:rok>2019</v2:rok>
+                              <v2:mesicOd>1</v2:mesicOd>
+                              <v2:mesicDo>6</v2:mesicDo>
+                            </v2:GenerujCenoveUdajeDleKuRequest>
+                          </soapenv:Body>
+                        </soapenv:Envelope>
