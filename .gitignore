@@ -1,10 +1,10 @@
 *~
 __pycache__/
-services/ctiOS/input/*.vfk
-services/ctiOS/input/*.zip
-services/ctiOS/input/*.txt
-services/ctiOS/output/*.db
-services/ctiOS/output/*.csv
+services/ctiOS/data/input/*.vfk
+services/ctiOS/data/input/*.zip
+services/ctiOS/data/input/*.txt
+services/ctiOS/data/output/*.db
+services/ctiOS/data/output/*.csv
 services/ctiOS/logs/*.log
 venv
 .idea
