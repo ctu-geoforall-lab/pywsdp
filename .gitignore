@@ -2,7 +2,6 @@
 __pycache__/
 services/ctiOS/data/input/*.vfk
 services/ctiOS/data/input/*.zip
-services/ctiOS/data/input/*.txt
 services/ctiOS/data/output/*.db
 services/ctiOS/data/output/*.csv
 services/ctiOS/logs/*.log
