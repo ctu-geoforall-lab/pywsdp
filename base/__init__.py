@@ -14,12 +14,13 @@ This library is free under the MIT License.
 import os
 import requests
 import configparser
+from abc import ABC, abstractmethod
 
 from base.exceptions import WSDPRequestError
 from base.template import WSDPTemplate
 
 
-class WSDPBase(object):
+class WSDPBase(ABC):
     """Base abstract class creating the interface for WSDP services
 
     Several methods has to be overridden or
@@ -34,7 +35,7 @@ class WSDPBase(object):
         self._password = password
 
         # Set modules directory
-        self.modules_dir = os.path.abspath(os.path.join('../../', 'services'))
+        self.modules_dir = self.get_module_path()
 
         # Set default output dir
         self.out_dir = self.get_default_out_dir()
@@ -52,18 +53,22 @@ class WSDPBase(object):
         self.get_service_headers()
         self.template_path = self.get_template_path()
 
+    @abstractmethod
     def get_service_name(self):
         """Abstract method for for getting service name"""
         raise NotImplementedError(self.__class__.__name__ + "get_service_name")
 
+    @abstractmethod
     def get_service_path(self):
         """Abstract method for for getting service path"""
         raise NotImplementedError(self.__class__.__name__ + "get_service_path")
 
+    @abstractmethod
     def get_default_log_dir(self):
         """Abstract method for getting a default service log dir"""
         raise NotImplementedError(self.__class__.__name__ + "get_default_log_dir")
 
+    @abstractmethod
     def get_default_out_dir(self):
         """Abstract method for getting a default output dir"""
         raise NotImplementedError(self.__class__.__name__ + "get_default_out_dir")
@@ -72,6 +77,16 @@ class WSDPBase(object):
     def logger(self):
         """A logger object to log messages to"""
         raise NotImplementedError
+
+    def is_run_by_jupyter(self):
+        import __main__ as main
+        return not hasattr(main, '__file__')
+
+    def get_module_path(self):
+        if self.is_run_by_jupyter():
+            return os.path.abspath(os.path.join('../../', 'services'))
+        else:
+            return os.path.join(os.path.dirname(os.path.dirname(__file__)), 'services')
 
     def get_config_path(self):
         """
