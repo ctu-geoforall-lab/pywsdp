@@ -53,15 +53,15 @@ class WSDPBase(ABC):
         self.get_service_headers()
         self.template_path = self.get_template_path()
 
-    @abstractmethod
-    def get_service_name(self):
-        """Abstract method for for getting service name"""
-        raise NotImplementedError(self.__class__.__name__ + "get_service_name")
+    @property
+    def logger(self):
+        """A logger object to log messages to"""
+        raise NotImplementedError
 
-    @abstractmethod
-    def get_service_path(self):
-        """Abstract method for for getting service path"""
-        raise NotImplementedError(self.__class__.__name__ + "get_service_path")
+    @property
+    def service_name(self):
+        """A service name object"""
+        raise NotImplementedError
 
     @abstractmethod
     def get_default_log_dir(self):
@@ -73,11 +73,6 @@ class WSDPBase(ABC):
         """Abstract method for getting a default output dir"""
         raise NotImplementedError(self.__class__.__name__ + "get_default_out_dir")
 
-    @property
-    def logger(self):
-        """A logger object to log messages to"""
-        raise NotImplementedError
-
     def is_run_by_jupyter(self):
         import __main__ as main
         return not hasattr(main, '__file__')
@@ -87,6 +82,10 @@ class WSDPBase(ABC):
             return os.path.abspath(os.path.join('../../', 'services'))
         else:
             return os.path.join(os.path.dirname(os.path.dirname(__file__)), 'services')
+
+    def get_service_path(self):
+        """Method for getting absolute service path"""
+        return os.path.join(self.modules_dir, self.service_name)
 
     def get_config_path(self):
         """

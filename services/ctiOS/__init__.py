@@ -12,16 +12,12 @@ This library is free under the MIT License.
 
 import os
 import math
-import sys
-from sys import path
 
 from services.ctiOS.helpers import CtiOSXMLParser, CtiOSCounter
 from services.ctiOS.exceptions import CtiOSInfo
 from base import WSDPBase
 from base.logger import WSDPLogger
 
-
-logger = ctios_logger = WSDPLogger("ctiOS")
 posidents_per_request = 10
 
 
@@ -33,19 +29,11 @@ class CtiOSBase(WSDPBase):
 
     Derived class must override get_posidents_from_db(), write_output() methods.
     """
-
-    logger = ctios_logger
+    service_name = "ctiOS"
+    logger = WSDPLogger(service_name)
 
     def __init__(self, username, password):
         super().__init__(username, password)
-
-    def get_service_name(self):
-        """Method for getting service name"""
-        return "ctiOS"
-
-    def get_service_path(self):
-        """Method for getting absolute service path"""
-        return os.path.join(self.modules_dir, self.get_service_name())
 
     def get_default_log_dir(self):
         """Method for getting default log dir"""
