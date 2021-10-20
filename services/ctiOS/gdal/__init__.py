@@ -30,7 +30,7 @@ class CtiOSGdal(CtiOSBase):
         self.db_path = db_path
         self.db = DbManager(self.db_path, self.logger)
 
-    def get_posidents_from_db(self, sql=None):
+    def get_parameters_from_db(self, sql=None):
         """Get posident array from db."""
         with self.db._create_connection() as conn:
             return self.db.get_ids_array_from_db(conn, sql)

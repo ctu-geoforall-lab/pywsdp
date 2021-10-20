@@ -41,7 +41,7 @@ class CtiOSBase(WSDPBase):
             content=content, counter=self.counter, logger=self.logger
         )
 
-    def get_posidents_from_txt(self, txt_path):
+    def get_parameters_from_txt(self, txt_path):
         """Get posident array from text file (delimiter is ',')."""
         with open(txt_path) as f:
             ids = f.read().split(",")
@@ -51,7 +51,7 @@ class CtiOSBase(WSDPBase):
             ids_array.append(row)
         return ids_array
 
-    def get_posidents_from_db(self):
+    def get_parameters_from_db(self):
         """Get posident array from db."""
         raise NotImplementedError(self.__class__.__name__ + "get_posidents_from_db")
 

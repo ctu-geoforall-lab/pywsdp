@@ -24,7 +24,7 @@ class CtiOSCsv(CtiOSBase):
         super().__init__(username, password)
         self.csv_path = csv_path
 
-    def get_posidents_from_db(self, db_path):
+    def get_parameters_from_db(self, db_path):
         """Get posident array from db. Not defined for CtiOSCsv service."""
         raise NotImplementedError(self.__class__.__name__ + ".get_posidents_from_db")
 

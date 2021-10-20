@@ -181,6 +181,11 @@ class WSDPBase(ABC):
         return request_xml
 
     @abstractmethod
+    def get_parameters_from_txt(self):
+        """Abstract method for getting request parameters from txt"""
+        raise NotImplementedError(self.__class__.__name__ + "get_parameters_from_txt")
+
+    @abstractmethod
     def parseXML(self):
         """Abstract method for parsing XML"""
         raise NotImplementedError(self.__class__.__name__ + "parseXML")
