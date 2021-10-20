@@ -35,14 +35,6 @@ class CtiOSBase(WSDPBase):
     def __init__(self, username, password):
         super().__init__(username, password)
 
-    def get_default_log_dir(self):
-        """Method for getting default log dir"""
-        return os.path.join(self.get_service_path(), "logs")
-
-    def get_default_out_dir(self):
-        """Method for getting default output dir"""
-        return os.path.join(self.get_service_path(), "data", "output")
-
     def parseXML(self, content):
         """Call ctiOS XML parser"""
         return CtiOSXMLParser()(

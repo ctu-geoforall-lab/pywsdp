@@ -10,7 +10,6 @@ Classes:
 This library is free under the MIT License.
 """
 
-
 import os
 import requests
 import configparser
@@ -63,16 +62,6 @@ class WSDPBase(ABC):
         """A service name object"""
         raise NotImplementedError
 
-    @abstractmethod
-    def get_default_log_dir(self):
-        """Abstract method for getting a default service log dir"""
-        raise NotImplementedError(self.__class__.__name__ + "get_default_log_dir")
-
-    @abstractmethod
-    def get_default_out_dir(self):
-        """Abstract method for getting a default output dir"""
-        raise NotImplementedError(self.__class__.__name__ + "get_default_out_dir")
-
     def is_run_by_jupyter(self):
         import __main__ as main
         return not hasattr(main, '__file__')
@@ -86,6 +75,14 @@ class WSDPBase(ABC):
     def get_service_path(self):
         """Method for getting absolute service path"""
         return os.path.join(self.modules_dir, self.service_name)
+
+    def get_default_log_dir(self):
+        """Method for getting default log dir"""
+        return os.path.join(self.get_service_path(), "logs")
+
+    def get_default_out_dir(self):
+        """Method for getting default output dir"""
+        return os.path.join(self.get_service_path(), "data", "output")
 
     def get_config_path(self):
         """
@@ -183,6 +180,7 @@ class WSDPBase(ABC):
         )
         return request_xml
 
+    @abstractmethod
     def parseXML(self):
         """Abstract method for parsing XML"""
         raise NotImplementedError(self.__class__.__name__ + "parseXML")
