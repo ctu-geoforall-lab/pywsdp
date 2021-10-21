@@ -41,6 +41,9 @@ class WSDPBase(ABC):
 
         # Set default log dir and
         log_dir = self.get_default_log_dir()
+        # Ensure log dir exists
+        self.ensure_log_dir_exists(log_dir)
+        # Redirect logger to log dir
         self.logger.set_directory(log_dir)
 
         # Read configuration from config file
@@ -82,6 +85,12 @@ class WSDPBase(ABC):
         """Method for getting default log dir"""
         return os.path.join(self.get_service_path(), "logs")
 
+    def ensure_log_dir_exists(self, log_dir):
+        """Method for checking if log dir exists.
+        If does not exist, it creates a new dir"""
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
     def get_default_out_dir(self):
         """Method for getting default output dir"""
         return os.path.join(self.get_service_path(), "data", "output")
@@ -112,7 +121,7 @@ class WSDPBase(ABC):
 
     def set_log_dir(self, log_dir):
         """User can set log dir"""
-        self.log_dir = log_dir
+        self.ensure_log_dir_exists(log_dir)
         self.logger.set_directory(log_dir)
 
     def set_out_dir(self, out_dir):
