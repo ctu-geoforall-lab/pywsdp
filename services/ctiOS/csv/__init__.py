@@ -12,8 +12,6 @@ This library is free under the MIT License.
 import csv
 
 from services.ctiOS import CtiOSBase
-
-from services.ctiOS.exceptions import CtiOSInfo
 from services.ctiOS.csv.exceptions import CtiOSCsvError
 
 
@@ -42,6 +40,6 @@ class CtiOSCsv(CtiOSBase):
             write.writerow(["posident", *header])
             for a, b in dictionary.items():
                 write.writerow([a] + [b.get(i, "") for i in header])
-                CtiOSInfo(
-                    self.logger, "Radky v csv u POSIdentu {} aktualizovany".format(a)
+                self.logger.info(
+                        "Radky v csv u POSIdentu {} aktualizovany".format(a)
                 )

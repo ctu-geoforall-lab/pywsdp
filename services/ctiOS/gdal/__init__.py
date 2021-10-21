@@ -18,7 +18,7 @@ from pathlib import Path
 from services.ctiOS import CtiOSBase
 from services.ctiOS.gdal.converter import Xml2DbConverter
 
-from services.ctiOS.exceptions import CtiOSError, CtiOSInfo
+from services.ctiOS.exceptions import CtiOSError
 from services.ctiOS.gdal.exceptions import CtiOSGdalError
 
 
@@ -192,9 +192,8 @@ class DbManager:
                         (posident_info[dat_name], posident_id),
                     )
                 cur.execute("COMMIT TRANSACTION")
-                CtiOSInfo(
-                    self.logger,
-                    "Radky v databazi u POSIdentu {} aktualizovany".format(posident_id),
+                self.logger.info(
+                    "Radky v databazi u POSIdentu {} aktualizovany".format(posident_id)
                 )
         except conn.Error as e:
             cur.execute("ROLLBACK TRANSACTION")

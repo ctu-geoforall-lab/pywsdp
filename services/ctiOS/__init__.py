@@ -10,11 +10,9 @@ Classes:
 This library is free under the MIT License.
 """
 
-import os
 import math
 
 from services.ctiOS.helpers import CtiOSXMLParser, CtiOSCounter
-from services.ctiOS.exceptions import CtiOSInfo
 from base import WSDPBase
 from base.logger import WSDPLogger
 
@@ -61,37 +59,31 @@ class CtiOSBase(WSDPBase):
 
     def write_stats(self):
         """Abstract method for for getting service name"""
-        CtiOSInfo(
-            self.logger,
-            "Pocet dotazovanych posidentu: {}.".format(self.number_of_posidents),
+        self.logger.info(
+            "Pocet dotazovanych posidentu: {}.".format(self.number_of_posidents)
         )
-        CtiOSInfo(
-            self.logger,
+        self.logger.info(
             "Pocet pozadavku do ktereho byl dotaz rozdelen: {}.".format(
                 self.number_of_chunks
-            ),
+            )
         )
-        CtiOSInfo(
-            self.logger,
+        self.logger.info(
             "Pocet uspesne stazenych posidentu: {}".format(
                 self.counter.uspesne_stazeno
-            ),
+            )
         )
-        CtiOSInfo(
-            self.logger,
+        self.logger.info(
             "Neplatny identifikator: {}x.".format(self.counter.neplatny_identifikator),
         )
-        CtiOSInfo(
-            self.logger,
+        self.logger.info(
             "Expirovany identifikator: {}x.".format(
                 self.counter.expirovany_identifikator
-            ),
+            )
         )
-        CtiOSInfo(
-            self.logger,
+        self.logger.info(
             "Opravneny subjekt neexistuje: {}x.".format(
                 self.counter.opravneny_subjekt_neexistuje
-            ),
+            )
         )
 
     def process(self, ids_array):

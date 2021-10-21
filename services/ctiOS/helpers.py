@@ -15,7 +15,7 @@ This library is free under the MIT License.
 
 import xml.etree.ElementTree as et
 
-from services.ctiOS.exceptions import CtiOSResponseError, CtiOSInfo
+from services.ctiOS.exceptions import CtiOSResponseError
 
 
 class CtiOSXMLParser:
@@ -61,9 +61,8 @@ class CtiOSXMLParser:
                     "EXPIROVANY_IDENTIFIKATOR",
                     "OPRAVNENY_SUBJEKT_NEEXISTUJE",
                 ):
-                    CtiOSInfo(
-                        logger,
-                        "POSIDENT {} {}".format(posident, identifier.replace("_", " ")),
+                    logger.info(
+                        "POSIDENT {} {}".format(posident, identifier.replace("_", " "))
                     )
                 else:
                     raise CtiOSResponseError(
@@ -74,7 +73,7 @@ class CtiOSXMLParser:
                 # No errors detected
                 xml_dict[posident] = {}
                 counter.add_uspesne_stazeno()
-                CtiOSInfo(logger, "POSIDENT {} USPESNE STAZEN".format(posident))
+                logger.info("POSIDENT {} USPESNE STAZEN".format(posident))
 
                 # Create the dictionary with XML child attribute names and particular texts
                 for child in os_tag.find(".//{}osDetail".format(namespace)):
