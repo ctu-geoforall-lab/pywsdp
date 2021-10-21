@@ -25,8 +25,8 @@ class WSDPBase(ABC):
     Several methods has to be overridden or
     NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
 
-    Derived class must override get_service_name(), get_default_log_dir(),
-    get_default_out_dir(), logger(), parse_xml() methods.
+    Derived class must override logger(), service_name(),
+    get_parameters_from_txt(), parse_xml() methods.
     """
 
     def __init__(self, username, password):
