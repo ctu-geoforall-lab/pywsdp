@@ -14,7 +14,7 @@ This library is free under the MIT License.
 import re
 import csv
 
-from services.ctiOS.exceptions import CtiOSError
+from base.exceptions import WSDPError
 
 
 class Xml2DbConverter:
@@ -67,7 +67,7 @@ class Xml2DbConverter:
             config_file (str): configuration file (not mandatory)
 
         Raises:
-            CtiOSError(XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME)
+            WSDPError(XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME)
 
         Returns:
             database_name (str): column names in database
@@ -79,7 +79,7 @@ class Xml2DbConverter:
             return database_name
 
         except Exception as e:
-            raise CtiOSError(
+            raise WSDPError(
                 self.logger,
                 "XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(
                     e

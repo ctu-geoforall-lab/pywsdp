@@ -12,7 +12,7 @@ This library is free under the MIT License.
 import csv
 
 from services.ctiOS import CtiOSBase
-from services.ctiOS.csv.exceptions import CtiOSCsvError
+from base.exceptions import WSDPError
 
 
 class CtiOSCsv(CtiOSBase):
@@ -29,7 +29,7 @@ class CtiOSCsv(CtiOSBase):
     def write_output(self, dictionary):
         """Write output in the form of nested dictionary to csv."""
         if not dictionary:
-            raise CtiOSCsvError(
+            raise WSDPError(
                 self.logger, "Writing to CSV failed! No values for output file."
             )
 

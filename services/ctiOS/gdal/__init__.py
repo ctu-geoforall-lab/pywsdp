@@ -18,8 +18,7 @@ from pathlib import Path
 from services.ctiOS import CtiOSBase
 from services.ctiOS.gdal.converter import Xml2DbConverter
 
-from services.ctiOS.exceptions import CtiOSError
-from services.ctiOS.gdal.exceptions import CtiOSGdalError
+from base.exceptions import WSDPError
 
 
 class CtiOSGdal(CtiOSBase):
@@ -67,7 +66,7 @@ class DbManager:
         Args:
             db_path (str): Path to vfk db
         Raises:
-            CtiOSError: FileNotFoundError
+            WSDPError: FileNotFoundError
         """
         my_file = Path(db_path)
         try:
@@ -76,13 +75,13 @@ class DbManager:
             return db_path
 
         except FileNotFoundError as e:
-            raise CtiOSError(self.logger, e)
+            raise WSDPError(self.logger, e)
 
     def _create_connection(self):
         """
         Create a database connection to the SQLite database specified by the db_path
         Raises:
-            CtiOSGdalError: SQLite error
+            WSDPError: SQLite error
         Returns:
             conn (Connection object)
         """
@@ -91,7 +90,7 @@ class DbManager:
             conn = sqlite3.connect(self.db_path)
             return conn
         except sqlite3.Error as e:
-            raise CtiOSGdalError(self.logger, e)
+            raise WSDPError(self.logger, e)
 
     def get_ids_array_from_db(self, conn, sql=None):
         """
@@ -100,8 +99,8 @@ class DbManager:
             conn (Connection object)
             sql (str): SQL select statement for filtering or None (if not specified, all ids from db are selected)
         Raises:
-            CtiOSGdalError: SQLite error (Raises when not possible to connect to db)
-            CtiOSGdalError: Query has an empty result! (Raises when the response is empty)
+            WSDPError: SQLite error (Raises when not possible to connect to db)
+            WSDPError: Query has an empty result! (Raises when the response is empty)
         Returns:
             ids_array (list): pseudo ids from db
         """
@@ -113,12 +112,12 @@ class DbManager:
             conn.commit()
             ids = cur.fetchall()
         except sqlite3.Error as e:
-            raise CtiOSGdalError(self.logger, e)
+            raise WSDPError(self.logger, e)
 
         # Control if not empty
         if len(ids) <= 1:
             msg = "Query has an empty result!"
-            raise CtiOSGdalError(self.logger, msg)
+            raise WSDPError(self.logger, msg)
 
         ids_array = []
         for i in list(set(ids)):
@@ -134,7 +133,7 @@ class DbManager:
             conn (Connection object)
             schema (str): name of schema in db
         Raises:
-            CtiOSGdalError: SQLite error
+            WSDPError: SQLite error
          Returns:
              col_names (list): column names in given schema
         """
@@ -144,7 +143,7 @@ class DbManager:
             cur.execute("""select * from {0}""".format(schema))
             col_names = list(map(lambda x: x[0], cur.description))
         except sqlite3.Error as e:
-            raise CtiOSGdalError(self.logger, e)
+            raise WSDPError(self.logger, e)
         return col_names
 
     def add_column_to_db(self, conn, schema, name, datatype):
@@ -156,7 +155,7 @@ class DbManager:
             name (str): name of column
             datatype (str): column data type
         Raises:
-            CtiOSGdalError: SQLite error
+            WSDPError: SQLite error
         """
         col_names = self.get_columns_names(conn, schema)
         try:
@@ -168,7 +167,7 @@ class DbManager:
                     )
                 )
         except sqlite3.Error as e:
-            raise CtiOSGdalError(self.logger, e)
+            raise WSDPError(self.logger, e)
 
     def save_attributes_to_db(self, conn, schema, dictionary):
         """
@@ -179,7 +178,7 @@ class DbManager:
             dictionary (nested dictonary): converted DB attributes
             counter (class): class managing statistics info
         Raises:
-            CtiOSGdalError: SQLite error
+            WSDPError: SQLite error
         """
         try:
             cur = conn.cursor()
@@ -198,4 +197,4 @@ class DbManager:
         except conn.Error as e:
             cur.execute("ROLLBACK TRANSACTION")
             cur.close()
-            raise CtiOSGdalError(self.logger, "Transaction failed!: {}".format(e))
+            raise WSDPError(self.logger, "Transaction failed!: {}".format(e))

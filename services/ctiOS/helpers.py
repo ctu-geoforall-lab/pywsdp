@@ -15,7 +15,7 @@ This library is free under the MIT License.
 
 import xml.etree.ElementTree as et
 
-from services.ctiOS.exceptions import CtiOSResponseError
+from base.exceptions import WSDPResponseError
 
 
 class CtiOSXMLParser:
@@ -65,7 +65,7 @@ class CtiOSXMLParser:
                         "POSIDENT {} {}".format(posident, identifier.replace("_", " "))
                     )
                 else:
-                    raise CtiOSResponseError(
+                    raise WSDPResponseError(
                         logger,
                         "POSIDENT {} {}".format(posident, identifier.replace("_", " ")),
                     )
