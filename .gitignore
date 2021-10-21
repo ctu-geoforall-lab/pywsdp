@@ -1,9 +1,10 @@
 *~
 __pycache__/
-tests/input_data/*.vfk
-tests/input_data/*.zip
-tests/input_data/*.db
-tests/*.log
-tests/logy/*.log
+services/ctiOS/data/input/*.vfk
+services/ctiOS/data/input/*.zip
+services/ctiOS/data/output/*.db
+services/ctiOS/data/output/*.csv
+.log
 venv
 .idea
+docs/notebooks/.ipynb_checkpoints/
