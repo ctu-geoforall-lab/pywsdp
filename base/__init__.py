@@ -62,12 +62,14 @@ class WSDPBase(ABC):
         """A service name object"""
         raise NotImplementedError
 
-    def is_run_by_jupyter(self):
-        import __main__ as main
-        return not hasattr(main, '__file__')
-
     def get_module_path(self):
-        if self.is_run_by_jupyter():
+        """"Get modules path according to the way the library is run"""
+
+        def is_run_by_jupyter():
+            import __main__ as main
+            return not hasattr(main, '__file__')
+
+        if is_run_by_jupyter():
             return os.path.abspath(os.path.join('../../', 'services'))
         else:
             return os.path.join(os.path.dirname(os.path.dirname(__file__)), 'services')
