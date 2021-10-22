@@ -1,13 +1,18 @@
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v2="http://katastr.cuzk.cz/sestavy/types/v2.9">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                        xmlns:typ="http://katastr.cuzk.cz/sestavy/types/"
+                        xmlns:v2="http://katastr.cuzk.cz/sestavy/types/2.9">
+                          <soapenv:Header>
+                              <wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"> 
+                                <wsse:UsernameToken wsu:Id="UsernameToken-3">
+                                  <wsse:Username>WSTEST</wsse:Username>
+                                  <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">WSHESLO</wsse:Password>
+                                </wsse:UsernameToken>
+                              </wsse:Security>
+                          </soapenv:Header>
+                          <soapenv:Body>
+                            <v2:GenerujCenoveUdajeDleKuRequest>
+                              $parameters
+                            </v2:GenerujCenoveUdajeDleKuRequest>
+                          </soapenv:Body>
+                        </soapenv:Envelope>
 
-   <soapenv:Header><wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><wsse:UsernameToken wsu:Id="UsernameToken-75EC6AB5AEDEA3A7A216347980430871"><wsse:Username>WSTEST</wsse:Username><wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">WSHESLO</wsse:Password><wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">9SmhHJI4l5Xdh7UhIcB63w==</wsse:Nonce><wsu:Created>2021-10-21T06:34:03.085Z</wsu:Created></wsse:UsernameToken></wsse:Security></soapenv:Header>
-
-   <soapenv:Body>
-
-      <v2:GenerujCenoveUdajeDleKuRequest>
-	$parameters
-      </v2:GenerujCenoveUdajeDleKuRequest>
-
-   </soapenv:Body>
-
-</soapenv:Envelope>
