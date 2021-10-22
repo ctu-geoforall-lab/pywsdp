@@ -1,0 +1,1 @@
+2021-10-21 06:02:59,409 CRITICAL WSDP REQUEST ERROR - HTTPSConnectionPool(host='dp4-a-isknz.cent.priv', port=443): Max retries exceeded with url: /trial/ws/wsdp/2.9/vyhledat (Caused by NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x7f573c80f7b8>: Failed to establish a new connection: [Errno -2] Name or service not known',))

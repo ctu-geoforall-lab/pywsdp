@@ -1,0 +1,5 @@
+katastrUzemiKod 732630
+rok 2020
+mesicOd 9
+mesicDo 12
+format zip
