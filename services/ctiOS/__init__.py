@@ -27,6 +27,7 @@ class CtiOSBase(WSDPBase):
 
     Derived class must override get_posidents_from_db(), write_output() methods.
     """
+    service_group = ""
     service_name = "ctiOS"
     logger = WSDPLogger(service_name)
 

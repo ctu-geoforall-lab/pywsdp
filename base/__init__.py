@@ -63,6 +63,11 @@ class WSDPBase(ABC):
         raise NotImplementedError
 
     @property
+    def service_type(self):
+        """A type of service - ctiOS, sestavy, vyhledat, ciselniky etc."""
+        raise NotImplementedError
+
+    @property
     def service_name(self):
         """A service name object"""
         raise NotImplementedError
@@ -87,7 +92,10 @@ class WSDPBase(ABC):
 
     def get_service_path(self):
         """Method for getting absolute service path"""
-        return os.path.join(self.modules_dir, self.service_name)
+        if self.service_name:
+            return os.path.join(self.modules_dir, self.service_group, self.service_name)
+        else:
+            return os.path.join(self.modules_dir, self.service_name)
 
     def get_default_log_dir(self):
         """Method for getting default log dir"""

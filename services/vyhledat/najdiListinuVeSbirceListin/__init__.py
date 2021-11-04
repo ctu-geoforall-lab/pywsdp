@@ -1,10 +1,10 @@
 """
 @package pywsdp
 
-@brief Base class creating the interface for NajdiListinuVeSbirceListinBase service
+@brief Base class creating the interface for NajdiListinuVeSbirceListin service
 
 Classes:
- - najdiListinuVeSbirceListinBase::NajdiListinuVeSbirceListinBase
+ - najdiListinuVeSbirceListin::NajdiListinuVeSbirceListin
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the MIT License.
@@ -19,6 +19,7 @@ class NajdiListinuVeSbirceListin(WSDPBase):
     used for NajdiListinuVeSbirceListin service.
     """
 
+    service_type = "vyhledat"
     service_name = "najdiListinuVeSbirceListin"
     logger = WSDPLogger(service_name)
 
