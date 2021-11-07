@@ -10,6 +10,7 @@ Classes:
 This library is free under the MIT License.
 """
 
+import os
 import math
 
 from services.ctiOS.helpers import CtiOSXMLParser, CtiOSCounter
@@ -20,19 +21,22 @@ posidents_per_request = 10
 
 
 class CtiOSBase(WSDPBase):
-    """A abstract class that defines interface and main logic used for ctiOS service.
+    """A class that defines interface and main logic used for ctiOS service.
 
     Several methods has to be overridden or
     NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
 
     Derived class must override get_posidents_from_db(), write_output() methods.
     """
-    service_group = ""
-    service_name = "ctiOS"
+    service_group = service_name = "ctiOS"
     logger = WSDPLogger(service_name)
 
     def __init__(self, username, password):
         super().__init__(username, password)
+
+    def get_service_path(self):
+        """Method for getting absolute service path"""
+        return os.path.join(self.modules_dir, self.service_name)
 
     def parseXML(self, content):
         """Call ctiOS XML parser"""
@@ -40,7 +44,7 @@ class CtiOSBase(WSDPBase):
             content=content, counter=self.counter, logger=self.logger
         )
 
-    def get_parameters_from_txt(self, txt_path):
+    def get_parameters_from_file(self, txt_path):
         """Get posident array from text file (delimiter is ',')."""
         with open(txt_path) as f:
             ids = f.read().split(",")

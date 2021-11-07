@@ -49,9 +49,9 @@ class WSDPBase(ABC):
         self.logger.set_directory(log_dir)
 
         # Read configuration from config file
-        config_path = self.get_config_path()
+        self.config_path = self.get_config_path()
         self._config = configparser.ConfigParser()
-        self._config.read(config_path)
+        self._config.read(self.config_path)
 
         # Set headers
         self.get_service_headers()
@@ -63,13 +63,18 @@ class WSDPBase(ABC):
         raise NotImplementedError
 
     @property
-    def service_type(self):
-        """A type of service - ctiOS, sestavy, vyhledat, ciselniky etc."""
+    def service_group(self):
+        """A type group services - ctiOS, sestavy, vyhledat, ciselniky etc."""
         raise NotImplementedError
 
     @property
     def service_name(self):
         """A service name object"""
+        raise NotImplementedError
+
+    @property
+    def get_service_path(self):
+        """Method for getting absolute service path"""
         raise NotImplementedError
 
     def get_module_path(self):
@@ -89,13 +94,6 @@ class WSDPBase(ABC):
         If does not exist, it creates a new dir"""
         if not os.path.exists(directory):
             os.makedirs(directory)
-
-    def get_service_path(self):
-        """Method for getting absolute service path"""
-        if self.service_name:
-            return os.path.join(self.modules_dir, self.service_group, self.service_name)
-        else:
-            return os.path.join(self.modules_dir, self.service_name)
 
     def get_default_log_dir(self):
         """Method for getting default log dir"""
@@ -187,13 +185,15 @@ class WSDPBase(ABC):
             "Connection": self.service_headers["connection"],
         }
         try:
-            response_xml = requests.post(
+            r = requests.post(
                 self.service_headers["endpoint"], data=xml, headers=_headers
-            ).text
+            )
+            r.raise_for_status()
             # if self.log_dir:
             #    self.logger.debug(response_xml)
         except requests.exceptions.RequestException as e:
             raise WSDPRequestError(self.logger, e)
+        response_xml = r.text
         return response_xml
 
     def renderXML(self, **kwargs):
@@ -204,9 +204,9 @@ class WSDPBase(ABC):
         return request_xml
 
     @abstractmethod
-    def get_parameters_from_txt(self):
+    def get_parameters_from_file(self):
         """Abstract method for getting request parameters from txt"""
-        raise NotImplementedError(self.__class__.__name__ + "get_parameters_from_txt")
+        raise NotImplementedError(self.__class__.__name__ + "get_parameters_from_file")
 
     @abstractmethod
     def parseXML(self):

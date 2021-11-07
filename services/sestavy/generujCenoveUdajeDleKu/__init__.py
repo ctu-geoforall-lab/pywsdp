@@ -13,142 +13,52 @@ Classes:
 This library is free under the MIT License.
 """
 
-import xml.etree.ElementTree as et
+import os
+from datetime import datetime
 
-from base import WSDPBase
+from services.sestavy import SestavyBase
 from base.logger import WSDPLogger
-from base.exceptions import WSDPResponseError
 
 
-class GenerujCenoveUdajeDleKu(WSDPBase):
-    """A abstract class that defines interface and main logic used for generujCenoveUdajeDleKu service.
+class GenerujCenoveUdajeDleKu(SestavyBase):
+    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
 
     Several methods has to be overridden or
     NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
     """
 
-    service_group = "sestavy"
     service_name = "generujCenoveUdajeDleKu"
     logger = WSDPLogger(service_name)
 
-    def __init__(self, username, password, csv_path):
+    def __init__(self, username, password):
         super().__init__(username, password)
-        self.csv_path = csv_path
 
-    def parseXML(self, content):
-        """Call generujCenoveUdajeParser XML parser
-        Returns:
-            xml_attributes (nested dictonary): parsed XML attributes
-        """
-        def get_xml_namespace_ns0():
-            return "{http://katastr.cuzk.cz/sestavy/types/v2.9}"
+    def get_service_path(self):
+        """Method for getting absolute service path"""
+        return os.path.join(self.modules_dir, self.service_group, self.service_name)
 
-        def get_xml_namespace_ns1():
-            return "{http://katastr.cuzk.cz/commonTypes/v2.9}"
+    def process(self):
+        """Main wrapping method"""
+        xml = self.renderXML(parameters="".join(self.parameters))
+        response_xml = self.call_service(xml)
+        self.xml_dict = self.parseXML(response_xml)
 
-        root = et.fromstring(content)
-
-        # Find tags with 'zprava' name
-        namespace_ns1 = get_xml_namespace_ns1()
-        os_tags = root.findall(".//{}zprava".format(namespace_ns1))
-        for os_tag in os_tags:
-            self.logger.info(os_tag.text)
-
-        # Find all tags with 'report' name
-        xml_dict = {}
-        namespace_ns0 = get_xml_namespace_ns0()
-        for os_tag in root.findall(".//{}report".format(namespace_ns0)):
-
-            # Id sestavy
-            xml_dict["idSestavy"] = os_tag.find("{}id".format(namespace_ns0)).text
-            if xml_dict["idSestavy"]:
-                self.logger.info("ID sestavy: {}".format(xml_dict["idSestavy"]))
-            else:
-                raise WSDPResponseError(
-                    self.logger,
-                    "ID sestavy nebylo vraceno")
-
-            # Nazev sestavy
-            if os_tag.find("{}nazev".format(namespace_ns0)) is not None:
-                xml_dict["nazev"] = os_tag.find("{}nazev".format(namespace_ns0)).text
-                self.logger.info("Nazev sestavy: {}".format(xml_dict["nazev"]))
-
-            # Pocet jednotek
-            if os_tag.find("{}pocetJednotek".format(namespace_ns0)) is not None:
-                xml_dict["pocetJednotek"] = os_tag.find("{}pocetJednotek".format(namespace_ns0)).text
-                self.logger.info("Pocet jednotek: {}".format(xml_dict["pocetJednotek"]))
-
-            # Pocet stran
-            if os_tag.find("{}pocetStran".format(namespace_ns0)) is not None:
-                xml_dict["pocetStran"] = os_tag.find("{}pocetStran".format(namespace_ns0)).text
-                self.logger.info("Pocet stran: {}".format(xml_dict["pocetStran"]))
-
-            # Cena
-            if os_tag.find("{}cena".format(namespace_ns0)) is not None:
-                xml_dict["cena"] = os_tag.find("{}cena".format(namespace_ns0)).text
-                self.logger.info("Cena: {}".format(xml_dict["cena"]))
-
-            # Datum pozadavku
-            if os_tag.find("{}datumPozadavku".format(namespace_ns0)) is not None:
-                xml_dict["datumPozadavku"] = os_tag.find("{}datumPozadavku".format(namespace_ns0)).text
-                self.logger.info("Datum pozadavku: {}".format(xml_dict["datumPozadavku"]))
-
-            # Datum spusteni
-            if os_tag.find("{}datumSpusteni".format(namespace_ns0)) is not None:
-                xml_dict["datumSpusteni"] = os_tag.find("{}datumSpusteni".format(namespace_ns0)).text
-                self.logger.info("Datum spusteni: {}".format(xml_dict["datumSpusteni"]))
-
-            # Datum vytvoreni
-            if os_tag.find("{}datumVytvoreni".format(namespace_ns0))is not None:
-                xml_dict["datumVytvoreni"] = os_tag.find("{}datumVytvoreni".format(namespace_ns0)).text
-                self.logger.info("Datum vytvoreni: {}".format(xml_dict["datumVytvoreni"]))
-
-            # Stav sestavy
-            if os_tag.find("{}stav".format(namespace_ns0)) is not None:
-                xml_dict["stav"] = os_tag.find("{}stav".format(namespace_ns0)).text
-                self.logger.info("Stav sestavy: {}".format(xml_dict["stav"]))
-
-            # Format
-            if os_tag.find("{}format".format(namespace_ns0)) is not None:
-                xml_dict["format"] = os_tag.find("{}format".format(namespace_ns0)).text
-                self.logger.info("Format sestavy: {}".format(xml_dict["format"]))
-
-            # Elektronicka znacka
-            if os_tag.find("{}elZnacka".format(namespace_ns0)) is not None:
-                xml_dict["elZnacka"] = os_tag.find("{}elZnacka".format(namespace_ns0)).text
-                self.logger.info("Elektronicka znacka: {}".format(xml_dict["elZnacka"]))
-
-            # Soubor sestavy
-            if os_tag.find("{}souborSestavy".format(namespace_ns0)) is not None:
-                xml_dict["souborSestavy"] = os_tag.find("{}souborSestavy".format(namespace_ns0)).text
-
-        return xml_dict
-
-    def get_parameters_from_txt(self, txt_path):
-        """Get parameters array from text file (delimiter is ',')."""
-        parameters_array = []
+    def get_parameters_from_file(self, txt_path):
+        """Get parameters list from text file (delimiter is ',')."""
+        self.parameters = []
         with open(txt_path) as f:
             for line in f:
                 key, value = line.split()
                 row = "<v2:{0}>{1}</v2:{0}>".format(key, value)
-                parameters_array.append(row)
-        return parameters_array
+                self.parameters.append(row)
 
-    def get_parameters_from_dict(self, dictionary, given_parameter=None):
-        """Get parameters array from dictionary (delimiter is ',')."""
-        parameters_array = []
-        if given_parameter:
-            value = dictionary[given_parameter]
-            row = "<v2:{0}>{1}</v2:{0}>".format(given_parameter, value)
-            return [row]
-        for key, value in dictionary.items():
-            row = "<v2:{0}>{1}</v2:{0}>".format(key, value)
-            parameters_array.append(row)
-        return parameters_array
-
-    def process(self, parameters_array):
-        """Main wrapping method"""
-        xml = self.renderXML(parameters="".join(parameters_array))
-        response_xml = self.call_service(xml)
-        xml_dict = self.parseXML(response_xml)
-        return xml_dict
+    def write_output(self, output_dir=None):
+        """Decode base64 string and write output to out dir"""
+        import base64
+        binary = base64.b64decode(self.get_soubor_sestavy())
+        if not output_dir:
+            output_dir = self.get_default_out_dir()
+        date = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
+        output_file = "cen_udaje_{}.{}".format(date, self.get_format())
+        with open(os.path.join(output_dir, output_file), 'wb') as f:
+            f.write(binary)
