@@ -97,15 +97,29 @@ class GenerujCenoveUdajeDleKuFacade():
         self.smaz_sestavu = None
 
     @property
+    def username(self):
+        """User can get usernamer"""
+        return self.cen_udaje.username
+
+    @property
+    def password(self):
+        """User can get password"""
+        return self.cen_udaje.password
+
+    @username.setter
+    def username(self, username):
+        """User can get usernamer"""
+        self.cen_udaje.username(username)
+
+    @password.setter
+    def password(self, password):
+        """User can get password"""
+        self.cen_udaje.password(password)
+
+    @property
     def credentials(self):
         """User can get log dir"""
-        return (self.cen_udaje.username, self.cen_udaje.password)
-
-    @credentials.setter
-    def credentials(self, username, password):
-        """User sets his WSDP username and password"""
-        self.cen_udaje.username = username
-        self.cen_udaje.password = password
+        return (self.cen_udaje.username, self.cen_udaje._password)
 
     def get_parameters_from_json(self, json):
         self.cen_udaje = pywsdp.create(json)
@@ -116,26 +130,26 @@ class GenerujCenoveUdajeDleKuFacade():
     def vytvorSestavu(self):
         self.cen_udaje.process()
 
-    def ziskejInfoOSestave(self):
+    def vypisInfoOSestave(self):
         self.parameters = {'seznamSestav': {'idSestavy': self.get_listina_id()}}
-        seznam_sestav = pywsdp.create(self.parameters)
-        seznam_sestav.credentials(username=self.cen_udaje.username,
-                                  password=self.cen_udaje.password)
-        seznam_sestav.process()
+        self.seznam_sestav = pywsdp.create(self.parameters)
+        self.seznam_sestav.username = self.username
+        self.seznam_sestav.password = self.password
+        self.seznam_sestav.process()
 
     def zauctujSestavu(self):
         self.parameters = {'vratSestavu': {'idSestavy': self.get_listina_id()}}
-        vrat_sestavu = pywsdp.create(self.parameters)
-        vrat_sestavu.set_credentials(username=self.cen_udaje.username,
-                                     password=self.cen_udaje.password)
-        vrat_sestavu.process()
+        self.vrat_sestavu = pywsdp.create(self.parameters)
+        self.vrat_sestavu.username = self.username
+        self.vrat_sestavu.password = self.password
+        self.vrat_sestavu.process()
 
     def smazSestavu(self):
         self.parameters = {'smazSestavu': {'idSestavy': self.get_listina_id()}}
-        smaz_sestavu = pywsdp.create(self.parameters)
-        smaz_sestavu.set_credentials(username=self.cen_udaje.username,
-                                     password=self.cen_udaje.password)
-        smaz_sestavu.process()
+        self.smaz_sestavu = pywsdp.create(self.parameters)
+        self.smaz_sestavu.username = self.username
+        self.smaz_sestavu.password = self.password
+        self.smaz_sestavu.process()
         self.not_deleted = False
 
     def get_listina_id(self):
@@ -163,4 +177,4 @@ class GenerujCenoveUdajeDleKuFacade():
         if self.not_deleted:
             self.smazSestavu()
 
-
+generujCenoveUdajeDleKuFacade = GenerujCenoveUdajeDleKuFacade()

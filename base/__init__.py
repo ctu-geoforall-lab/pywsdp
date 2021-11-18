@@ -76,15 +76,29 @@ class WSDPBase(ABC):
         return "".join(xml_params)
 
     @property
+    def username(self):
+        """User can get usernamer"""
+        return self._username
+
+    @property
+    def password(self):
+        """User can get password"""
+        return self._password
+
+    @username.setter
+    def username(self, username):
+        """User can get usernamer"""
+        self._username = username
+
+    @password.setter
+    def password(self, password):
+        """User can get password"""
+        self._password = password
+
+    @property
     def credentials(self):
         """User can get log dir"""
         return (self._username, self._password)
-
-    @credentials.setter
-    def credentials(self, username, password):
-        """User sets his WSDP username and password"""
-        self._username = username
-        self._password = password
 
     @property
     def modules_dir(self):
@@ -127,6 +141,7 @@ class WSDPBase(ABC):
     def _set_default_log_dir(self):
         """Method for getting default log dir"""
         log_dir = os.path.join(self.service_dir, "logs")
+        self._ensure_dir_exists(log_dir)
         self.logger.set_directory(log_dir)
         return log_dir
 
