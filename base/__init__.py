@@ -29,55 +29,69 @@ class WSDPBase(ABC):
     get_parameters_from_txt(), parse_xml() methods.
     """
 
-    def __init__(self, username, password):
+    def __init__(self):
+        self._username = "WSTEST"
+        self._password = "WSHESLO"
+        self._modules_dir = self._find_module_dir()
+        self._service_dir = self._set_service_dir()
+        self._log_dir = self._set_default_log_dir()
+        self._config = self._read_configuration()
+        self._template_path = self._set_template_path()
+        self._service_headers = self._set_service_headers()
+        self._result_dict = None
+
+    @property
+    @abstractmethod
+    def logger(self):
+        """A logger object to log messages to"""
+        pass
+
+    @property
+    @abstractmethod
+    def service_group(self):
+        """A type group services - ctiOS, sestavy, vyhledat, ciselniky etc."""
+        pass
+
+    @property
+    @abstractmethod
+    def service_name(self):
+        """A service name object"""
+        pass
+
+    @classmethod
+    def _from_recipe(cls, parameters):
+        result = cls()
+        result.parameters = parameters
+        return result
+
+    def __repr__(self):
+        return f"{self.service_group}->{ self.service_name}"
+
+    @property
+    def xml_attrs(self):
+        xml_params = []
+        for key, value in self.parameters.items():
+             row = "<v2:{0}>{1}</v2:{0}>".format(key, value)
+             xml_params.append(row)
+        return "".join(xml_params)
+
+    @property
+    def credentials(self):
+        """User can get log dir"""
+        return (self._username, self._password)
+
+    @credentials.setter
+    def credentials(self, username, password):
+        """User sets his WSDP username and password"""
         self._username = username
         self._password = password
 
-        # Set modules directory
-        self.modules_dir = self.get_module_path()
-
-        # Set default output dir
-        self.out_dir = self.get_default_out_dir()
-        # Ensure out dir exists
-        self.ensure_dir_exists(self.out_dir)
-
-        # Set default log dir and
-        log_dir = self.get_default_log_dir()
-        # Ensure log dir exists
-        self.ensure_dir_exists(log_dir)
-        # Redirect logger to log dir
-        self.logger.set_directory(log_dir)
-
-        # Read configuration from config file
-        self.config_path = self.get_config_path()
-        self._config = configparser.ConfigParser()
-        self._config.read(self.config_path)
-
-        # Set headers
-        self.get_service_headers()
-        self.template_path = self.get_template_path()
-
     @property
-    def logger(self):
-        """A logger object to log messages to"""
-        raise NotImplementedError
+    def modules_dir(self):
+        """User can get module dir"""
+        return self._modules_dir
 
-    @property
-    def service_group(self):
-        """A type group services - ctiOS, sestavy, vyhledat, ciselniky etc."""
-        raise NotImplementedError
-
-    @property
-    def service_name(self):
-        """A service name object"""
-        raise NotImplementedError
-
-    @property
-    def get_service_path(self):
-        """Method for getting absolute service path"""
-        raise NotImplementedError
-
-    def get_module_path(self):
+    def _find_module_dir(self):
         """"Get modules path according to the way the library is run"""
 
         def is_run_by_jupyter():
@@ -89,86 +103,111 @@ class WSDPBase(ABC):
         else:
             return os.path.join(os.path.dirname(os.path.dirname(__file__)), 'services')
 
-    def ensure_dir_exists(self, directory):
-        """Method for checking if file exists.
-        If does not exist, it creates a new dir"""
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+    @property
+    def service_dir(self):
+        """User can get log dir"""
+        return self._service_dir
 
-    def get_default_log_dir(self):
+    def _set_service_dir(self):
+        """Method for getting absolute service path"""
+        return os.path.join(self._modules_dir, self.service_group, self.service_name)
+
+    @property
+    def log_dir(self):
+        """User can get log dir"""
+        return self._log_dir
+
+    @log_dir.setter
+    def log_dir(self, log_dir):
+        """User can set log dir"""
+        self._ensure_dir_exists(log_dir)
+        self.logger.set_directory(log_dir)
+        self._log_dir = log_dir
+
+    def _set_default_log_dir(self):
         """Method for getting default log dir"""
-        return os.path.join(self.get_service_path(), "logs")
+        log_dir = os.path.join(self.service_dir, "logs")
+        self.logger.set_directory(log_dir)
+        return log_dir
 
-    def get_default_out_dir(self):
-        """Method for getting default output dir"""
-        return os.path.join(self.get_service_path(), "data", "output")
+    @property
+    def config_path(self):
+        """User can get config path"""
+        return self._config_path
 
-    def get_config_path(self):
+    def _read_configuration(self):
         """
-        Get config path needed for getting headers for given service
+        Set config path needed for getting headers for given service
         Returns:
             config_dir (string)
         """
-        config_path = os.path.join(
-            self.get_service_path(), "config", "settings.ini"
+        self._config_path = os.path.join(
+            self.service_dir, "config", "settings.ini"
         )
-        return config_path
+        config = configparser.ConfigParser()
+        config.read(self._config_path)
+        return config
 
-    def get_template_path(self):
+    @property
+    def template_path(self):
+        """User can get template path"""
+        return self._template_path
+
+    def _set_template_path(self):
         """
-        Get XML template path needed for rendering XML request
+        Set XML template path needed for rendering XML request
         Returns:
             template path (string):  path for rendered XML request
         """
         template_path = os.path.join(
-            self.get_service_path(),
+            self.service_dir,
             "config",
             self._config["files"]["xml_template"],
         )
         return template_path
 
-    def set_log_dir(self, log_dir):
-        """User can set log dir"""
-        self.log_dir = log_dir
-        self.ensure_file_exists(log_dir)
-        self.logger.set_directory(log_dir)
+    @property
+    def service_headers(self):
+        """User can get service headers"""
+        return self._service_headers
 
-    def set_out_dir(self, out_dir):
-        """User can set output dir"""
-        self.out_dir = out_dir
-        self.ensure_file_exists(out_dir)
-
-    def get_log_dir(self):
-        """User can get log dir"""
-        return self.log_dir
-
-    def get_out_dir(self):
-        """User can get output dir"""
-        return self.out_dir
-
-    def get_service_headers(self):
+    def _set_service_headers(self):
         """
-        Get service headers needed for calling WSDP service
+        Set service headers needed for calling WSDP service
         Returns:
             service headers (dictionary):  parameters for calling WSDP service
         """
         # CTIOS service parameters loaded from ini file
-        self.service_headers = {}
-        self.service_headers["content_type"] = self._config["service headers"][
+        service_headers = {}
+        service_headers["content_type"] = self._config["service headers"][
             "content_type"
         ]
-        self.service_headers["accept_encoding"] = self._config["service headers"][
+        service_headers["accept_encoding"] = self._config["service headers"][
             "accept_encoding"
         ]
-        self.service_headers["soap_action"] = self._config["service headers"][
+        service_headers["soap_action"] = self._config["service headers"][
             "soap_action"
         ]
-        self.service_headers["connection"] = self._config["service headers"][
+        service_headers["connection"] = self._config["service headers"][
             "connection"
         ]
-        self.service_headers["endpoint"] = self._config["service headers"]["endpoint"]
+        service_headers["endpoint"] = self._config["service headers"]["endpoint"]
+        return service_headers
 
-    def call_service(self, xml):
+    def _ensure_dir_exists(self, directory):
+        """Method for checking if dir exists.
+        If does not exist, it creates a new dir"""
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+    def _renderXML(self, **kwargs):
+        """Abstract method rendering XML"""
+        request_xml = WSDPTemplate(self.template_path).render(
+            username=self._username, password=self._password, **kwargs
+        )
+        return request_xml
+
+    def _call_service(self, xml):
         """Send a request in the XML form to WSDP service
         Args:
             request_xml (str): xml for requesting WSDP service
@@ -196,19 +235,13 @@ class WSDPBase(ABC):
         response_xml = r.text
         return response_xml
 
-    def renderXML(self, **kwargs):
-        """Abstract method rendering XML"""
-        request_xml = WSDPTemplate(self.template_path).render(
-            username=self._username, password=self._password, **kwargs
-        )
-        return request_xml
-
     @abstractmethod
-    def get_parameters_from_file(self):
-        """Abstract method for getting request parameters from txt"""
-        raise NotImplementedError(self.__class__.__name__ + "get_parameters_from_file")
+    def _parseXML(self, content):
+        """Call XML parser"""
+        pass
 
-    @abstractmethod
-    def parseXML(self):
-        """Abstract method for parsing XML"""
-        raise NotImplementedError(self.__class__.__name__ + "parseXML")
+    def process(self):
+        """Main wrapping method"""
+        xml = self._renderXML(parameters=self.xml_attrs)
+        response_xml = self._call_service(xml)
+        self.result_dict = self._parseXML(response_xml)

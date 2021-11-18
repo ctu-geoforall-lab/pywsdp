@@ -4,7 +4,7 @@
 @brief Base class creating the interface for ctiOS services
 
 Classes:
- - ctiOS::CtiOSBase
+ - ctiOS::CtiOS
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the MIT License.
@@ -20,7 +20,7 @@ from base.logger import WSDPLogger
 posidents_per_request = 10
 
 
-class CtiOSBase(WSDPBase):
+class CtiOS(WSDPBase):
     """A class that defines interface and main logic used for ctiOS service.
 
     Several methods has to be overridden or
@@ -53,10 +53,6 @@ class CtiOSBase(WSDPBase):
             row = "<v2:pOSIdent>{}</v2:pOSIdent>".format(i)
             ids_array.append(row)
         return ids_array
-
-    def get_parameters_from_db(self):
-        """Get posident array from db."""
-        raise NotImplementedError(self.__class__.__name__ + "get_posidents_from_db")
 
     def write_output(self):
         """Abstract method for writing results to output file"""

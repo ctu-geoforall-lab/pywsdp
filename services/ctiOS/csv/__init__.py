@@ -11,11 +11,11 @@ This library is free under the MIT License.
 
 import csv
 
-from services.ctiOS import CtiOSBase
+from services.ctiOS import CtiOS
 from base.exceptions import WSDPError
 
 
-class CtiOSCsv(CtiOSBase):
+class CtiOSCsv(CtiOS):
     """A concrete creator that implements concrete methods for CtiOSCsv class"""
 
     def __init__(self, username, password, csv_path):

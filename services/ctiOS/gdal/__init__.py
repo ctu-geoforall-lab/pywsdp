@@ -3,7 +3,7 @@
 @brief Base abstract class creating the interface for ctiOS service
 
 Classes:
- - ctiOS::CtiOSGdal
+ - ctiOS::CtiOS
  - ctiOS::DbManager
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
@@ -15,13 +15,13 @@ import os
 import sqlite3
 from pathlib import Path
 
-from services.ctiOS import CtiOSBase
+from services.ctiOS import CtiOS
 from services.ctiOS.gdal.converter import Xml2DbConverter
 
 from base.exceptions import WSDPError
 
 
-class CtiOSGdal(CtiOSBase):
+class CtiOSGdal(CtiOS):
     """A concrete creator that implements concrete methods for CtiOSGdal class"""
 
     def __init__(self, username, password, db_path):
