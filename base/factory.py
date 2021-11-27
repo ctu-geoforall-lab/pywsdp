@@ -1,34 +1,36 @@
+
 import os
 import json
-from datetime import datetime
 from pathlib import Path
+
+from services.ctiOS import CtiOSBase
+from services.ctiOS.helpers import CtiOSDbManager, CtiOSXml2DbConverter
 from services.sestavy import SestavyBase
 from base.logger import WSDPLogger
+from base.exceptions import WSDPError
 
 
 class WSDPFactory:
-    """tovarna"""
+    """Tovarna"""
     def __init__(self):
         self.classes = {}
  
     def register(self, cls):
         self.classes[cls.service_name] = cls
         return cls
- 
-    def create(self, recipe):
-        "Dictionary or json file"
-        if isinstance(recipe, dict):
-            data = recipe
-        else:
-            file = Path(recipe)
-            if file.exists():
-                with open(file) as f:
-                    data = json.load(f)
-        service_name = list(data.keys())[0]
-        parameters = list(data.values())[0]
-        cls = self.classes[service_name]
-        return cls._from_recipe(parameters)
 
+    def create(self, recipe, logger):
+        """Create service instance based on an input dictionary consisted of
+        service name and parameters"""
+        if not isinstance(recipe, dict):
+            raise WSDPError(
+                self.logger,
+                "Input is not a dictionary!"
+                )
+        service_name = list(recipe.keys())[0]
+        parameters = list(recipe.values())[0]
+        cls = self.classes[service_name]
+        return cls._from_recipe(parameters, logger)
 
 pywsdp = WSDPFactory()
 
@@ -87,94 +89,120 @@ class SmazSestavu(SestavyBase):
     service_name = "smazSestavu"
     logger = WSDPLogger(service_name)
 
+@pywsdp.register
+class CtiOSDict(CtiOSBase):
+    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
 
-class GenerujCenoveUdajeDleKuFacade():
+    Several methods has to be overridden or
+    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
+    """
+
+    service_name = "ctiOSDict"
+    logger = WSDPLogger(service_name)
+
+    def _get_parameters(self):
+        """Method for getting parameters"""
+        return self.parameters["posidents"]
+
+@pywsdp.register
+class CtiOSJson(CtiOSBase):
+    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
+
+    Several methods has to be overridden or
+    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
+    """
+
+    service_name = "ctiOSJson"
+    logger = WSDPLogger(service_name)
+
+    def _get_parameters(self):
+        """Method for getting parameters"""
+        json_path = self.parameters
+        file = Path(json_path)
+        if file.exists():
+            with open(file) as f:
+                data = json.load(f)
+                return data["posidents"]
+        else:
+            raise WSDPError(
+                self.logger,
+                "File is not found!"
+                )
+
+@pywsdp.register
+class CtiOSDb(CtiOSBase):
+    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
+
+    Several methods has to be overridden or
+    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
+    """
+
+    schema = "OPSUB"
+    service_name = "ctiOSDb"
+    logger = WSDPLogger(service_name)
 
     def __init__(self):
-        self.cen_udaje = None
-        self.seznam_sestav = None
-        self.vrat_sestavu = None
-        self.smaz_sestavu = None
+        super().__init__()
+        self._mapping_json_path = self._set_mapping_json_path()
 
     @property
-    def username(self):
-        """User can get usernamer"""
-        return self.cen_udaje.username
+    def mapping_json_path(self):
+        """User can get mapping csv to db path"""
+        return self._mapping_json_path
 
-    @property
-    def password(self):
-        """User can get password"""
-        return self.cen_udaje.password
+    def _set_mapping_json_path(self):
+        """
+        Set XML template path needed for rendering XML request
+        Returns:
+            template path (string):  path for rendered XML request
+        """
+        mapping_json_path = os.path.join(
+            self.service_dir,
+            "config",
+            "attributes_mapping.json",
+        )
+        return mapping_json_path
 
-    @username.setter
-    def username(self, username):
-        """User can get usernamer"""
-        self.cen_udaje.username(username)
+    def _get_parameters(self):
+        """Method for getting parameters"""
+        sql=None
+        if isinstance(self.parameters, list):
+            db_path = self.parameters[0]
+            sql = self.parameters[1]
+        else:
+            db_path = self.parameters
 
-    @password.setter
-    def password(self, password):
-        """User can get password"""
-        self.cen_udaje.password(password)
+        file = Path(db_path)
+        if file.exists():
+            self.db_path = db_path
+            self.db = CtiOSDbManager(db_path, self.logger)
+            self.db._create_connection()
+            if sql:
+                return self.db.get_posidents_from_db(sql)
+            return self.db.get_posidents_from_db()
+        else:
+            raise WSDPError(
+                self.logger,
+                "File is not found!"
+                )
 
-    @property
-    def credentials(self):
-        """User can get log dir"""
-        return (self.cen_udaje.username, self.cen_udaje._password)
+    def _save_posidents_to_db(self, dictionary):
+        """Method for saving posidents to db"""
+        self.db.add_column_to_db(self.schema, "OS_ID", "text")
+        columns = self.db.get_columns_names(self.schema)
+        # Convert xml attributes to db
+        dictionary = CtiOSXml2DbConverter(
+            self.mapping_json_path, self.logger
+        ).convert_attributes(columns, dictionary)
+        # Save attributes to db
+        self.db.save_attributes_to_db(self.schema, dictionary)
+        self.logger.info(
+                "Soubor v ceste {} byl aktualizovan.".format(self.db_path)
+        )
+        self.db.close_connection()
 
-    def get_parameters_from_json(self, json):
-        self.cen_udaje = pywsdp.create(json)
-
-    def get_parameters_from_dict(self, dictionary):
-        self.cen_udaje = pywsdp.create(dictionary)
-
-    def vytvorSestavu(self):
-        self.cen_udaje.process()
-
-    def vypisInfoOSestave(self):
-        self.parameters = {'seznamSestav': {'idSestavy': self.get_listina_id()}}
-        self.seznam_sestav = pywsdp.create(self.parameters)
-        self.seznam_sestav.username = self.username
-        self.seznam_sestav.password = self.password
-        self.seznam_sestav.process()
-
-    def zauctujSestavu(self):
-        self.parameters = {'vratSestavu': {'idSestavy': self.get_listina_id()}}
-        self.vrat_sestavu = pywsdp.create(self.parameters)
-        self.vrat_sestavu.username = self.username
-        self.vrat_sestavu.password = self.password
-        self.vrat_sestavu.process()
-
-    def smazSestavu(self):
-        self.parameters = {'smazSestavu': {'idSestavy': self.get_listina_id()}}
-        self.smaz_sestavu = pywsdp.create(self.parameters)
-        self.smaz_sestavu.username = self.username
-        self.smaz_sestavu.password = self.password
-        self.smaz_sestavu.process()
-        self.not_deleted = False
-
-    def get_listina_id(self):
+    def _process(self):
         """Main wrapping method"""
-        return self.cen_udaje.result_dict["idSestavy"]
-
-    def get_format(self):
-        """Main wrapping method"""
-        return self.cen_udaje.result_dict["format"]
-
-    def get_soubor_sestavy(self):
-        """Main wrapping method"""
-        return self.vrat_sestavu.result_dict["souborSestavy"]
-
-    def write_output(self, output_dir=None):
-        """Decode base64 string and write output to out dir"""
-        import base64
-        binary = base64.b64decode(self.get_soubor_sestavy())
-        date = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
-        output_file = "cen_udaje_{}.{}".format(date, self.get_format())
-        with open(os.path.join(output_dir, output_file), 'wb') as f:
-            f.write(binary)
-
-    def __del__(self):
-        if self.not_deleted:
-            self.smazSestavu()
-
-generujCenoveUdajeDleKuFacade = GenerujCenoveUdajeDleKuFacade()
+        dictionary = super()._process()
+        self._save_posidents_to_db(dictionary)
+        return dictionary

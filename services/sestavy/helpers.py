@@ -37,13 +37,15 @@ class SestavyXMLParser:
         root = et.fromstring(content)
 
         # Find tags with 'zprava' name
+        xml_dict = {}
         namespace_ns1 = get_xml_namespace_ns1()
         os_tags = root.findall(".//{}zprava".format(namespace_ns1))
         for os_tag in os_tags:
+            xml_dict["zprava"] = os_tag.text
+            logger.info("")
             logger.info(os_tag.text)
 
         # Find all tags with 'report' name
-        xml_dict = {}
         namespace_ns0 = get_xml_namespace_ns0()
         for os_tag in root.findall(".//{}report".format(namespace_ns0)):
 

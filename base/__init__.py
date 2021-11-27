@@ -21,12 +21,7 @@ from base.template import WSDPTemplate
 
 class WSDPBase(ABC):
     """Base abstract class creating the interface for WSDP services
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
-
-    Derived class must override logger(), service_name(),
-    get_parameters_from_txt(), parse_xml() methods.
+    Several methods has to be overridden.
     """
 
     def __init__(self):
@@ -34,17 +29,9 @@ class WSDPBase(ABC):
         self._password = "WSHESLO"
         self._modules_dir = self._find_module_dir()
         self._service_dir = self._set_service_dir()
-        self._log_dir = self._set_default_log_dir()
         self._config = self._read_configuration()
         self._template_path = self._set_template_path()
         self._service_headers = self._set_service_headers()
-        self._result_dict = None
-
-    @property
-    @abstractmethod
-    def logger(self):
-        """A logger object to log messages to"""
-        pass
 
     @property
     @abstractmethod
@@ -58,22 +45,22 @@ class WSDPBase(ABC):
         """A service name object"""
         pass
 
+    @property
+    @abstractmethod
+    def xml_attrs(self):
+        """XML attributes prepared for XML template rendering"""
+        pass
+
     @classmethod
-    def _from_recipe(cls, parameters):
+    def _from_recipe(cls, parameters, logger):
+        """Creates class instance based on the recipe"""
         result = cls()
         result.parameters = parameters
+        result.logger = logger
         return result
 
     def __repr__(self):
         return f"{self.service_group}->{ self.service_name}"
-
-    @property
-    def xml_attrs(self):
-        xml_params = []
-        for key, value in self.parameters.items():
-             row = "<v2:{0}>{1}</v2:{0}>".format(key, value)
-             xml_params.append(row)
-        return "".join(xml_params)
 
     @property
     def username(self):
@@ -122,28 +109,10 @@ class WSDPBase(ABC):
         """User can get log dir"""
         return self._service_dir
 
+    @abstractmethod
     def _set_service_dir(self):
         """Method for getting absolute service path"""
-        return os.path.join(self._modules_dir, self.service_group, self.service_name)
-
-    @property
-    def log_dir(self):
-        """User can get log dir"""
-        return self._log_dir
-
-    @log_dir.setter
-    def log_dir(self, log_dir):
-        """User can set log dir"""
-        self._ensure_dir_exists(log_dir)
-        self.logger.set_directory(log_dir)
-        self._log_dir = log_dir
-
-    def _set_default_log_dir(self):
-        """Method for getting default log dir"""
-        log_dir = os.path.join(self.service_dir, "logs")
-        self._ensure_dir_exists(log_dir)
-        self.logger.set_directory(log_dir)
-        return log_dir
+        pass
 
     @property
     def config_path(self):
@@ -209,11 +178,6 @@ class WSDPBase(ABC):
         service_headers["endpoint"] = self._config["service headers"]["endpoint"]
         return service_headers
 
-    def _ensure_dir_exists(self, directory):
-        """Method for checking if dir exists.
-        If does not exist, it creates a new dir"""
-        if not os.path.exists(directory):
-            os.makedirs(directory)
 
     def _renderXML(self, **kwargs):
         """Abstract method rendering XML"""
@@ -255,8 +219,8 @@ class WSDPBase(ABC):
         """Call XML parser"""
         pass
 
-    def process(self):
+    def _process(self):
         """Main wrapping method"""
         xml = self._renderXML(parameters=self.xml_attrs)
         response_xml = self._call_service(xml)
-        self.result_dict = self._parseXML(response_xml)
+        return self._parseXML(response_xml)
