@@ -83,7 +83,7 @@ class CtiOS():
         self.logger.set_directory(log_adresar)
         self._log_adresar = log_adresar
 
-    def vezmi_identifikatory_ze_slovniku(self, ctios_slovnik):
+    def nacti_identifikatory_ze_slovniku(self, ctios_slovnik):
         """Vezme parametry ze slovniku
         a vytvori instanci sluzby CtiOSDict
         Jedna se o slovnik ve formatu:
@@ -92,7 +92,7 @@ class CtiOS():
         dictionary = {"ctiOSDict": ctios_slovnik}
         self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
 
-    def vezmi_identifikatory_z_json_souboru(self, cesta_k_json_souboru):
+    def nacti_identifikatory_z_json_souboru(self, cesta_k_json_souboru):
         """Vezme parametry ze souboru typu *.JSON
         a vytvori instanci sluzby CtiOSJson
         Vnitrek json souboru je ve tvaru slovniku:
@@ -101,7 +101,7 @@ class CtiOS():
         dictionary = {"ctiOSJson": cesta_k_json_souboru}
         self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
 
-    def vezmi_identifikatory_z_databaze(self, cesta_k_databazi, sql_dotaz=None):
+    def nacti_identifikatory_z_databaze(self, cesta_k_databazi, sql_dotaz=None):
         """Vezme parametry ze souboru typu *.db, ktery byl vytvoren z VFK souboru,
         a vytvori instanci sluzby CtiOSDb. Vstupem muze byt sql_dotaz pro
         vyber identifikatoru, prikladem: "SELECT * FROM OPSUB order by ID LIMIT 10".

@@ -95,7 +95,7 @@ class GenerujCenoveUdajeDleKu():
         self.logger.set_directory(log_adresar)
         self._log_adresar = log_adresar
 
-    def vezmi_parametry_ze_slovniku(self, cenove_udaje_slovnik):
+    def nacti_parametry_ze_slovniku(self, cenove_udaje_slovnik):
         """Vezme parametry ze slovniku
         a vytvori instanci sluzby GenerujCenoveUdajeDleKu.
         Jedna se o slovnik ve formatu:
@@ -108,7 +108,7 @@ class GenerujCenoveUdajeDleKu():
         dictionary = {'generujCenoveUdajeDleKu': cenove_udaje_slovnik}
         self.cen_udaje = pywsdp.create(recipe=dictionary, logger=self.logger)
 
-    def vezmi_parametry_z_json_souboru(self, cesta_k_json_souboru):
+    def nacti_parametry_z_json_souboru(self, cesta_k_json_souboru):
         """Vezme parametry ze souboru typu *.JSON
         a vytvori instanci sluzby GenerujCenoveUdajeDleKu
         Vnitrek json souboru je ve tvaru slovniku:
