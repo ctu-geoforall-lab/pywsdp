@@ -17,13 +17,13 @@ Metody:
  - id_sestavy - getter
  - format_sestavy - getter
  - soubor_sestavy - getter
- - vezmi_parametry_ze_slovniku(cenove_udaje_slovnik: dict)
- - vezmi_parametry_ze_json_souboru(cesta_k_json_souboru: str)
+ - nacti_parametry_ze_slovniku(cenove_udaje_slovnik: dict)
+ - nacti_parametry_ze_json_souboru(cesta_k_json_souboru: str)
  - vytvor_sestavu
- - vypis_info_o_sestave
- - zauctuj_sestavu
- - uloz_vystup
- - vymaz_sestavu
+ - vypis_info_o_sestave(sestava)
+ - zauctuj_sestavu(sestava)
+ - uloz_vystup(zauctovana_sestava, vystupni_adresar)
+ - vymaz_sestavu(sestava)
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the MIT License.

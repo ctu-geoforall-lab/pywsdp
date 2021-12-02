@@ -15,11 +15,11 @@ Metody:
  - pristupove_udaje(uzivatel, heslo) - getter
  - log_adresar - getter
  - log_adresar(log_adresar) - setter
- - vezmi_identifikatory_ze_slovniku(ctios_slovnik: dict)
- - vezmi_identifikatory_z_json_souboru(cesta_k_json_souboru: str)
- - vezmi_identifikatory_z_databaze(cesta_k_databazi: str, sql: str)
+ - nacti_identifikatory_ze_slovniku(ctios_slovnik: dict)
+ - nacti_identifikatory_z_json_souboru(cesta_k_json_souboru: str)
+ - nacti_identifikatory_z_databaze(cesta_k_databazi: str, sql: str)
  - zpracuj_identifikatory
- - uloz_vystup
+ - uloz_vystup(osobni_udaje, vystupni_soubor, format_souboru)
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the MIT License.
@@ -30,6 +30,7 @@ import os
 from base.factory import pywsdp
 from base.exceptions import WSDPError
 from base.logger import WSDPLogger
+from modules import OutputFormat
 
 
 class CtiOS():
@@ -120,21 +121,21 @@ class CtiOS():
         """
         return self.ctios._process()
 
-    def uloz_vystup(self, osobni_udaje, format_souboru, vystupni_adresar):
+    def uloz_vystup(self, osobni_udaje, vystupni_soubor, format_souboru):
         """Konvertuje osobni udaje typu slovnik do souboru o definovanem
         formatu a soubor ulozi do definovaneho vystupniho adresare.
         """
-        format_souboru = format_souboru.lower()
-        if format_souboru == "json":
-            output = self.ctios._write_output_to_json(vystupni_adresar, osobni_udaje)
-        elif format_souboru == "csv":
-            output = self.ctios._write_output_to_csv(vystupni_adresar, osobni_udaje)
+        if format_souboru == OutputFormat.GdalDb:
+            self.ctios._write_output_to_db(osobni_udaje, vystupni_soubor)
+        elif format_souboru == OutputFormat.Json:
+            self.ctios._write_output_to_json(osobni_udaje, vystupni_soubor)
+        elif format_souboru == OutputFormat.Csv:
+            self.ctios._write_output_to_csv(osobni_udaje, vystupni_soubor)
         else:
             raise WSDPError(
                 self.ctios.logger,
                 "Format {} is not supported".format(format_souboru)
             )
-        return output
 
     def _set_default_log_dir(self):
         """Method for getting default log dir"""

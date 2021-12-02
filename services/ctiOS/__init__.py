@@ -14,7 +14,6 @@ import os
 import csv
 import json
 import math
-from datetime import datetime
 
 from services.ctiOS.helpers import CtiOSXMLParser, CtiOSCounter
 from base import WSDPBase
@@ -102,35 +101,25 @@ class CtiOSBase(WSDPBase):
             )
         )
 
-    def _write_output_to_csv(self, output_dir, result_dict):
+    def _write_output_to_csv(self, result_dict, output_csv):
         """Write dictionary to csv"""
-        date = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
-        output_file = "ctios_{}.csv".format(date)
-        output = os.path.join(output_dir, output_file)
-
         header = sorted(set(i for b in map(dict.keys, result_dict.values()) for i in b))
-        with open(output, "w", newline="") as f:
+        with open(output_csv, "w", newline="") as f:
             write = csv.writer(f)
             write.writerow(["posident", *header])
             for a, b in result_dict.items():
                 write.writerow([a] + [b.get(i, "") for i in header])
             self.logger.info(
-                    "Vystupni soubor je k dispozici zde: {}".format(output)
+                    "Vystup byl ulozen zde: {}".format(output_csv)
             )
-        return output
 
-    def _write_output_to_json(self, output_dir, result_dict):
-        """Write dictionary to csv"""
-        date = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
-        output_file = "ctios_{}.json".format(date)
-        output = os.path.join(output_dir, output_file)
-
-        with open(output, "w", newline="", encoding='utf-8') as f:
+    def _write_output_to_json(self, result_dict, output_json):
+        """Write dictionary to json"""
+        with open(output_json, "w", newline="", encoding='utf-8') as f:
             json.dump(result_dict, f, ensure_ascii=False)
             self.logger.info(
-                    "Vystupni soubor je k dispozici zde: {}".format(output)
+                    "Vystup byl ulozen zde: {}".format(output_json)
             )
-        return output
 
     def _process(self):
         """Main wrapping method"""

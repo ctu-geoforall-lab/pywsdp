@@ -42,7 +42,6 @@ class SestavyXMLParser:
         os_tags = root.findall(".//{}zprava".format(namespace_ns1))
         for os_tag in os_tags:
             xml_dict["zprava"] = os_tag.text
-            logger.info("")
             logger.info(os_tag.text)
 
         # Find all tags with 'report' name

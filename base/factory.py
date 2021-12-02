@@ -174,35 +174,40 @@ class CtiOSDb(CtiOSBase):
 
         file = Path(db_path)
         if file.exists():
-            self.db_path = db_path
-            self.db = CtiOSDbManager(db_path, self.logger)
-            self.db._create_connection()
+            db = CtiOSDbManager(db_path, self.logger)
+            db._create_connection()
             if sql:
-                return self.db.get_posidents_from_db(sql)
-            return self.db.get_posidents_from_db()
+                posidents = db.get_posidents_from_db(sql)
+            else:
+                posidents = db.get_posidents_from_db()
+            db.close_connection()
+            return posidents
         else:
             raise WSDPError(
                 self.logger,
                 "File is not found!"
                 )
 
-    def _save_posidents_to_db(self, dictionary):
-        """Method for saving posidents to db"""
-        self.db.add_column_to_db(self.schema, "OS_ID", "text")
-        columns = self.db.get_columns_names(self.schema)
-        # Convert xml attributes to db
-        dictionary = CtiOSXml2DbConverter(
-            self.mapping_json_path, self.logger
-        ).convert_attributes(columns, dictionary)
-        # Save attributes to db
-        self.db.save_attributes_to_db(self.schema, dictionary)
-        self.logger.info(
-                "Soubor v ceste {} byl aktualizovan.".format(self.db_path)
-        )
-        self.db.close_connection()
-
-    def _process(self):
-        """Main wrapping method"""
-        dictionary = super()._process()
-        self._save_posidents_to_db(dictionary)
-        return dictionary
+    def _write_output_to_db(self, result_dict, output_db):
+        """Write dictionary to db"""
+        file = Path(output_db)
+        if file.exists():
+            db = CtiOSDbManager(output_db, self.logger)
+            db._create_connection()
+            db.add_column_to_db(self.schema, "OS_ID", "text")
+            columns = db.get_columns_names(self.schema)
+            # Convert xml attributes to db
+            dictionary = CtiOSXml2DbConverter(
+                self.mapping_json_path, self.logger
+            ).convert_attributes(columns, result_dict)
+            # Save attributes to db
+            db.save_attributes_to_db(self.schema, dictionary)
+            self.logger.info(
+                    "Soubor v ceste {} byl aktualizovan.".format(output_db)
+            )
+            db.close_connection()
+        else:
+            raise WSDPError(
+                self.logger,
+                "File is not found!"
+                )
