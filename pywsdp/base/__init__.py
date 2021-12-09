@@ -15,8 +15,8 @@ import requests
 import configparser
 from abc import ABC, abstractmethod
 
-from base.exceptions import WSDPRequestError
-from base.template import WSDPTemplate
+from pywsdp.base.exceptions import WSDPRequestError
+from pywsdp.base.template import WSDPTemplate
 
 
 class WSDPBase(ABC):
@@ -27,7 +27,7 @@ class WSDPBase(ABC):
     def __init__(self):
         self._username = "WSTEST"
         self._password = "WSHESLO"
-        self._modules_dir = self._find_module_dir()
+        self._services_dir = self._find_services_dir()
         self._service_dir = self._set_service_dir()
         self._config = self._read_configuration()
         self._template_path = self._set_template_path()
@@ -88,11 +88,11 @@ class WSDPBase(ABC):
         return (self._username, self._password)
 
     @property
-    def modules_dir(self):
-        """User can get module dir"""
-        return self._modules_dir
+    def services_dir(self):
+        """User can get services dir"""
+        return self._services_dir
 
-    def _find_module_dir(self):
+    def _find_services_dir(self):
         """"Get modules path according to the way the library is run"""
 
         def is_run_by_jupyter():
@@ -100,7 +100,7 @@ class WSDPBase(ABC):
             return not hasattr(main, '__file__')
 
         if is_run_by_jupyter():
-            return os.path.abspath(os.path.join('../../', 'services'))
+            return os.path.abspath(os.path.join('../../', 'pywsdp', 'services'))
         else:
             return os.path.join(os.path.dirname(os.path.dirname(__file__)), 'services')
 

@@ -12,8 +12,8 @@ This library is free under the MIT License.
 
 import os
 
-from base import WSDPBase
-from services.sestavy.helpers import SestavyXMLParser
+from pywsdp.base import WSDPBase
+from pywsdp.services.sestavy.helpers import SestavyXMLParser
 
 
 class SestavyBase(WSDPBase):
@@ -38,7 +38,7 @@ class SestavyBase(WSDPBase):
 
     def _set_service_dir(self):
         """Method for getting absolute service path"""
-        return os.path.join(self._modules_dir, self.service_group, self.service_name)
+        return os.path.join(self._services_dir, self.service_group, self.service_name)
 
     def _parseXML(self, content):
         """Call sestavy XML parser"""

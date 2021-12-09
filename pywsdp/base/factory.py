@@ -3,11 +3,11 @@ import os
 import json
 from pathlib import Path
 
-from services.ctiOS import CtiOSBase
-from services.ctiOS.helpers import CtiOSDbManager, CtiOSXml2DbConverter
-from services.sestavy import SestavyBase
-from base.logger import WSDPLogger
-from base.exceptions import WSDPError
+from pywsdp.services.ctiOS import CtiOSBase
+from pywsdp.services.ctiOS.helpers import CtiOSDbManager, CtiOSXml2DbConverter
+from pywsdp.services.sestavy import SestavyBase
+from pywsdp.base.logger import WSDPLogger
+from pywsdp.base.exceptions import WSDPError
 
 
 class WSDPFactory:
