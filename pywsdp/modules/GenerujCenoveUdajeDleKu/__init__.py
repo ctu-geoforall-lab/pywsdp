@@ -34,9 +34,9 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from base.factory import pywsdp
-from base.exceptions import WSDPError
-from base.logger import WSDPLogger
+from pywsdp.base.factory import pywsdp
+from pywsdp.base.exceptions import WSDPError
+from pywsdp.base.logger import WSDPLogger
 
 
 class GenerujCenoveUdajeDleKu():
@@ -221,7 +221,7 @@ class GenerujCenoveUdajeDleKu():
             return not hasattr(main, '__file__')
 
         if is_run_by_jupyter():
-            module_dir = os.path.abspath(os.path.join('../../', 'modules', self.nazev_modulu))
+            module_dir = os.path.abspath(os.path.join('../../',  'pywsdp', 'modules', self.nazev_modulu))
         else:
             module_dir = os.path.dirname(__file__)
         log_dir = os.path.join(module_dir, "logs")

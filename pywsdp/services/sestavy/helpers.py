@@ -12,7 +12,7 @@ This library is free under the MIT License.
 
 import xml.etree.ElementTree as et
 
-from base.exceptions import WSDPResponseError
+from pywsdp.base.exceptions import WSDPResponseError
 
 
 class SestavyXMLParser:

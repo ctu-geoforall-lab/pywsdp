@@ -20,7 +20,7 @@ import sqlite3
 from pathlib import Path
 import xml.etree.ElementTree as et
 
-from base.exceptions import WSDPError, WSDPResponseError
+from pywsdp.base.exceptions import WSDPError, WSDPResponseError
 
 
 class CtiOSXMLParser:

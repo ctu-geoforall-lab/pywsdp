@@ -15,8 +15,8 @@ import csv
 import json
 import math
 
-from services.ctiOS.helpers import CtiOSXMLParser, CtiOSCounter
-from base import WSDPBase
+from pywsdp.base import WSDPBase
+from pywsdp.services.ctiOS.helpers import CtiOSXMLParser, CtiOSCounter
 
 posidents_per_request = 10
 
@@ -61,7 +61,7 @@ class CtiOSBase(WSDPBase):
 
     def _set_service_dir(self):
         """Method for getting absolute service path"""
-        return os.path.join(self._modules_dir, self.service_group)
+        return os.path.join(self._services_dir, self.service_group)
 
     def _parseXML(self, content):
         """Call ctiOS XML parser"""

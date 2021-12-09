@@ -27,10 +27,10 @@ This library is free under the MIT License.
 
 import os
 
-from base.factory import pywsdp
-from base.exceptions import WSDPError
-from base.logger import WSDPLogger
-from modules import OutputFormat
+from pywsdp.formats import OutputFormat
+from pywsdp.base.factory import pywsdp
+from pywsdp.base.exceptions import WSDPError
+from pywsdp.base.logger import WSDPLogger
 
 
 class CtiOS():
@@ -100,6 +100,7 @@ class CtiOS():
         {"posidents" : [pseudokod1, pseudokod2...]}.
         """
         dictionary = {"ctiOSJson": cesta_k_json_souboru}
+        print(dictionary)
         self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
 
     def nacti_identifikatory_z_databaze(self, cesta_k_databazi, sql_dotaz=None):
@@ -144,7 +145,7 @@ class CtiOS():
             return not hasattr(main, '__file__')
 
         if is_run_by_jupyter():
-            module_dir = os.path.abspath(os.path.join('../../', 'modules', self.nazev_modulu))
+            module_dir = os.path.abspath(os.path.join('../../', 'pywsdp', 'modules', self.nazev_modulu))
         else:
             module_dir = os.path.dirname(__file__)
         log_dir = os.path.join(module_dir, "logs")
