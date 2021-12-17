@@ -14,8 +14,10 @@ import os
 import requests
 import configparser
 from abc import ABC, abstractmethod
+from lxml import etree
+from io import StringIO
 
-from pywsdp.base.exceptions import WSDPRequestError
+from pywsdp.base.exceptions import WSDPRequestError, WSDPError
 from pywsdp.base.template import WSDPTemplate
 
 
@@ -213,6 +215,29 @@ class WSDPBase(ABC):
             raise WSDPRequestError(self.logger, e)
         response_xml = r.text
         return response_xml
+
+    def _validateXMLByXSD(self, xml_file, xsd_url):
+        """ Verify that the XML compliance with XSD
+        Args:
+            xml_file: Input xml file
+            xsd_url: xsd url of a file which needs to be validated against xml
+        Raises:
+              WSDPError
+        Return: True or error
+        """
+        try:
+            print("Validating:{0}".format(xml_file))
+            print("xsd_url:{0}".format(xsd_url))
+            xml_doc = etree.parse(xml_file)
+            xsd_doc = etree.parse(StringIO(requests.get(xsd_url).content))
+            xmlschema = etree.XMLSchema(xsd_doc)
+            xmlschema.assert_(xml_doc)
+
+        except etree.XMLSyntaxError as err:
+            raise WSDPError(self.logger, err)
+        except AssertionError as err:
+            raise WSDPError(self.logger, err)
+        return True
 
     @abstractmethod
     def _parseXML(self, content):
