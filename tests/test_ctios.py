@@ -5,14 +5,14 @@ import configparser
 from pathlib import Path
 from shutil import copyfile
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
 from pywsdp.modules import CtiOS
 
 
 class TestCtiOS:
 
     service_group = service_name = "ctiOS"
-    library_path = os.path.abspath(os.path.join('../../'))
+    library_path = os.path.abspath('../')
     if library_path not in sys.path:
        sys.path.append(library_path)
     service_dir = os.path.abspath(os.path.join(library_path, 'pywsdp', 'services', 'ctiOS'))
@@ -47,9 +47,9 @@ class TestCtiOS:
         "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka"]
         }
         ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
-        status = ctiOS.otestuj_sluzbu()
-        print(status)
-        assert status == 200
+        r, status_kod = ctiOS.otestuj_sluzbu()
+        print(status_kod)
+        assert status_kod == 200
          
     def test_CtiOS_service_invalid_password(self):
         """Test the service itself, use invalid user/password, check http error code DB connection.
@@ -67,9 +67,9 @@ class TestCtiOS:
         "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka"]
         }
         ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
-        status = ctiOS.otestuj_sluzbu()
-        print(status)
-        assert status != 200
+        r, status_kod = ctiOS.otestuj_sluzbu()
+        print(status_kod)
+        assert status_kod != 200
 
     def test_template_file_exists(self):
         """Check if template file exists"""
@@ -90,8 +90,8 @@ class TestCtiOS:
         json = os.path.join(self.library_path, 'data', 'input', 'ctios_template.json')
         ctiOS = CtiOS()
         ctiOS.nacti_identifikatory_z_json_souboru(json)
-        # dopsat property na pocet posidentu - len(self._get_parameters())
-        assert len(ctiOS.pocet_uspesne_stazenych) == 10
+        assert len(ctiOS.pocet_identifikatoru) == 10
+        assert len(ctiOS.pocet_zpracovanych_identifikatoru) == 10
 
     def test_read_posidents_from_db(self):
         """Test reading posidents from db (50)."""
@@ -99,8 +99,8 @@ class TestCtiOS:
         output_db = copyfile(db_path, os.path.join(self.library_path, 'data', 'output', 'ctios_template.db'))
         ctiOS = CtiOS()
         ctiOS.nacti_identifikatory_z_databaze(output_db)
-        # dopsat property na pocet posidentu - len(self._get_parameters())
-        assert len(ctiOS.pocet_uspesne_stazenych) == 50
+        assert len(ctiOS.pocet_identifikatoru) == 50
+        assert len(ctiOS.pocet_zpracovanych_identifikatoru) == 50
 
     def test_read_posidents_from_db_sql(self):
         """Test reading posidents from db file (10)."""
@@ -109,8 +109,8 @@ class TestCtiOS:
         sql = "SELECT * FROM OPSUB order by ID LIMIT 10"
         ctiOS = CtiOS()
         ctiOS.nacti_identifikatory_z_databaze(output_db, sql)
-        # dopsat property na pocet posidentu - len(self._get_parameters())
-        assert len(ctiOS.pocet_uspesne_stazenych) == 10
+        assert len(ctiOS.pocet_identifikatoru) == 10
+        assert len(ctiOS.pocet_zpracovanych_identifikatoru) == 10
 
     def test_read_posidents_from_dict(self):
         """Test reading posidents from dict file, adding expired posidents (2), nonvalid posidents (1) and duplicit (1)."""
@@ -133,11 +133,11 @@ class TestCtiOS:
         ]}
         ctiOS = CtiOS()
         ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
-        # dopsat property na pocet posidentu - len(self._get_parameters())
-        assert len(ctiOS.pocet_expirovanych) == 2
-        assert len(ctiOS.pocet_neplatnych) == 1
-        assert len(ctiOS.pocet_odstranenych_duplicit) == 1
-        assert len(ctiOS.pocet_uspesne_stazenych) == 10
+        assert len(ctiOS.pocet_identifikatoru) == 15
+        assert len(ctiOS.pocet_zpracovanych_identifikatoru) == 10
+        assert len(ctiOS.pocet_expirovanych_identifikatoru) == 2
+        assert len(ctiOS.pocet_neplatnych_identifikatoru) == 1
+        assert len(ctiOS.pocet_odstranenych_duplicit) == 2
 
     def test_request_XML(self):
         """Test if created XML from template is not empty and is valid, tag exists."""
@@ -170,5 +170,3 @@ class TestCtiOS:
     def test_write_output_csv(self):
         """Check non empty, is valid, read csv, check number of keys, posidents code"""
         pass
-
-

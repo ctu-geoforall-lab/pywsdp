@@ -50,27 +50,27 @@ class CtiOS():
     @property
     def uzivatel(self):
         """Vypise uzivatelske jmeno k WSDP."""
-        return self.cen_udaje.username
+        return self.ctios.username
 
     @property
     def heslo(self):
         """Vypise heslo k WSDP."""
-        return self.cen_udaje.password
+        return self.ctios.password
 
     @uzivatel.setter
     def uzivatel(self, uzivatel):
         """Nastavi uzivatelske jmeno k WSDP."""
-        self.cen_udaje.username(uzivatel)
+        self.ctios.username(uzivatel)
 
     @heslo.setter
     def heslo(self, heslo):
         """Nastavi heslo k WSDP."""
-        self.cen_udaje.password(heslo)
+        self.ctios.password(heslo)
 
     @property
     def pristupove_udaje(self):
         """Vypise pristupove udaje k WSDP ve forme uzivatelskeho jmeno a hesla."""
-        return (self.cen_udaje.username, self.cen_udaje.password)
+        return (self.ctios.username, self.ctios.password)
 
     @property
     def log_adresar(self):
@@ -114,13 +114,45 @@ class CtiOS():
             dictionary = {"ctiOSDb": cesta_k_databazi}
         self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
 
+    def otestuj_sluzbu(self):
+        xml = self.ctios._renderXML(posidents=self.ctios.xml_attr)
+        return self.ctios._post_request(xml)
+
     def zpracuj_identifikatory(self):
         """Zpracuje vstupni parametry pomoci sluzby CtiOS a vysledne osobni udaje
         opravnenych subjektu ulozi do slovniku.
-        V pripade vstupu ve forme databaze navic updatuje ziskanymi osobnimi
-        udaji vstupni databazi.
         """
         return self.ctios._process()
+
+    @property
+    def pocet_identifikatoru(self):
+        """ Vypise celkovy pocet vstupnich identifikatoru."""
+        return self.ctios.number_of_posidents
+
+    @property
+    def pocet_zpracovanych_identifikatoru(self):
+        """ Vypise pocet uspesne zpracovanych identifikatoru."""
+        return self.ctios.counter.neplatny_identifikator
+
+    @property
+    def pocet_neplatnych_identifikatoru(self):
+        """ Vypise pocet neplatnych identifikatoru."""
+        return self.ctios.counter.neplatny_identifikator
+
+    @property
+    def pocet_expirovanych_identifikatoru(self):
+        """ Vypise pocet expirovanych identifikatoru."""
+        return self.ctios.counter.expirovany_identifikator
+
+    @property
+    def pocet_odstranenych_duplicit(self):
+        """ Vypise pocet odstranenych duplicitnich identifikatoru."""
+        return self.ctios.number_of_duplicits
+
+    @property
+    def pocet_neexistujicich_opravnenych_subjektu(self):
+        """ Vypise pocet subjektu, ktere neexistuji."""
+        return self.ctios.counter.opravneny_subjekt_neexistuje
 
     def uloz_vystup(self, osobni_udaje, vystupni_soubor, format_souboru):
         """Konvertuje osobni udaje typu slovnik do souboru o definovanem

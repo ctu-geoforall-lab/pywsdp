@@ -186,6 +186,27 @@ class WSDPBase(ABC):
         )
         return request_xml
 
+    def _post_request(self, xml):
+        """Send a request in the XML form to WSDP service
+        Args:
+            request_xml (str): xml for requesting WSDP service
+        Returns:
+            r (HTTPError): error
+            status_code (int): status code WSDP service
+        """
+        # WSDP headers for service requesting
+        _headers = {
+            "Content-Type": self.service_headers["content_type"],
+            "Accept-Encoding": self.service_headers["accept_encoding"],
+            "SOAPAction": self.service_headers["soap_action"],
+            "Connection": self.service_headers["connection"],
+        }
+        r = requests.post(
+            self.service_headers["endpoint"], data=xml, headers=_headers
+        )
+        status_code = requests.status_code
+        return r, status_code
+
     def _call_service(self, xml):
         """Send a request in the XML form to WSDP service
         Args:
@@ -195,20 +216,9 @@ class WSDPBase(ABC):
         Returns:
             response_xml (str): xml response from WSDP service
         """
-        # WSDP headers for service requesting
-        _headers = {
-            "Content-Type": self.service_headers["content_type"],
-            "Accept-Encoding": self.service_headers["accept_encoding"],
-            "SOAPAction": self.service_headers["soap_action"],
-            "Connection": self.service_headers["connection"],
-        }
         try:
-            r = requests.post(
-                self.service_headers["endpoint"], data=xml, headers=_headers
-            )
+            r, status_code = self._post_request(xml)
             r.raise_for_status()
-            # if self.log_dir:
-            #    self.logger.debug(response_xml)
         except requests.exceptions.RequestException as e:
             raise WSDPRequestError(self.logger, e)
         response_xml = r.text

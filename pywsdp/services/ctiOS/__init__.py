@@ -40,7 +40,7 @@ class CtiOSBase(WSDPBase):
     def xml_attrs(self):
         """XML attributes prepared for XML template rendering"""
         xml_params = []
-        posidents = self._get_parameters()
+        posidents = self._get_parameters_without_duplicits()
 
         def create_chunks(lst, n):
             """"Create n-sized chunks from list as a generator"""
@@ -59,6 +59,10 @@ class CtiOSBase(WSDPBase):
         """Method for getting parameters"""
         pass
 
+    def _get_parameters_without_duplicits(self):
+        """Method for getting parameters withnout duplicits"""
+        return list(dict.fromkeys(self._get_parameters()))
+
     def _set_service_dir(self):
         """Method for getting absolute service path"""
         return os.path.join(self._services_dir, self.service_group)
@@ -72,7 +76,8 @@ class CtiOSBase(WSDPBase):
     def _write_stats(self):
         """Method for getting service stats"""
         self.number_of_posidents = len(self._get_parameters())
-        self.number_of_chunks = math.ceil(len(self._get_parameters()) / posidents_per_request)
+        self.number_of_duplicits = len(self.number_of_posidents) - len(self._get_parameters_without_duplicits())
+        self.number_of_chunks = math.ceil(len(self.number_of_posidents / posidents_per_request))
 
         self.logger.info(
             "Pocet dotazovanych posidentu: {}".format(self.number_of_posidents)
