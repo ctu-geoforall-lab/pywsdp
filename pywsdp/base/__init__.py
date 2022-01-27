@@ -27,6 +27,8 @@ class WSDPBase(ABC):
     def __init__(self):
         self._username = None
         self._password = None
+        self._request_xml = None
+        self._response_xml = None
         self._services_dir = self._find_services_dir()
         self._service_dir = self._set_service_dir()
         self._config = self._read_configuration()
@@ -210,13 +212,15 @@ class WSDPBase(ABC):
         dictionary = {}
         if isinstance(self.xml_attrs, list):
             for xml_attr in self.xml_attrs:
-                xml = self._renderXML(parameters=xml_attr)
-                response_xml = self._call_service(xml).text
+                request_xml = self._renderXML(parameters=xml_attr)
+                response_xml = self._call_service(request_xml).text
                 dictionary = {**dictionary, **self._parseXML(response_xml)}
         else:
-            xml = self._renderXML(parameters=self.xml_attrs)
-            response_xml = self._call_service(xml).text
+            request_xml = self._renderXML(parameters=self.xml_attrs)
+            response_xml = self._call_service(request_xml).text
             dictionary = self._parseXML(response_xml)
+        self.request_xml = request_xml
+        self.response_xml = response_xml
         return dictionary
 
     def _test_service(self):

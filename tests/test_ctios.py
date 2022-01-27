@@ -2,6 +2,7 @@ import sys
 import os
 import configparser
 from shutil import copyfile
+import xml.etree.ElementTree as et
 
 library_path = os.path.abspath(os.path.join('../'))
 if library_path not in sys.path:
@@ -107,19 +108,72 @@ class TestCtiOS:
 
     def test_03a_request_XML(self):
         """Test if created XML from template is not empty and is valid, tag exists."""
-        pass
+        dictionary = {"posidents" : [
+        "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka",
+        ]}
+        namespace = "{http://katastr.cuzk.cz/ctios/types/v2.8}"
+        ctiOS = CtiOS()
+        ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
+        xmlattr = ctiOS.ctios.xml_attrs[0]
+        request_xml = ctiOS.ctios._renderXML(parameters=xmlattr)
+        root = et.fromstring(request_xml)
+        # check tag with 'pOSIdent' name
+        assert root.findall(".//{}pOSIdent".format(namespace)) is not None
 
     def test_03b_response_XML(self):
-        """Send XML, check http error code, check response XML (not empty, is valid, check nonvalid posidents)"""
-        pass
+        """Check response XML (not empty, is valid)"""
+        dictionary = {"posidents" : [
+        "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka",
+        ]}
+        namespace_ns0 = "{http://katastr.cuzk.cz/ctios/types/v2.8}"
+        namespace_ns1 = "{http://katastr.cuzk.cz/commonTypes/v2.8}"
+        ctiOS = CtiOS()
+        ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
+        xmlattr = ctiOS.ctios.xml_attrs[0]
+        request_xml = ctiOS.ctios._renderXML(parameters=xmlattr)
+        response_xml = ctiOS.ctios._call_service(request_xml).text
+        root = et.fromstring(response_xml)
+
+        # Check tag with 'zprava' name
+        tags = root.findall(".//{}zprava".format(namespace_ns1))
+        assert tags[0].text == "Požadovaná akce byla úspěšně provedena."
+
+        # check tags with 'os' name
+        assert root.findall(".//{}os".format(namespace_ns0)) is not None
 
     def test_03c_response_XML_invalid_version(self):
-        """Modify request XML (invalid service version), send, check http error code, check response XML"""
-        pass
+        """Modify request XML (invalid service version), send, check response XML"""
+        dictionary = {"posidents" : [
+        "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka",
+        ]}
+        namespace_ns0 = "{http://katastr.cuzk.cz/ctios/types/v2.8}"
+        namespace_ns1 = "{http://katastr.cuzk.cz/commonTypes/v2.8}"
+        ctiOS = CtiOS()
+        ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
+        xmlattr = ctiOS.ctios.xml_attrs[0]
+        request_xml = ctiOS.ctios._renderXML(parameters=xmlattr)
+        response_xml = ctiOS.ctios._call_service(request_xml).text
+        root = et.fromstring(response_xml)
+
+        # Check tag with 'zprava' name
+        tags = root.findall(".//{}zprava".format(namespace_ns1))
+        assert tags[0].text == "Požadovaná akce byla úspěšně provedena."
+
+        # check tags with 'os' name
+        assert root.findall(".//{}os".format(namespace_ns0)) is not None
 
     def test_03d_parse_response_XML(self):
         """Parse response XML, check result dictionary"""
-        pass
+        dictionary = {"posidents" : [
+        "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka",
+        ]}
+        ctiOS = CtiOS()
+        ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
+        xmlattr = ctiOS.ctios.xml_attrs[0]
+        request_xml = ctiOS.ctios._renderXML(parameters=xmlattr)
+        response_xml = ctiOS.ctios._call_service(request_xml).text
+        dictionary = ctiOS.ctios._parseXML(response_xml)
+        print(dictionary)
 
     def test_04a_check_number_of_keys(self):
         """Check number of keys == 10, check posident codes"""
