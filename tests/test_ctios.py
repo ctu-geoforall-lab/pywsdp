@@ -1,30 +1,32 @@
 import sys
 import os
-import pytest
 import configparser
-from pathlib import Path
 from shutil import copyfile
 
-sys.path.insert(0, str(Path(__file__).parent))
+library_path = os.path.abspath(os.path.join('../'))
+if library_path not in sys.path:
+   sys.path.append(library_path)
+
 from pywsdp.modules import CtiOS
 
 
 class TestCtiOS:
 
+    service_dir = os.path.abspath(os.path.join(library_path, 'pywsdp', 'services'))
     service_group = service_name = "ctiOS"
-    library_path = os.path.abspath('../')
-    if library_path not in sys.path:
-       sys.path.append(library_path)
-    service_dir = os.path.abspath(os.path.join(library_path, 'pywsdp', 'services', 'ctiOS'))
+    service_dir = os.path.abspath(os.path.join(service_dir, service_group))
 
-    def test_config_file(self):
-        """Read config, check values."""
+    def _read_config_file(self):
         config_path = os.path.join(
                 self.service_dir, "config", "settings.ini"
             )
         config = configparser.ConfigParser()
         config.read(config_path)
-        
+        return config
+
+    def test_00a_config_file(self):
+        """Read config, check values."""
+        config = self._read_config_file()
         # check values
         assert config["files"]["xml_template"] == "ctiOS.xml"
         assert config["service headers"]["content_type"] == "text/xml;charset=UTF-8"
@@ -33,33 +35,33 @@ class TestCtiOS:
         assert config["service headers"]["connection"] == "Keep-Alive"
         assert config["service headers"]["endpoint"] == "https://wsdptrial.cuzk.cz/trial/ws/ctios/2.8/ctios"
 
-    def test_CtiOS_service(self):
-        """Test the service itself, use invalid user/password, check http error code DB connection.
-        Send one posident with wrong set username and password"""
-        config_path = os.path.join(
-                self.service_dir, "config", "settings.ini"
+    def test_00b_template_file_exists(self):
+        """Check if template file exists"""
+        template_path = os.path.join(
+                self.service_dir, "config", "ctiOS.xml"
             )
-        config = configparser.ConfigParser()
-        config.read(config_path)
-        
+        assert os.path.exists(template_path) == True
+
+    def test_00c_mapping_file_exists(self):
+        """Cehck if mapping attributes file exists."""
+        mapping_attributes_path = os.path.join(
+                self.service_dir, "config", "attributes_mapping.json"
+            )
+        assert os.path.exists(mapping_attributes_path) == True
+
+    def test_01a_CtiOS_service(self):
+        """Test the service itself, check http error code DB connection."""
         ctiOS = CtiOS()
         dictionary = {"posidents" : [
         "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka"]
         }
         ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
-        r, status_kod = ctiOS.otestuj_sluzbu()
-        print(status_kod)
-        assert status_kod == 200
-         
-    def test_CtiOS_service_invalid_password(self):
+        status_code = ctiOS.otestuj_sluzbu()
+        assert status_code == 200
+
+    def test_01b_CtiOS_service_invalid_password(self):
         """Test the service itself, use invalid user/password, check http error code DB connection.
         Send one posident with wrong set username and password"""
-        config_path = os.path.join(
-                self.service_dir, "config", "settings.ini"
-            )
-        config = configparser.ConfigParser()
-        config.read(config_path)
-        
         ctiOS = CtiOS()
         ctiOS.uzivatel = "uzivatel"
         ctiOS.heslo = "heslo"
@@ -67,52 +69,63 @@ class TestCtiOS:
         "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka"]
         }
         ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
-        r, status_kod = ctiOS.otestuj_sluzbu()
-        print(status_kod)
-        assert status_kod != 200
+        status_code = ctiOS.otestuj_sluzbu()
+        assert status_code == 500
 
-    def test_template_file_exists(self):
-        """Check if template file exists"""
-        template_path = os.path.join(
-                self.service_dir, "config", "ctiOS.xml"
-            )
-        assert os.path.exists(template_path) == True
-
-    def test_mapping_file_exists(self):
-        """Cehck if mapping attributes file exists."""
-        mapping_attributes_path = os.path.join(
-                self.service_dir, "config", "attributes_mapping.json"
-            )
-        assert os.path.exists(mapping_attributes_path) == True
-
-    def test_read_posidents_from_file(self):
+    def test_02a_read_posidents_from_file(self):
         """Test reading posidents from json file."""
-        json = os.path.join(self.library_path, 'data', 'input', 'ctios_template.json')
+        json = os.path.join(library_path, 'data', 'input', 'ctios_template.json')
         ctiOS = CtiOS()
         ctiOS.nacti_identifikatory_z_json_souboru(json)
-        assert len(ctiOS.pocet_identifikatoru) == 10
-        assert len(ctiOS.pocet_zpracovanych_identifikatoru) == 10
+        assert ctiOS.pocet_dotazovanych_identifikatoru == 10
 
-    def test_read_posidents_from_db(self):
+    def test_02b_read_posidents_from_db(self):
         """Test reading posidents from db (50)."""
-        db_path = os.path.join(self.library_path, 'data', 'input', 'ctios_template.db')
-        output_db = copyfile(db_path, os.path.join(self.library_path, 'data', 'output', 'ctios_template.db'))
+        db_path = os.path.join(library_path, 'data', 'input', 'ctios_template.db')
         ctiOS = CtiOS()
-        ctiOS.nacti_identifikatory_z_databaze(output_db)
-        assert len(ctiOS.pocet_identifikatoru) == 50
-        assert len(ctiOS.pocet_zpracovanych_identifikatoru) == 50
+        ctiOS.nacti_identifikatory_z_databaze(db_path)
+        assert ctiOS.pocet_dotazovanych_identifikatoru == 108
 
-    def test_read_posidents_from_db_sql(self):
+    def test_02c_read_posidents_from_db_sql(self):
         """Test reading posidents from db file (10)."""
-        db_path = os.path.join(self.library_path, 'data', 'input', 'ctios_template.db')
-        output_db = copyfile(db_path, os.path.join(self.library_path, 'data', 'output', 'ctios_template.db'))
+        db_path = os.path.join(library_path, 'data', 'input', 'ctios_template.db')
+        output_db = copyfile(db_path, os.path.join(library_path, 'data', 'output', 'ctios_template.db'))
         sql = "SELECT * FROM OPSUB order by ID LIMIT 10"
         ctiOS = CtiOS()
         ctiOS.nacti_identifikatory_z_databaze(output_db, sql)
-        assert len(ctiOS.pocet_identifikatoru) == 10
-        assert len(ctiOS.pocet_zpracovanych_identifikatoru) == 10
+        assert ctiOS.pocet_dotazovanych_identifikatoru == 10
 
-    def test_read_posidents_from_dict(self):
+    def test_02d_read_posidents_from_dict(self):
+        """Test reading posidents from dict (2)."""
+        dictionary = {"posidents" : [
+        "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka",
+        "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka"
+        ]}
+        ctiOS = CtiOS()
+        ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
+        assert ctiOS.pocet_dotazovanych_identifikatoru == 2
+
+    def test_03a_request_XML(self):
+        """Test if created XML from template is not empty and is valid, tag exists."""
+        pass
+
+    def test_03b_response_XML(self):
+        """Send XML, check http error code, check response XML (not empty, is valid, check nonvalid posidents)"""
+        pass
+
+    def test_03c_response_XML_invalid_version(self):
+        """Modify request XML (invalid service version), send, check http error code, check response XML"""
+        pass
+
+    def test_03d_parse_response_XML(self):
+        """Parse response XML, check result dictionary"""
+        pass
+
+    def test_04a_check_number_of_keys(self):
+        """Check number of keys == 10, check posident codes"""
+        pass
+
+    def test_04b_check_posident_types(self):
         """Test reading posidents from dict file, adding expired posidents (2), nonvalid posidents (1) and duplicit (1)."""
         dictionary = {"posidents" : [
         "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka",
@@ -133,40 +146,23 @@ class TestCtiOS:
         ]}
         ctiOS = CtiOS()
         ctiOS.nacti_identifikatory_ze_slovniku(dictionary)
-        assert len(ctiOS.pocet_identifikatoru) == 15
-        assert len(ctiOS.pocet_zpracovanych_identifikatoru) == 10
-        assert len(ctiOS.pocet_expirovanych_identifikatoru) == 2
-        assert len(ctiOS.pocet_neplatnych_identifikatoru) == 1
-        assert len(ctiOS.pocet_odstranenych_duplicit) == 2
+        ctiOS.zpracuj_identifikatory()
+        assert ctiOS.pocet_dotazovanych_identifikatoru == 15
+        assert ctiOS.pocet_neplatnych_identifikatoru == 0
+        assert ctiOS.pocet_expirovanych_identifikatoru == 2
+        assert ctiOS.pocet_neexistujicich_os == 0
+        assert ctiOS.pocet_uspesne_stazenych_os == 10
+        assert ctiOS.pocet_odstranenych_duplicit == 3
+        assert ctiOS.pocet_dotazu_na_server == 2
 
-    def test_request_XML(self):
-        """Test if created XML from template is not empty and is valid, tag exists."""
-        pass
-
-    def test_response_XML(self):
-        """Send XML, check http error code, check response XML (not empty, is valid, check nonvalid posidents)"""
-        pass
-
-    def test_response_XML_invalid_version(self):
-        """Modify request XML (invalid service version), send, check http error code, check response XML"""
-        pass
-    
-    def test_parse_response_XML(self):
-        """Parse response XML, check result dictionary"""
-        pass
-
-    def test_number_of_keys(self):
-        """Check number of keys == 10, check posident codes"""
-        pass
-
-    def test_write_output_json(self):
+    def test_05a_write_output_json(self):
         """Check non empty, is valid, read json, check number of keys, posidents code"""
         pass
 
-    def test_write_output_db(self):
+    def test_05b_write_output_db(self):
         """Check non empty, is valid, read db, check number of keys, posidents code"""
         pass
 
-    def test_write_output_csv(self):
+    def test_05c_write_output_csv(self):
         """Check non empty, is valid, read csv, check number of keys, posidents code"""
         pass

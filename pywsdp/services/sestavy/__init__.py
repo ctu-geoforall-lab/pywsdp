@@ -31,7 +31,7 @@ class SestavyBase(WSDPBase):
     def xml_attrs(self):
         """XML attributes prepared for XML template rendering"""
         xml_params = []
-        for key, value in self.parameters.items():
+        for key, value in self.args.items():
              row = "<v2:{0}>{1}</v2:{0}>".format(key, value)
              xml_params.append(row)
         return "".join(xml_params)

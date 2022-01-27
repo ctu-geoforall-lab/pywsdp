@@ -10,7 +10,7 @@
                           </soapenv:Header> 
                           <soapenv:Body> 
                             <v2:CtiOsRequest> 
-                                $posidents
+                                $parameters
                             </v2:CtiOsRequest> 
                           </soapenv:Body>
                         </soapenv:Envelope>

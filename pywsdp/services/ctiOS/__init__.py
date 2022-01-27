@@ -23,13 +23,8 @@ posidents_per_request = 10
 
 class CtiOSBase(WSDPBase):
     """A class that defines interface and main logic used for ctiOS service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
-
-    Derived class must override get_posidents_from_db(), write_output() methods.
+    Derived class must override service_name property and _get_parameters() method.
     """
-    service_group = service_name = "ctiOS"
 
     @property
     def service_name(self):
@@ -37,17 +32,39 @@ class CtiOSBase(WSDPBase):
         pass
 
     @property
+    def service_group(self):
+        """A service group object"""
+        return "ctiOS"
+
+    @property
+    def parameters(self):
+        """Method for getting parameters"""
+        pass
+
+    @property
+    def number_of_posidents(self):
+        return len(self.parameters)
+
+    @property
+    def number_of_posidents_final(self):
+        return len(list(dict.fromkeys(self.parameters)))
+
+    @property
+    def number_of_chunks(self):
+        return math.ceil(self.number_of_posidents_final / posidents_per_request)
+
+    @property
     def xml_attrs(self):
         """XML attributes prepared for XML template rendering"""
-        xml_params = []
-        posidents = self._get_parameters_without_duplicits()
 
         def create_chunks(lst, n):
             """"Create n-sized chunks from list as a generator"""
             n = max(1, n)
             return (lst[i : i + n] for i in range(0, len(lst), n))
 
-        chunks = create_chunks(posidents, posidents_per_request)
+        xml_params = []
+        self.posidents = list(dict.fromkeys(self.parameters)) # remove duplicates
+        chunks = create_chunks(self.posidents, posidents_per_request)
         for chunk in chunks:
             for idx in range(len(chunk)):
                 chunk[idx] = "<v2:pOSIdent>{}</v2:pOSIdent>".format(chunk[idx])
@@ -55,54 +72,35 @@ class CtiOSBase(WSDPBase):
             xml_params.append(chunk)
         return xml_params
 
-    def _get_parameters(self):
-        """Method for getting parameters"""
-        pass
-
-    def _get_parameters_without_duplicits(self):
-        """Method for getting parameters withnout duplicits"""
-        return list(dict.fromkeys(self._get_parameters()))
-
     def _set_service_dir(self):
         """Method for getting absolute service path"""
         return os.path.join(self._services_dir, self.service_group)
 
     def _parseXML(self, content):
         """Call ctiOS XML parser"""
+        self.counter = CtiOSCounter()
         return CtiOSXMLParser()(
             content=content, counter=self.counter, logger=self.logger
         )
 
-    def _write_stats(self):
-        """Method for getting service stats"""
-        self.number_of_posidents = len(self._get_parameters())
-        self.number_of_duplicits = len(self.number_of_posidents) - len(self._get_parameters_without_duplicits())
-        self.number_of_chunks = math.ceil(len(self.number_of_posidents / posidents_per_request))
-
+    def write_preprocessing_stats(self):
+        """Method for getting preprocessing stats"""
         self.logger.info(
             "Pocet dotazovanych posidentu: {}".format(self.number_of_posidents)
         )
         self.logger.info(
-            "Pocet pozadavku do ktereho byl dotaz rozdelen: {}".format(
+            "Pocet zjistenych duplicitnich identifikatoru: {}".format(
+                self.number_of_posidents - self.number_of_posidents_final
+            )
+        )
+        self.logger.info(
+            "Realny pocet identifikatoru po odstraneni duplicit: {}".format(
+                self.number_of_posidents_final
+            )
+        )
+        self.logger.info(
+            "Pocet pozadavku do kterych bude dotaz rozdelen: {}".format(
                 self.number_of_chunks
-            )
-        )
-        self.logger.info(
-            "Pocet uspesne stazenych posidentu: {}".format(
-                self.counter.uspesne_stazeno
-            )
-        )
-        self.logger.info(
-            "Neplatny identifikator: {}x".format(self.counter.neplatny_identifikator),
-        )
-        self.logger.info(
-            "Expirovany identifikator: {}x".format(
-                self.counter.expirovany_identifikator
-            )
-        )
-        self.logger.info(
-            "Opravneny subjekt neexistuje: {}x".format(
-                self.counter.opravneny_subjekt_neexistuje
             )
         )
 
@@ -126,14 +124,28 @@ class CtiOSBase(WSDPBase):
                     "Vystup byl ulozen zde: {}".format(output_json)
             )
 
+    def write_postprocessing_stats(self):
+        self.logger.info(
+            "Pocet uspesne stazenych posidentu: {}".format(
+                self.counter.uspesne_stazeno
+            )
+        )
+        self.logger.info(
+            "Pocet neplatnych identifikatoru: {}".format(self.counter.neplatny_identifikator),
+        )
+        self.logger.info(
+            "Pocet expirovanych identifikatoru: {}".format(
+                self.counter.expirovany_identifikator
+            )
+        )
+        self.logger.info(
+            "Pocet identifikatoru neexistujicich opravnenych subjektu: {}".format(
+                self.counter.opravneny_subjekt_neexistuje
+            )
+        )
+
     def _process(self):
         """Main wrapping method"""
-        dictionary = {}
-        self.counter = CtiOSCounter()
-        for xml_attr in self.xml_attrs:
-            xml = self._renderXML(posidents=xml_attr)
-            response_xml = self._call_service(xml)
-            dictionary = {**dictionary, **self._parseXML(response_xml)}
-        self._write_stats()
+        dictionary = super()._process()
+        self.write_postprocessing_stats()
         return dictionary
-
