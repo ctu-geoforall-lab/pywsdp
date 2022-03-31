@@ -26,6 +26,10 @@ class CtiOSBase(WSDPBase):
     Derived class must override service_name property and _get_parameters() method.
     """
 
+    def __init__(self):
+        super().__init__()
+        self.counter = CtiOSCounter()
+
     @property
     def service_name(self):
         """A service name object"""
@@ -78,7 +82,6 @@ class CtiOSBase(WSDPBase):
 
     def _parseXML(self, content):
         """Call ctiOS XML parser"""
-        self.counter = CtiOSCounter()
         return CtiOSXMLParser()(
             content=content, counter=self.counter, logger=self.logger
         )

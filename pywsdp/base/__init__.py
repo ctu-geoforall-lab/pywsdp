@@ -32,8 +32,8 @@ class WSDPBase(ABC):
         self._services_dir = self._find_services_dir()
         self._service_dir = self._set_service_dir()
         self._config = self._read_configuration()
-        self._template_path = self._set_template_path()
         self._service_headers = self._set_service_headers()
+        self._set_template_path()
 
     @property
     @abstractmethod
@@ -60,9 +60,6 @@ class WSDPBase(ABC):
         result.args = args
         result.logger = logger
         return result
-
-    def __repr__(self):
-        return f"{self.service_group}->{ self.service_name}"
 
     @property
     def username(self):
@@ -129,18 +126,21 @@ class WSDPBase(ABC):
         """User can get template path"""
         return self._template_path
 
-    def _set_template_path(self):
+    def _set_template_path(self, template_path=None):
         """
         Set XML template path needed for rendering XML request
         Returns:
-            template path (string):  path for rendered XML request
+            template path (string):  path for rendered XML request (optional)
+            If template path is not set, the default one is selected.
         """
-        template_path = os.path.join(
-            self.service_dir,
-            "config",
-            self._config["files"]["xml_template"],
-        )
-        return template_path
+        if not template_path:
+            self._template_path = os.path.join(
+                self.service_dir,
+                "config",
+                self._config["files"]["xml_template"],
+            )
+        else:
+            self._template_path = template_path
 
     @property
     def service_headers(self):
@@ -197,6 +197,7 @@ class WSDPBase(ABC):
             r = requests.post(
                 self.service_headers["endpoint"], data=xml, headers=_headers
             )
+            r.raise_for_status()
             return r
         except requests.exceptions.RequestException as e:
             raise WSDPRequestError(self.logger, e)
