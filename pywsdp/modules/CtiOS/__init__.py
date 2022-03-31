@@ -47,30 +47,38 @@ class CtiOS():
         self.logger = WSDPLogger(self.nazev_modulu)
         self._log_adresar = self._set_default_log_dir()
 
+        # Defaultni pristupove udaje
+        self._uzivatel = "WSTEST"
+        self._heslo = "WSHESLO"
+
     @property
     def uzivatel(self):
-        """Vypise uzivatelske jmeno k WSDP."""
-        return self.cen_udaje.username
+        """Vypise uzivatelske jmeno ke sluzbe."""
+        return self._uzivatel
 
     @property
     def heslo(self):
-        """Vypise heslo k WSDP."""
-        return self.cen_udaje.password
+        """Vypise heslo ke sluzbe."""
+        return self._heslo
 
     @uzivatel.setter
     def uzivatel(self, uzivatel):
-        """Nastavi uzivatelske jmeno k WSDP."""
-        self.cen_udaje.username(uzivatel)
+        """Nastavi uzivatelske jmeno ke sluzbe."""
+        if self.ctios:
+            self.ctios.username(uzivatel)
+        self._uzivatel = uzivatel
 
     @heslo.setter
     def heslo(self, heslo):
-        """Nastavi heslo k WSDP."""
-        self.cen_udaje.password(heslo)
+        """Nastavi heslo ke sluzbe."""
+        if self.ctios:
+            self.ctios.password(heslo)
+        self._heslo = heslo
 
     @property
     def pristupove_udaje(self):
-        """Vypise pristupove udaje k WSDP ve forme uzivatelskeho jmeno a hesla."""
-        return (self.cen_udaje.username, self.cen_udaje.password)
+        """Vypise pristupove udaje ke sluzbe ve forme uzivatelskeho jmeno a hesla."""
+        return (self._uzivatel, self._heslo)
 
     @property
     def log_adresar(self):
@@ -84,6 +92,46 @@ class CtiOS():
         self.logger.set_directory(log_adresar)
         self._log_adresar = log_adresar
 
+    @property
+    def pocet_dotazovanych_identifikatoru(self):
+        """Vypise pocet identifikatoru na vstupu."""
+        return self.ctios.number_of_posidents
+
+    @property
+    def pocet_neplatnych_identifikatoru(self):
+        """Vypise pocet neplatnych identifikatoru opravnenych subjektu"""
+        return self.ctios.counter.neplatny_identifikator
+
+    @property
+    def pocet_expirovanych_identifikatoru(self):
+        """Vypise pocet expirovanych identifikatoru opravnenych subjektu"""
+        return self.ctios.counter.expirovany_identifikator
+
+    @property
+    def pocet_neexistujicich_os(self):
+        """Vypise pocet neexistujicich opravnenych subjektu"""
+        return self.ctios.counter.opravneny_subjekt_neexistuje
+
+    @property
+    def pocet_uspesne_stazenych_os(self):
+        """Vypise pocet uspesne stazenych opravnenych subjektu."""
+        return self.ctios.counter.uspesne_stazeno
+
+    @property
+    def pocet_odstranenych_duplicit(self):
+        """Vypise pocet nalezenych duplicit ve vstupnich datech,
+        Duplicity jsou pri vypoctu automaticky odstraneny."""
+        return self.ctios.number_of_posidents -self.ctios.number_of_posidents_final
+
+    @property
+    def pocet_dotazu_na_server(self):
+        """Vypise pocet samostatnych dotazu, do kterych byl pozadavek rozdelen."""
+        return self.ctios.number_of_chunks
+
+    def otestuj_sluzbu(self):
+        """Otestuje zda je CtiOS sluzba funkcni."""
+        return self.ctios._test_service()
+
     def nacti_identifikatory_ze_slovniku(self, ctios_slovnik):
         """Vezme parametry ze slovniku
         a vytvori instanci sluzby CtiOSDict
@@ -92,6 +140,8 @@ class CtiOS():
         """
         dictionary = {"ctiOSDict": ctios_slovnik}
         self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
+        self.ctios.set_credentials(username=self._uzivatel, password=self._heslo)
+        self.ctios.write_preprocessing_stats()
 
     def nacti_identifikatory_z_json_souboru(self, cesta_k_json_souboru):
         """Vezme parametry ze souboru typu *.JSON
@@ -100,8 +150,9 @@ class CtiOS():
         {"posidents" : [pseudokod1, pseudokod2...]}.
         """
         dictionary = {"ctiOSJson": cesta_k_json_souboru}
-        print(dictionary)
         self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
+        self.ctios.set_credentials(username=self._uzivatel, password=self._heslo)
+        self.ctios.write_preprocessing_stats()
 
     def nacti_identifikatory_z_databaze(self, cesta_k_databazi, sql_dotaz=None):
         """Vezme parametry ze souboru typu *.db, ktery byl vytvoren z VFK souboru,
@@ -113,12 +164,12 @@ class CtiOS():
         else:
             dictionary = {"ctiOSDb": cesta_k_databazi}
         self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
+        self.ctios.set_credentials(username=self._uzivatel, password=self._heslo)
+        self.ctios.write_preprocessing_stats()
 
     def zpracuj_identifikatory(self):
         """Zpracuje vstupni parametry pomoci sluzby CtiOS a vysledne osobni udaje
         opravnenych subjektu ulozi do slovniku.
-        V pripade vstupu ve forme databaze navic updatuje ziskanymi osobnimi
-        udaji vstupni databazi.
         """
         return self.ctios._process()
 

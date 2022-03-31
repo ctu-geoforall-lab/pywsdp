@@ -58,30 +58,38 @@ class GenerujCenoveUdajeDleKu():
         # Boolean pro mazani sestavy
         self.not_deleted = True
 
+        # Defaultni pristupove udaje
+        self._uzivatel = "WSTEST"
+        self._heslo = "WSHESLO"
+
     @property
     def uzivatel(self):
-        """Vypise uzivatelske jmeno k WSDP."""
-        return self.cen_udaje.username
+        """Vypise uzivatelske jmeno ke sluzbe."""
+        return self._uzivatel
 
     @property
     def heslo(self):
-        """Vypise heslo k WSDP."""
-        return self.cen_udaje.password
+        """Vypise heslo ke sluzbe."""
+        return self._heslo
 
     @uzivatel.setter
     def uzivatel(self, uzivatel):
-        """Nastavi uzivatelske jmeno k WSDP."""
-        self.cen_udaje.username(uzivatel)
+        """Nastavi uzivatelske jmeno ke sluzbe."""
+        if self.cen_udaje:
+            self.cen_udaje.username(uzivatel)
+        self._uzivatel = uzivatel
 
     @heslo.setter
     def heslo(self, heslo):
-        """Nastavi heslo k WSDP."""
-        self.cen_udaje.password(heslo)
+        """Nastavi heslo ke sluzbe."""
+        if self.cen_udaje:
+            self.cen_udaje.password(heslo)
+        self._heslo = heslo
 
     @property
     def pristupove_udaje(self):
-        """Vypise pristupove udaje k WSDP ve forme uzivatelskeho jmeno a hesla."""
-        return (self.cen_udaje.username, self.cen_udaje.password)
+        """Vypise pristupove udaje ke sluzbe ve forme uzivatelskeho jmeno a hesla."""
+        return (self._uzivatel, self._heslo)
 
     @property
     def log_adresar(self):
@@ -107,6 +115,7 @@ class GenerujCenoveUdajeDleKu():
         """
         dictionary = {'generujCenoveUdajeDleKu': cenove_udaje_slovnik}
         self.cen_udaje = pywsdp.create(recipe=dictionary, logger=self.logger)
+        self.cen_udaje.set_credentials(username=self._uzivatel, password=self._heslo)
 
     def nacti_parametry_z_json_souboru(self, cesta_k_json_souboru):
         """Vezme parametry ze souboru typu *.JSON
@@ -129,7 +138,8 @@ class GenerujCenoveUdajeDleKu():
                 "File is not found!"
                 )
         dictionary = {self.name: dictionary}
-        self.cen_udaje = pywsdp.create(recipe=dictionary)
+        self.cen_udaje = pywsdp.create(recipe=dictionary, logger=self.logger)
+        self.cen_udaje.set_credentials(username=self._uzivatel, password=self._heslo)
 
     def vytvor_sestavu(self):
         """Zavola sluzbu GenerujCenoveUdajeDleKu, preda ji parametry
@@ -165,8 +175,7 @@ class GenerujCenoveUdajeDleKu():
         """
         self.parametry = {'seznamSestav': {'idSestavy': sestava["idSestavy"]}}
         self.seznam_sestav = pywsdp.create(recipe=self.parametry, logger=self.logger)
-        self.seznam_sestav.username = self.uzivatel
-        self.seznam_sestav.password = self.heslo
+        self.seznam_sestav.set_credentials(username=self._uzivatel, password=self._heslo)
         return self.seznam_sestav._process()
 
     def zauctuj_sestavu(self, sestava):
@@ -188,8 +197,7 @@ class GenerujCenoveUdajeDleKu():
          'souborSestavy': ''}"""
         self.parameters = {'vratSestavu': {'idSestavy':  sestava["idSestavy"]}}
         self.vrat_sestavu = pywsdp.create(recipe=self.parameters, logger=self.logger)
-        self.vrat_sestavu.username = self.uzivatel
-        self.vrat_sestavu.password = self.heslo
+        self.vrat_sestavu.set_credentials(username=self._uzivatel, password=self._heslo)
         return self.vrat_sestavu._process()
 
     def uloz_vystup(self, zauctovana_sestava, vystupni_adresar):
@@ -209,8 +217,7 @@ class GenerujCenoveUdajeDleKu():
         {'zprava': ''}"""
         self.parameters = {'smazSestavu': {'idSestavy': sestava["idSestavy"]}}
         self.smaz_sestavu = pywsdp.create(recipe=self.parameters, logger=self.logger)
-        self.smaz_sestavu.username = self.uzivatel
-        self.smaz_sestavu.password = self.heslo
+        self.smaz_sestavu.set_credentials(username=self._uzivatel, password=self._heslo)
         self.not_deleted = False
         return self.smaz_sestavu._process()
 

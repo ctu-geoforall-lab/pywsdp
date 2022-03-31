@@ -37,21 +37,33 @@ class CtiOSXMLParser:
         Returns:
             xml_attributes (nested dictonary): parsed XML attributes
         """
+        def get_xml_namespace_ns0():
+            return "{http://katastr.cuzk.cz/ctios/types/v2.8}"
+
+        def get_xml_namespace_ns1():
+            return "{http://katastr.cuzk.cz/commonTypes/v2.8}"
+
         root = et.fromstring(content)
-        namespace = self._get_xml_namespace()
-        namespace_length = len(namespace)
+
+        # Find tags with 'zprava' name
         xml_dict = {}
+        namespace_ns1 = get_xml_namespace_ns1()
+        os_tags = root.findall(".//{}zprava".format(namespace_ns1))
+        for os_tag in os_tags:
+            logger.info(os_tag.text)
 
         # Find all tags with 'os' name
-        for os_tag in root.findall(".//{}os".format(namespace)):
+        namespace_ns0 = get_xml_namespace_ns0()
+        namespace_length = len(namespace_ns0)
+        for os_tag in root.findall(".//{}os".format(namespace_ns0)):
 
             # Save posident variable
-            posident = os_tag.find("{}pOSIdent".format(namespace)).text
+            posident = os_tag.find("{}pOSIdent".format(namespace_ns0)).text
 
-            if os_tag.find("{}chybaPOSIdent".format(namespace)) is not None:
+            if os_tag.find("{}chybaPOSIdent".format(namespace_ns0)) is not None:
 
                 # Errors detected
-                identifier = os_tag.find("{}chybaPOSIdent".format(namespace)).text
+                identifier = os_tag.find("{}chybaPOSIdent".format(namespace_ns0)).text
 
                 if identifier == "NEPLATNY_IDENTIFIKATOR":
                     counter.add_neplatny_identifikator()
@@ -81,18 +93,15 @@ class CtiOSXMLParser:
                 logger.info("POSIDENT {} USPESNE STAZEN".format(posident))
 
                 # Create the dictionary with XML child attribute names and particular texts
-                for child in os_tag.find(".//{}osDetail".format(namespace)):
+                for child in os_tag.find(".//{}osDetail".format(namespace_ns0)):
                     # key: remove namespace from element name
                     name = child.tag
                     xml_dict[posident][name[namespace_length:]] = os_tag.find(
                         ".//{}".format(name)
                     ).text
-                os_id = os_tag.find("{}osId".format(namespace)).text
+                os_id = os_tag.find("{}osId".format(namespace_ns0)).text
                 xml_dict[posident]["osId"] = os_id
         return xml_dict
-
-    def _get_xml_namespace(self):
-        return "{http://katastr.cuzk.cz/ctios/types/v2.8}"
 
 
 class CtiOSCounter:

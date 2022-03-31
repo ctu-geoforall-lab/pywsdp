@@ -25,13 +25,15 @@ class WSDPBase(ABC):
     """
 
     def __init__(self):
-        self._username = "WSTEST"
-        self._password = "WSHESLO"
+        self._username = None
+        self._password = None
+        self._request_xml = None
+        self._response_xml = None
         self._services_dir = self._find_services_dir()
         self._service_dir = self._set_service_dir()
         self._config = self._read_configuration()
-        self._template_path = self._set_template_path()
         self._service_headers = self._set_service_headers()
+        self._set_template_path()
 
     @property
     @abstractmethod
@@ -52,15 +54,12 @@ class WSDPBase(ABC):
         pass
 
     @classmethod
-    def _from_recipe(cls, parameters, logger):
+    def _from_recipe(cls, args, logger):
         """Creates class instance based on the recipe"""
         result = cls()
-        result.parameters = parameters
+        result.args = args
         result.logger = logger
         return result
-
-    def __repr__(self):
-        return f"{self.service_group}->{ self.service_name}"
 
     @property
     def username(self):
@@ -72,20 +71,10 @@ class WSDPBase(ABC):
         """User can get password"""
         return self._password
 
-    @username.setter
-    def username(self, username):
-        """User can get usernamer"""
+    def set_credentials(self, username, password):
+        """User can set credentials"""
         self._username = username
-
-    @password.setter
-    def password(self, password):
-        """User can get password"""
         self._password = password
-
-    @property
-    def credentials(self):
-        """User can get log dir"""
-        return (self._username, self._password)
 
     @property
     def services_dir(self):
@@ -137,18 +126,21 @@ class WSDPBase(ABC):
         """User can get template path"""
         return self._template_path
 
-    def _set_template_path(self):
+    def _set_template_path(self, template_path=None):
         """
         Set XML template path needed for rendering XML request
         Returns:
-            template path (string):  path for rendered XML request
+            template path (string):  path for rendered XML request (optional)
+            If template path is not set, the default one is selected.
         """
-        template_path = os.path.join(
-            self.service_dir,
-            "config",
-            self._config["files"]["xml_template"],
-        )
-        return template_path
+        if not template_path:
+            self._template_path = os.path.join(
+                self.service_dir,
+                "config",
+                self._config["files"]["xml_template"],
+            )
+        else:
+            self._template_path = template_path
 
     @property
     def service_headers(self):
@@ -178,7 +170,6 @@ class WSDPBase(ABC):
         service_headers["endpoint"] = self._config["service headers"]["endpoint"]
         return service_headers
 
-
     def _renderXML(self, **kwargs):
         """Abstract method rendering XML"""
         request_xml = WSDPTemplate(self.template_path).render(
@@ -193,7 +184,7 @@ class WSDPBase(ABC):
         Raises:
             WSDPRequestError(Service error)
         Returns:
-            response_xml (str): xml response from WSDP service
+            response from WSDP service
         """
         # WSDP headers for service requesting
         _headers = {
@@ -207,12 +198,10 @@ class WSDPBase(ABC):
                 self.service_headers["endpoint"], data=xml, headers=_headers
             )
             r.raise_for_status()
-            # if self.log_dir:
-            #    self.logger.debug(response_xml)
+            return r
         except requests.exceptions.RequestException as e:
             raise WSDPRequestError(self.logger, e)
-        response_xml = r.text
-        return response_xml
+        return None
 
     @abstractmethod
     def _parseXML(self, content):
@@ -221,6 +210,24 @@ class WSDPBase(ABC):
 
     def _process(self):
         """Main wrapping method"""
-        xml = self._renderXML(parameters=self.xml_attrs)
-        response_xml = self._call_service(xml)
-        return self._parseXML(response_xml)
+        dictionary = {}
+        if isinstance(self.xml_attrs, list):
+            for xml_attr in self.xml_attrs:
+                request_xml = self._renderXML(parameters=xml_attr)
+                response_xml = self._call_service(request_xml).text
+                dictionary = {**dictionary, **self._parseXML(response_xml)}
+        else:
+            request_xml = self._renderXML(parameters=self.xml_attrs)
+            response_xml = self._call_service(request_xml).text
+            dictionary = self._parseXML(response_xml)
+        self.request_xml = request_xml
+        self.response_xml = response_xml
+        return dictionary
+
+    def _test_service(self):
+        """Test service"""
+        if isinstance(self.xml_attrs, list):
+            xml = self._renderXML(parameters=self.xml_attrs[0])
+        else:
+            xml = self._renderXML(parameters=self.xml_attrs)
+        return self._call_service(xml).status_code

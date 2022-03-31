@@ -28,96 +28,63 @@ class WSDPFactory:
                 "Input is not a dictionary!"
                 )
         service_name = list(recipe.keys())[0]
-        parameters = list(recipe.values())[0]
+        args = list(recipe.values())[0]
         cls = self.classes[service_name]
-        return cls._from_recipe(parameters, logger)
+        return cls._from_recipe(args, logger)
 
 pywsdp = WSDPFactory()
 
 @pywsdp.register
 class GenerujCenoveUdajeDleKu(SestavyBase):
-    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
     """
-
+    """
     service_name = "generujCenoveUdajeDleKu"
     logger = WSDPLogger(service_name)
 
 @pywsdp.register
-class GenerujVystupZeSbirkyListin(SestavyBase):
-    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
-    """
-
-    service_name = "generujVystupZeSbirkyListin"
-    logger = WSDPLogger(service_name)
-
-@pywsdp.register
 class SeznamSestav(SestavyBase):
-    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
     """
-
+    """
     service_name = "seznamSestav"
     logger = WSDPLogger(service_name)
 
 @pywsdp.register
 class VratSestavu(SestavyBase):
-    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
     """
-
+    """
     service_name = "vratSestavu"
     logger = WSDPLogger(service_name)
 
 @pywsdp.register
 class SmazSestavu(SestavyBase):
-    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
     """
-
+    """
     service_name = "smazSestavu"
     logger = WSDPLogger(service_name)
 
 @pywsdp.register
 class CtiOSDict(CtiOSBase):
-    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
     """
-
+    """
     service_name = "ctiOSDict"
     logger = WSDPLogger(service_name)
 
-    def _get_parameters(self):
+    @property
+    def parameters(self):
         """Method for getting parameters"""
-        return self.parameters["posidents"]
+        return self.args["posidents"]
 
 @pywsdp.register
 class CtiOSJson(CtiOSBase):
-    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
     """
-
+    """
     service_name = "ctiOSJson"
     logger = WSDPLogger(service_name)
 
-    def _get_parameters(self):
+    @property
+    def parameters(self):
         """Method for getting parameters"""
-        json_path = self.parameters
+        json_path = self.args
         file = Path(json_path)
         if file.exists():
             with open(file) as f:
@@ -131,18 +98,14 @@ class CtiOSJson(CtiOSBase):
 
 @pywsdp.register
 class CtiOSDb(CtiOSBase):
-    """A class that defines interface and main logic used for generujCenoveUdajeDleKu service.
-
-    Several methods has to be overridden or
-    NotImplementedError(self.__class__.__name__+ "MethodName") will be raised.
     """
-
-    schema = "OPSUB"
+    """
     service_name = "ctiOSDb"
     logger = WSDPLogger(service_name)
 
     def __init__(self):
         super().__init__()
+        self.schema = "OPSUB"
         self._mapping_json_path = self._set_mapping_json_path()
 
     @property
@@ -163,14 +126,15 @@ class CtiOSDb(CtiOSBase):
         )
         return mapping_json_path
 
-    def _get_parameters(self):
+    @property
+    def parameters(self):
         """Method for getting parameters"""
         sql=None
-        if isinstance(self.parameters, list):
-            db_path = self.parameters[0]
-            sql = self.parameters[1]
+        if isinstance(self.args, list):
+            db_path = self.args[0]
+            sql = self.args[1]
         else:
-            db_path = self.parameters
+            db_path = self.args
 
         file = Path(db_path)
         if file.exists():
