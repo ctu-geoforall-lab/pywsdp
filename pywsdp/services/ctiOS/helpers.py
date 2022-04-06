@@ -7,7 +7,7 @@ Classes:
  - ctiOS::CtiOSXMLParser
  - ctiOS::CtiOSCounter
  - ctiOS::CtiOSDbManager
- - ctiOS::CtiOSXml2DbConverter
+ - ctiOS::CtiOsAttributeConverter
 
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
@@ -245,7 +245,6 @@ class CtiOSDbManager:
         Args:
             schema (str): name of schema in db
             dictionary (nested dictonary): converted DB attributes
-            counter (class): class managing statistics info
         Raises:
             WSDPError: SQLite error
         """
@@ -270,89 +269,67 @@ class CtiOSDbManager:
             self.conn.close()
 
 
-class CtiOSXml2DbConverter:
+class CtiOSAttributeConverter:
     """
-    CtiOS class for converting XML attribute names to DB attribute names
+    CtiOS class for compiling attribute dictionary based on DB columns
+    and mapping json file.
     """
-    def __init__(self, mapping_attributes_path, logger):
-        self.logger = logger
+    def __init__(self, mapping_attributes_path, input_dictionary, db_columns,  logger):
         self.mapping_attributes_path = mapping_attributes_path
+        self.input_dictionary = input_dictionary
+        self.db_columns = db_columns
+        self.logger = logger
 
-    def _read_mapping_attributes_dir(self):
+    def _read_mapping_attributes_dict(self):
         """
-        Read csv attributes as dictionary
+        Read json attributes as dictionary.
+        The dictionary consists of db columns (keys) and xml tags (values).
 
         Args:
             csv_name (str): name of attribute mapping csv file
 
         Returns:
-            dictionary (dict): (1.column:2.column)
+            dictionary (dict): (db_column: xml_tag)
         """
         with open(self.mapping_attributes_path) as json_file:
             return json.load(json_file)
         return None
 
-    def _transform_names(self, xml_name):
+    def _transform(self, xml_tag):
         """
-        Convert names in XML name to name in database (eg. StavDat to STAV_DAT)
+        Convert tags in XML to name in database (eg.StavDat to STAV_DAT)
 
         Args:
-            xml_name (str): tag of xml attribute in xml response
+            xml_tag (str): tag of xml attribute in xml response
 
         Returns:
-            database_name (str): column names in database
+            database_name (str): column names in database 
         """
+        return re.sub("([A-Z]{1})", r"_\1", xml_tag).upper()
 
-        database_name = re.sub("([A-Z]{1})", r"_\1", xml_name).upper()
-        return database_name
-
-    def _transform_names_dict(self, xml_name):
+    def convert_attributes(self):
         """
-        Convert names in XML name to name in database based on special dictionary
-
-        Args:
-            xml_name (str): tag of xml attribute in xml response
-            config_file (str): configuration file (not mandatory)
-
-        Raises:
-            WSDPError(XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME)
+        Draw up converted attribute dictionary based on mapping json file
+        and transformed db column names.
 
         Returns:
-            database_name (str): column names in database
-        """
-        try:
-            # Load dictionary with names of XML tags and their relevant database names
-            mapping_attributes_dict = self._read_mapping_attributes_dir()
-            database_name = mapping_attributes_dict[xml_name]
-            return database_name
-
-        except Exception as e:
-            raise WSDPError(
-                self.logger,
-                "XML ATTRIBUTE NAME CANNOT BE CONVERTED TO DATABASE COLUMN NAME: {}".format(
-                    e
-                ),
-            )
-
-    def convert_attributes(self, db_columns, input_dictionary):
-        """
-        Convert XML attribute names to db attributes names
-
-        Args:
-            columns: list of columns in db
-            input dictionary (nested dictonary): original XML attributes
-
-        Returns:
-            output dictionary (nested dictonary): converted DB attributes
+            output dictionary (nested dictonary): converted XML tags
         """
         output_dictionary = {}
-
-        for posident_id, input_nested_dictionary in input_dictionary.items():
+        mapping_dictionary = self._read_mapping_attributes_dict()
+        for posident_id, input_nested_dictionary in self.input_dictionary.items():
             output_nested_dictionary = {}
-            for xml_key, value in input_nested_dictionary.items():
-                db_key = self._transform_names(xml_key)
-                if db_key not in db_columns:
-                    db_key = self._transform_names_dict(xml_key)
-                output_nested_dictionary[db_key] = value
+            # Go through nested dictionary keys and replace them
+            for key in input_nested_dictionary.keys():
+                if key in mapping_dictionary.keys():
+                    new_key = mapping_dictionary[key]
+                else:
+                    new_key = self._transform(key)
+                    if new_key not in self.db_columns:
+                        raise WSDPError(
+                                self.logger,
+                                "XML attribute name cannot be converted to database column name"
+                        )
+                output_nested_dictionary[new_key] = input_nested_dictionary[key]
             output_dictionary[posident_id] = output_nested_dictionary
         return output_dictionary
