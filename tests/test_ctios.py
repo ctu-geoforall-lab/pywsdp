@@ -41,32 +41,7 @@ class TestCtiOS:
         assert config["service headers"]["connection"] == "Keep-Alive"
         assert config["service headers"]["endpoint"] == "https://wsdptrial.cuzk.cz/trial/ws/ctios/2.8/ctios"
 
-    def test_00b_mapping_file(self):
-        """Check if mapping attributes json exists, check magic values."""
-        mapping_attributes_path = os.path.join(
-                self.service_dir, "config", "attributes_mapping.json"
-            )
-        # Check if json file exists
-        assert os.path.exists(mapping_attributes_path) == True
-        # Open mapping attributes json file
-        with open(mapping_attributes_path) as json_file:
-            dictionary = json.load(json_file)
-
-        # Check values againts db columns
-        db_path = os.path.join(library_path, 'data', 'input', 'ctios_template.db')
-        con = sqlite3.connect(db_path)
-        cur = con.cursor()
-        cur.execute("PRAGMA read_committed = true;")
-        cur.execute("""select * from {0}""".format("OPSUB"))
-        col_names = list(map(lambda x: x[0], cur.description))
-
-        for key, value in dictionary.items():
-            if value in col_names:
-                assert 1 == 1
-            else:
-                assert 0 == 1
-
-    def test_00c_template_file(self):
+    def test_00b_template_file(self):
         """Check if template file exists, check magic values."""
         template_path = os.path.join(
                 self.service_dir, "config", "ctiOS.xml"
@@ -268,20 +243,7 @@ class TestCtiOS:
         "5wQRil9Nd5KIrn5KWTf8+sksZslnMqy2tveDvYPIsd1cd9qHYs1V9d9uZVwBEVe5Sknvonhh+FDiaYEJa+RdHM3VtvGsIqsc2Hm3mX0xYfs=",
         "UKcYWvUUTpNi8flxUzlm+Ss5iq0JV3CiStJSAMOk6xHFQncZraFeO9yj8OGraKiDJ8eLB0FegdXYuyYWsEXiv2H9ws95ezlKNTqR6ze7aOnR3a7NWzWJfe+R5VHfU13+"]
 
-    def test_05b_write_output_db(self):
-        """Check non empty, is valid, read db, check number of keys, posidents code"""
-        db_path = os.path.join(library_path, 'data', 'input', 'ctios_template.db')
-        output_path = copyfile(db_path, os.path.join(library_path, 'data', 'output', 'ctios_template.db'))
-        ctiOS = CtiOS()
-        ctiOS.nacti_identifikatory_z_databaze(output_path)
-        vysledek = ctiOS.zpracuj_identifikatory()
-        ctiOS.uloz_vystup(vysledek, output_path , OutputFormat.GdalDb)
-        con = sqlite3.connect(output_path)
-        cur = con.cursor()
-        for row in cur.execute("SELECT count(*) FROM OPSUB"):
-            assert row == (108,)
-
-    def test_05c_write_output_csv(self):
+    def test_05b_write_output_csv(self):
         """Check non empty, is valid, read csv, check number of keys, posidents code"""
         dictionary = {"posidents" : [
         "uecJ/wWk2Ej6CAnwe3i0y0jfrp9Xr1oMVJ+9kLKpkU8trb/GSsJmcvNw7XJ0dzNpkKLYrpaxDPIVMKGKnG/ZMzSYtEOoqKGnRHhbt/PXjUr/RJzL4O5LlsS30GNP3Kka",
@@ -297,4 +259,47 @@ class TestCtiOS:
                 if line[0] == dictionary["posidents"][0]:
                     boolean = 1
         assert boolean == 1
+        
+    def test_05c_check_mapping_file(self):
+        """Check if mapping attributes json exists, check magic values."""
+        mapping_attributes_path = os.path.join(
+                self.service_dir, "config", "attributes_mapping.json"
+            )
+        # Check if json file exists
+        assert os.path.exists(mapping_attributes_path) == True
+        # Open mapping attributes json file
+        with open(mapping_attributes_path) as json_file:
+            dictionary = json.load(json_file)
+            assert dictionary == {
+            	"priznakKontext": "PRIZNAK_KONTEXTU",
+            	"partnerBsm1": "ID_JE_1_PARTNER_BSM",
+            	"partnerBsm2": "ID_JE_2_PARTNER_BSM",
+            	"charOsType": "CHAROS_KOD",
+            	"kodAdresnihoMista": "KOD_ADRM",
+            	"idNadrizenePravnickeOsoby": "ID_NADRIZENE_PO"
+            }       
+        db_path = os.path.join(library_path, 'data', 'input', 'ctios_template.db')
+        ctiOS = CtiOS()
+        ctiOS.nacti_identifikatory_z_databaze(db_path)
+        vysledek = ctiOS.zpracuj_identifikatory()
+        db = ctiOS.ctios._create_connection(db_path)
+        
+        try:
+            ctiOS.ctios.convert_attributes(vysledek, db)
+        except:
+            with WSDPRequestError:
+                pytest.fail("XML attribute name cannot be converted to database column name")
+
+    def test_05d_write_output_db(self):
+        """Check non empty, is valid, read db, check number of keys, posidents code"""
+        db_path = os.path.join(library_path, 'data', 'input', 'ctios_template.db')
+        output_path = copyfile(db_path, os.path.join(library_path, 'data', 'output', 'ctios_template.db'))
+        ctiOS = CtiOS()
+        ctiOS.nacti_identifikatory_z_databaze(output_path)
+        vysledek = ctiOS.zpracuj_identifikatory()
+        ctiOS.uloz_vystup(vysledek, output_path , OutputFormat.GdalDb)
+        con = sqlite3.connect(output_path)
+        cur = con.cursor()
+        for row in cur.execute("SELECT count(*) FROM OPSUB"):
+            assert row == (108,)
 
