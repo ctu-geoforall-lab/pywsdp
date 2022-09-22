@@ -8,3 +8,6 @@ services/ctiOS/data/output/*.csv
 venv
 .idea
 docs/notebooks/.ipynb_checkpoints/
+build/
+dist/
+pywsdp.egg-info/
