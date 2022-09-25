@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  sphinx:
+  run-sphinx:
     name: Sphinx ${{ matrix.sphinx-version }}
 
     strategy:
@@ -23,7 +23,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository contents
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -35,6 +36,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install sphinx==${{ matrix.sphinx-version }}
           pip install nbsphinx==${{ matrix.nbsphinx-version }}
-      - name: Build sphinx documentation
+
+      - name: Build Sphinx documentation
         run: |
           docs/make html
