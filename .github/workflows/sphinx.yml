@@ -1,14 +1,20 @@
 name: Update Sphinx documentation
+
+# Controls when the workflow will run
 on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
-    branches:
-      - master
+    branches: [ "master" ]
   pull_request:
-    branches:
-      - master
+    branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   sphinx:
-#    name: Sphinx ${{ matrix.sphinx-version }}
+    name: Sphinx ${{ matrix.sphinx-version }}
 
     # Using matrix just to get variables which are not environmental variables
     # and also to sync with other workflows which use matrix.
@@ -23,7 +29,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v2
