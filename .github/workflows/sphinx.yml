@@ -40,4 +40,4 @@ jobs:
 
       - name: Build Sphinx documentation
         run: |
-          make html
+          docs/make html
