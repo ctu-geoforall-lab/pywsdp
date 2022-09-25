@@ -33,10 +33,10 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          #pip install sphinx==${{ matrix.sphinx-version }}
-          #pip install nbsphinx==${{ matrix.nbsphinx-version }}
+          pip install sphinx==${{ matrix.sphinx-version }}
+          pip install nbsphinx==${{ matrix.nbsphinx-version }}
 
-      # - name: Build sphinx documentation
-      #   run: |
-      #     docs/make html
+       - name: Build sphinx documentation
+         run: |
+           docs/make html
 
