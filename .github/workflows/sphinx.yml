@@ -1,4 +1,4 @@
-name: sphinx
+name: Update Sphinx documentation
 on:
   push:
     branches:
