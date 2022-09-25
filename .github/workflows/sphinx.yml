@@ -10,7 +10,6 @@ on:
 
 jobs:
   run-sphinx:
-    name: Sphinx ${{ matrix.sphinx-version }}
 
     strategy:
       matrix:
@@ -19,6 +18,8 @@ jobs:
             python-version: "3.6.9"
             sphinx-version: "1.6.7"
             nbsphinx-version: "0.8.8"
+
+    name: Sphinx ${{ matrix.sphinx-version }}
 
     runs-on: ${{ matrix.os }}
 
