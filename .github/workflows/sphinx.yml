@@ -1,4 +1,4 @@
-name: Update Sphinx docs
+name: Update Sphinx documentation
 
 on:
   push:
@@ -10,31 +10,21 @@ on:
 
 jobs:
   sphinx:
-    name: Sphinx ${{ matrix.sphinx-version }}
-
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-18.04
-            python-version: "3.6"
-            sphinx-version: "1.6.7"
-            nbsphinx-version: "0.8.8"
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
 
     steps:
       - uses: actions/checkout@v3
-
+      
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.6"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install sphinx==${{ matrix.sphinx-version }}
-          pip install nbsphinx==${{ matrix.nbsphinx-version }}
+          pip install sphinx=="1.6.7"
+          pip install nbsphinx=="0.8.8"
 
       - name: Build sphinx documentation
         run: |
