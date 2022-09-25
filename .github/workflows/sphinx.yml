@@ -39,5 +39,4 @@ jobs:
           pip install nbsphinx==${{ matrix.nbsphinx-version }}
 
       - name: Build Sphinx documentation
-        run: |
-          docs/make html
+        run: docs/make html
