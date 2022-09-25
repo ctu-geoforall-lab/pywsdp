@@ -8,8 +8,17 @@ on:
       - master
 jobs:
   sphinx:
-    runs-on: ubuntu-18.04
 
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-18.04
+            python-version: "3.6"
+            sphinx-version: "1.6.7"
+            nbsphinx-version: "0.8.8"
+
+    runs-on: ${{ matrix.os }}
+            
     steps:
       - uses: actions/checkout@v3
       
