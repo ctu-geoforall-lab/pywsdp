@@ -119,7 +119,6 @@ class WSDPBase(ABC):
         )
         config = configparser.ConfigParser()
         config.read(self._config_path)
-        print(self._config_path)
         return config
 
     @property
