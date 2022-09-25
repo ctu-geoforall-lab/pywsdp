@@ -36,4 +36,4 @@ jobs:
     
       - name: Build sphinx documentation
         run: |
-         docs/make html
+        docs/make html
