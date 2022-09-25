@@ -8,7 +8,7 @@ on:
       - master
 jobs:
   sphinx:
-    name: Sphinx "1.6.7"
+    #name: Sphinx "1.6.7"
 
     # Using matrix just to get variables which are not environmental variables
     # # and also to sync with other workflows which use matrix.
