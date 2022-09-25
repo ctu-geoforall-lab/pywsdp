@@ -1,46 +1,40 @@
 name: Update Sphinx documentation
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
-    branches: [ "master" ]
+    branches:
+      - master
   pull_request:
-    branches: [ "master" ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+    branches:
+      - master
 jobs:
   sphinx:
-    name: Sphinx ${{ matrix.sphinx-version }}
+    name: Sphinx "1.6.7"
 
     # Using matrix just to get variables which are not environmental variables
-    # and also to sync with other workflows which use matrix.
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-18.04
-            python-version: "3.6"
-            sphinx-version: "1.6.7"
-            nbsphinx-version: "0.8.8"
+    # # and also to sync with other workflows which use matrix.
+    # strategy:
+    #   matrix:
+    #     include:
+    #       - os: ubuntu-18.04
+    #         python-version: "3.6"
+    #         sphinx-version: "1.6.7"
+    #         nbsphinx-version: "0.8.8"
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.6"
 
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install sphinx==${{ matrix.sphinx-version }}
-          pip install nbsphinx==${{ matrix.nbsphinx-version }}
+          pip install sphinx=="1.6.7"
+          pip install nbsphinx=="0.8.8"
 
       - name: Build Sphinx documentation
         run: |
