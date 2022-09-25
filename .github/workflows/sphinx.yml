@@ -7,8 +7,18 @@ on:
     branches:
       - master
 jobs:
-  sphinx:
-    runs-on: ubuntu-18.04
+  run-sphinx:
+    name: Sphinx ${{ matrix.sphinx-version }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-18.04
+            python-version: "3.6"
+            sphinx-version: "1.6.7"
+            nbsphinx-version: "0.8.8"
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v2
@@ -16,13 +26,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.6"
+          python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install
         run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install sphinx==${{ matrix.sphinx-version }}
+          pip install nbsphinx==${{ matrix.nbsphinx-version }}
     
-      - name: Build sphinx documentation
+      - name: Build Sphinx documentation
         run: |
-         make html
+          make html
