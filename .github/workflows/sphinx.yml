@@ -1,5 +1,4 @@
 name: Update Sphinx documentation
-
 on:
   push:
     branches:
@@ -7,9 +6,8 @@ on:
   pull_request:
     branches:
       - master
-
 jobs:
-  run-sphinx:
+  sphinx:
     name: Sphinx ${{ matrix.sphinx-version }}
 
     # Using matrix just to get variables which are not environmental variables
