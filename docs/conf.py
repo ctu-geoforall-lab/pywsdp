@@ -32,7 +32,6 @@ release = '1.0'
 # ones.
 extensions = [
     'nbsphinx',  # Integrate Jupyter Notebooks and Sphinx
-    'sphinx_copybutton'
 ]
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
