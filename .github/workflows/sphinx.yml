@@ -2,7 +2,7 @@ name: Pages
 on:
   push:
     branches:
-    - master
+    - pages-workflow
 jobs:
   build:
     runs-on: ubuntu-latest
