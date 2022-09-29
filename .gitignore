@@ -1,0 +1,12 @@
+__pycache__/
+*.vfk
+*.zip
+*.db
+*.csv
+*.log
+*.ipynb_checkpoints
+docs/_build/
+docs/_autosummary/
+build
+dist
+pywsdp.egg-info/
