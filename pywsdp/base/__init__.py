@@ -18,6 +18,8 @@ from abc import ABC, abstractmethod
 from pywsdp.base.exceptions import WSDPRequestError
 from pywsdp.base.template import WSDPTemplate
 
+__version__ = '1.0'
+
 
 class WSDPBase(ABC):
     """Base abstract class creating the interface for WSDP services

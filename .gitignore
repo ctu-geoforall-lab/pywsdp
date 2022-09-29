@@ -9,4 +9,4 @@ docs/_build/
 docs/_autosummary/
 build
 dist
-
+pywsdp.egg-info/
