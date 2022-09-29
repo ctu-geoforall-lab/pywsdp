@@ -4,7 +4,6 @@ Python CUZK WSDP Library
 
 Library for communication with WSDP CUZK services.
 
-
 ## Installing PyWSDP
 
 PyWSDP is available on PyPI:
@@ -12,3 +11,7 @@ PyWSDP is available on PyPI:
 ```console
 $ python -m pip install pywsdp
 ```
+
+## Documentation
+
+https://ctu-geoforall-lab.github.io/pywsdp/
