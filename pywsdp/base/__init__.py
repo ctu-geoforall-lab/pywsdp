@@ -91,7 +91,7 @@ class WSDPBase(ABC):
             return not hasattr(main, '__file__')
 
         if is_run_by_jupyter():
-            return os.path.abspath(os.path.join('../../', 'pywsdp', 'services'))
+            return os.path.abspath(os.path.join('../../../', 'pywsdp', 'services'))
         else:
             return os.path.join(os.path.dirname(os.path.dirname(__file__)), 'services')
 
