@@ -32,15 +32,10 @@ release = '1.0'
 # ones.
 extensions = [
     'nbsphinx',  # Integrate Jupyter Notebooks and Sphinx
+    'sphinx.ext.autodoc', # Create documentation from docstrings
 ]
 
-autosummary_generate = True  # Turn on sphinx.ext.autosummary
-autoclass_content = "both"  # Add __init__ doc (ie. params) to class summaries
-html_show_sourcelink = True  # Remove 'view source code' from top of page (for html, not python)
-autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
-set_type_checking_flag = True  # Enable 'expensive' imports for sphinx_autodoc_typehints
 nbsphinx_allow_errors = True  # Continue through Jupyter errors
-#autodoc_typehints = "description" # Sphinx-native method. Not as good as sphinx_autodoc_typehints
 add_module_names = False # Remove namespaces from class/method signatures
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
@@ -66,8 +61,7 @@ language = 'cs'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
+exclude_patterns = ['_build']
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -75,3 +69,30 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'alabaster'
+
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+html_theme_options = {
+    'github_user': 'ctu-geoforall-lab',
+    'github_banner': True,
+    'github_repo': 'pywsdp',
+    'travis_button': True,
+    'codecov_button': True
+}
+
+
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ['_static']
+
+# Custom sidebar templates, maps document names to template names.
+html_sidebars = {
+    '**': [
+        'sidebar-intro.html','globaltoc.html', 'sourcelink.html',
+        'searchbox.html'
+    ]
+}
+
+htmlhelp_basename = 'PyWSDPdoc'
