@@ -16,6 +16,16 @@ from zeep.transports import Transport
 from zeep.wsse.username import UsernameToken
 
 from enum import Enum
+
+from zeep.xsd.types import builtins as xsd_builtins_types
+
+def parse_date(_, value):
+    if isinstance(value, str):
+        return value
+    else:
+        return super().parse_date()
+
+xsd_builtins_types.DateTime.pythonvalue = parse_date
  
 class OutputFormat(Enum):
     GdalDb = 1
@@ -154,7 +164,6 @@ class WSDPFactory:
     if args[1]:
         service_name = args[1]
     cls = self.classes[service_name]
-    print(*args)
     return cls._from_recipe(*args)
 
 
@@ -1087,12 +1096,12 @@ if __name__ == "__main__":
     
     # CtiOS
     ctios = CtiOS(creds_test, trial=True)
-    print(ctios)
-    print(ctios.skupina_sluzeb)
-    print(ctios.nazev_sluzby)
-    print(ctios.pristupove_udaje)
-    print(ctios.log_adresar)
-    print(ctios.testovaci_mod)
+    #print(ctios)
+    ##print(ctios.skupina_sluzeb)
+    #print(ctios.nazev_sluzby)
+    #print(ctios.pristupove_udaje)
+    #print(ctios.log_adresar)
+    #print(ctios.testovaci_mod)
     parametry = {"pOSIdent": ["im+o3Qoxrit4ZwyJIPjx3X788EOgtJieiZYw/eqwxTPERjsqLramxBhGoAaAnooYAliQoVBYy7Q7fN2cVAxsAoUoPFaReqsfYWOZJjMBj/6Q=",
                               "4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyBI=",
                               "5wQRil9Nd5KIrn5KWTf8+sksZslnMqy2tveDvYPIsd1cd9qHYs1V9d9uZVwBEVe5Sknvonhh+FDiaYEJa+RdHM3VtvGsIqsc2Hm3mX0xYfs=",
@@ -1103,10 +1112,13 @@ if __name__ == "__main__":
     print(type(xml_odpoved))
     slovnik = ctios.preved_vysledek_na_slovnik(xml_odpoved)
     print(slovnik)    
+    print(type(slovnik))    
 
-    print(os.path.dirname( __file__ ))
-    vystupni_soubor = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data', 'output', 'ctios.json'))
+    #print(os.path.dirname( __file__ ))
+    vystupni_soubor = os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'data', 'output', 'ctios.json'))
+    
     ctios.uloz_vystup(slovnik, vystupni_soubor , OutputFormat.Json)
+    # ctios.uloz_vystup(slovnik, vystupni_soubor , OutputFormat.Csv)
 
     # vystupni_soubor = os.path.join('../', 'data', 'output', 'ctios.json')
     # ctios.uloz_vystup(slovnik, vystupni_soubor , OutputFormat.Json)

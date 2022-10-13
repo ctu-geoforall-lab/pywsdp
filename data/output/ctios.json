@@ -1,0 +1,148 @@
+{
+  "vysledek": {
+    "zprava": [
+      {
+        "kod": 0,
+        "_value_1": "Požadovaná akce byla úspěšně provedena.",
+        "uroven": "INFORMACE"
+      }]
+  },
+  "osList": {
+    "os": [
+      {
+        "chybaPOSIdent": "NEPLATNY_IDENTIFIKATOR",
+        "pOSIdent": "im+o3Qoxrit4ZwyJIPjx3X788EOgtJieiZYw/eqwxTPERjsqLramxBhGoAaAnooYAliQoVBYy7Q7fN2cVAxsAoUoPFaReqsfYWOZJjMBj/6Q=",
+        "osDetail": null,
+        "osId": null
+      },{
+        "chybaPOSIdent": null,
+        "pOSIdent": "4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyBI=",
+        "osDetail": [
+          {
+            "prijmeniU": "JUST",
+            "okres": null,
+            "nazevU": null,
+            "psc": 11000,
+            "ico": null,
+            "titulZaJmenem": null,
+            "doplnekIco": null,
+            "nazev": null,
+            "rizeniIdVzniku2": null,
+            "datumVzniku": "2000-01-01T00:00:00",
+            "charOsType": 2,
+            "titulPredJmenem": null,
+            "rizeniIdVzniku": 52211641010,
+            "cisloDomovni": 801,
+            "castObce": "Komárov",
+            "datumVzniku2": null,
+            "prijmeni": "Just",
+            "jmeno": "Josef",
+            "priznakKontext": 3,
+            "datumZaniku": null,
+            "idNadrizenePravnickeOsoby": null,
+            "jmenoU": "JOSEF",
+            "opsubType": "OFO",
+            "rizeniIdZaniku": null,
+            "nazevUlice": null,
+            "mestskaCast": null,
+            "kodAdresnihoMista": null,
+            "stavDat": 0,
+            "idZdroj": null,
+            "partnerBsm2": null,
+            "partnerBsm1": null,
+            "stat": null,
+            "obec": "Komárov",
+            "cpCe": "1",
+            "rodneCislo": "310426052",
+            "cisloOrientacni": null
+          }],
+        "osId": 414260306
+      },{
+        "chybaPOSIdent": null,
+        "pOSIdent": "5wQRil9Nd5KIrn5KWTf8+sksZslnMqy2tveDvYPIsd1cd9qHYs1V9d9uZVwBEVe5Sknvonhh+FDiaYEJa+RdHM3VtvGsIqsc2Hm3mX0xYfs=",
+        "osDetail": [
+          {
+            "prijmeniU": "MOCH",
+            "okres": null,
+            "nazevU": null,
+            "psc": 11000,
+            "ico": null,
+            "titulZaJmenem": null,
+            "doplnekIco": null,
+            "nazev": null,
+            "rizeniIdVzniku2": null,
+            "datumVzniku": "2000-01-01T00:00:00",
+            "charOsType": 2,
+            "titulPredJmenem": null,
+            "rizeniIdVzniku": 36225636010,
+            "cisloDomovni": 1134,
+            "castObce": "Pražmo",
+            "datumVzniku2": null,
+            "prijmeni": "Moch",
+            "jmeno": "Pavel",
+            "priznakKontext": 3,
+            "datumZaniku": null,
+            "idNadrizenePravnickeOsoby": null,
+            "jmenoU": "PAVEL",
+            "opsubType": "OFO",
+            "rizeniIdZaniku": null,
+            "nazevUlice": null,
+            "mestskaCast": null,
+            "kodAdresnihoMista": null,
+            "stavDat": 0,
+            "idZdroj": null,
+            "partnerBsm2": null,
+            "partnerBsm1": null,
+            "stat": null,
+            "obec": "Pražmo",
+            "cpCe": "1",
+            "rodneCislo": "301228618",
+            "cisloOrientacni": null
+          }],
+        "osId": 415709306
+      },{
+        "chybaPOSIdent": null,
+        "pOSIdent": "UKcYWvUUTpNi8flxUzlm+Ss5iq0JV3CiStJSAMOk6xHFQncZraFeO9yj8OGraKiDJ8eLB0FegdXYuyYWsEXiv2H9ws95ezlKNTqR6ze7aOnR3a7NWzWJfe+R5VHfU13+",
+        "osDetail": [
+          {
+            "prijmeniU": "VUOVA",
+            "okres": null,
+            "nazevU": null,
+            "psc": 11000,
+            "ico": null,
+            "titulZaJmenem": null,
+            "doplnekIco": null,
+            "nazev": null,
+            "rizeniIdVzniku2": null,
+            "datumVzniku": "2000-01-01T00:00:00",
+            "charOsType": 2,
+            "titulPredJmenem": null,
+            "rizeniIdVzniku": 59062279010,
+            "cisloDomovni": 2229,
+            "castObce": "Louny",
+            "datumVzniku2": null,
+            "prijmeni": "Vuová",
+            "jmeno": "Dana",
+            "priznakKontext": 3,
+            "datumZaniku": null,
+            "idNadrizenePravnickeOsoby": null,
+            "jmenoU": "DANA",
+            "opsubType": "OFO",
+            "rizeniIdZaniku": null,
+            "nazevUlice": null,
+            "mestskaCast": null,
+            "kodAdresnihoMista": null,
+            "stavDat": 0,
+            "idZdroj": null,
+            "partnerBsm2": null,
+            "partnerBsm1": null,
+            "stat": null,
+            "obec": "Slavičín",
+            "cpCe": "1",
+            "rodneCislo": "6161219955",
+            "cisloOrientacni": null
+          }],
+        "osId": 22339543010
+      }]
+  }
+}
