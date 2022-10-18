@@ -2,45 +2,41 @@ import os
 import re
 import csv
 import math
-from abc import ABC, abstractmethod
+import logging
 import json
 import sqlite3
+from enum import Enum
 from pathlib import Path
 import xml.etree.ElementTree as et
-import logging
+from abc import ABC, abstractmethod
 from datetime import datetime
+from lxml import etree
+import shutil
 
-from zeep import Client, Settings, helpers
+
+from zeep import Client, Settings
 from zeep.cache import SqliteCache
 from zeep.transports import Transport
 from zeep.wsse.username import UsernameToken
+from zeep.plugins import HistoryPlugin
 
-from enum import Enum
 
-from zeep.xsd.types import builtins as xsd_builtins_types
-
-def parse_date(_, value):
-    if isinstance(value, str):
-        return value
-    else:
-        return super().parse_date()
-
-xsd_builtins_types.DateTime.pythonvalue = parse_date
- 
 class OutputFormat(Enum):
     GdalDb = 1
     Json = 2
     Csv = 3
-    
+
+
 XML2DB_mapping = {
-	"priznakKontext": "PRIZNAK_KONTEXTU",
-	"partnerBsm1": "ID_JE_1_PARTNER_BSM",
-	"partnerBsm2": "ID_JE_2_PARTNER_BSM",
-	"charOsType": "CHAROS_KOD",
-	"kodAdresnihoMista": "KOD_ADRM",
-	"idNadrizenePravnickeOsoby": "ID_NADRIZENE_PO"
+    "priznakKontext": "PRIZNAK_KONTEXTU",
+    "partnerBsm1": "ID_JE_1_PARTNER_BSM",
+    "partnerBsm2": "ID_JE_2_PARTNER_BSM",
+    "charOsType": "CHAROS_KOD",
+    "kodAdresnihoMista": "KOD_ADRM",
+    "idNadrizenePravnickeOsoby": "ID_NADRIZENE_PO",
 }
-    
+
+
 class WSDPLogger(logging.getLoggerClass()):
     """
     General WSDP class for logging
@@ -54,7 +50,7 @@ class WSDPLogger(logging.getLoggerClass()):
         """
         super().__init__(name)
 
-        # Define a level of log messages 
+        # Define a level of log messages
         logging.basicConfig(level=level)
 
         # Define a Stream Console Handler
@@ -75,22 +71,29 @@ class WSDPLogger(logging.getLoggerClass()):
 
         log_filename = datetime.now().strftime("%H_%M_%S_%d_%m_%Y.log")
 
-        file_handler = logging.FileHandler(
+        self.file_handler = logging.FileHandler(
             filename=log_dir + "/" + log_filename, mode="w"
         )
 
-        formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s")
-        file_handler.setFormatter(formatter)
+        formatter = logging.Formatter("%(name)-12s %(asctime)s %(levelname)-8s %(message)s")
+        self.file_handler.setFormatter(formatter)
 
         # Add handlers to the logger
-        self.addHandler(file_handler)
+        self.addHandler(self.file_handler)
+
+    def __del__(self):
+        logging.shutdown()
 
 
-xmlNamespace0 = {"sestavy": "{http://katastr.cuzk.cz/sestavy/types/v2.9}",
-                 "ctios": "{http://katastr.cuzk.cz/ctios/types/v2.8}" }
+xmlNamespace0 = {
+    "sestavy": "{http://katastr.cuzk.cz/sestavy/types/v2.9}",
+    "ctios": "{http://katastr.cuzk.cz/ctios/types/v2.8}",
+}
 
-xmlNamespace1 = {"sestavy": "{http://katastr.cuzk.cz/commonTypes/v2.9}",
-                 "ctios": "{http://katastr.cuzk.cz/commonTypes/v2.8}"}
+xmlNamespace1 = {
+    "sestavy": "{http://katastr.cuzk.cz/commonTypes/v2.9}",
+    "ctios": "{http://katastr.cuzk.cz/commonTypes/v2.8}",
+}
 
 trialWsdls = {
     "sestavy": "https://wsdptrial.cuzk.cz/trial/dokumentace/ws29/wsdp/sestavy_v29.wsdl",
@@ -98,7 +101,7 @@ trialWsdls = {
     "vyhledat": "https://wsdptrial.cuzk.cz/trial/dokumentace/ws29/wsdp/vyhledat_v29.wsdl",
     "informace": "https://wsdptrial.cuzk.cz/trial/dokumentace/ws29/wsdp/informace_v29.wsdl",
     "ucet": "https://wsdptrial.cuzk.cz/trial/dokumentace/ws29/wsdp/ucet_v29.wsdl",
-    "ctios": "https://wsdptrial.cuzk.cz/trial/dokumentace/ws28/ctios/ctios_v28.wsdl",  
+    "ctios": "https://wsdptrial.cuzk.cz/trial/dokumentace/ws28/ctios/ctios_v28.wsdl",
 }
 
 prodWsdls = {
@@ -113,58 +116,86 @@ prodWsdls = {
 transport = Transport(cache=SqliteCache())
 settings = Settings(raw_response=False, strict=False, xml_huge_tree=True)
 settings = Settings(strict=False, xml_huge_tree=True)
+history = HistoryPlugin()
 
 
 class WSDPClient(ABC):
+    @classmethod
+    def from_recipe(cls, wsdl, service_name, creds, logger, trial):
+        """
+        Method used by factory for creating instances of WSDP client classes.
+        :param wsdl: link to wsdl document (str)
+        :param service_name: name of the service used in CUZK documentation (str)
+        :param creds: credentials to WSDP (dict)
+        :rtype: Cient class
+        """
+        result = cls()
+        if trial is True:
+            result.client = Client(
+                trialWsdls[wsdl],
+                transport=transport,
+                wsse=UsernameToken(*creds),
+                settings=settings,
+                plugins=[history],
+            )
+        else:
+            result.client = Client(
+                prodWsdls[wsdl],
+                transport=transport,
+                wsse=UsernameToken(*creds),
+                settings=settings,
+                plugins=[history],
+            )
+        result.service_name = service_name
+        result.logger = logger
+        result.creds = creds
+        return result
 
-  @classmethod
-  def _from_recipe(cls, wsdl, service_name, creds, logger, trial):
-    """
-    Method used by factory for creating instances of WSDP client classes.
-    :param wsdl: link to wsdl document (str)
-    :param service_name: name of the service used in CUZK documentation (str)
-    :param creds: credentials to WSDP (dict)
-    :rtype: Cient class
-    """
-    result = cls()
-    if trial == True:
-        result.client = Client(trialWsdls[wsdl],
-    					transport=transport,
-    					wsse=UsernameToken(*creds),
-    					settings=settings,
-    				)
-    else:
-        result.client = Client(prodWsdls[wsdl],
-    					transport=transport,
-    					wsse=UsernameToken(*creds),
-    					settings=settings,
-    				)			
-    result.service_name = service_name
-    result.logger = WSDPLogger(service_name)
-    result.creds = creds
-    return result
+    @abstractmethod
+    def send_request(self, *args):
+        """
+        Method for sending a request to a service. Must be defined by all child classes.
+        """
 
-  @abstractmethod
-  def send_request(*args):
-    """
-    Method for sending a request to a service. Must be defined by all child classes.
-    """
-    pass
+    def zeep_object_to_xml(self):
+        """
+        Convert output zeep object to XML object using lxml library.
+        """
+        try:
+            for hist in [history.last_sent, history.last_received]:
+                response_xml = etree.tostring(
+                    hist["envelope"], encoding="unicode", pretty_print=True
+                )
+            return response_xml
+        except (IndexError, TypeError) as e:
+            raise WSDPRequestError(self.logger, e) from e
+
+
+class SestavyClient(WSDPClient):
+
+    service_group = "sestavy"
+
+    def zeep_object_to_dict(self):
+        """
+        Convert output zeep object to dict object using lxml library and own parsering class.
+        """
+        response_xml = self.zeep_object_to_xml()
+        return SestavyXMLParser()(content=response_xml, logger=self.logger)
 
 
 class WSDPFactory:
-  def __init__(self):
-    self.classes = {}
-  
-  def register(self, cls):
-    self.classes[cls.service_name] = cls
-    return cls
-  
-  def create(self, *args):
-    if args[1]:
-        service_name = args[1]
-    cls = self.classes[service_name]
-    return cls._from_recipe(*args)
+    def __init__(self):
+        self.classes = {}
+
+    def register(self, cls):
+        self.classes[cls.service_name] = cls
+        return cls
+
+    def create(self, *args):
+        if args[1]:
+            service_name = args[1]
+        cls = self.classes[service_name]
+        return cls.from_recipe(*args)
 
 
 pywsdp = WSDPFactory()
@@ -192,8 +223,7 @@ class WSDPResponseError(WSDPError):
 
 
 class CtiOSXMLParser:
-    """Class parsing ctiOS XML response into a dictionary.
-    """
+    """Class parsing ctiOS XML response into a dictionary."""
 
     def __call__(self, content, counter, logger):
         """
@@ -212,6 +242,7 @@ class CtiOSXMLParser:
         namespace_ns1 = xmlNamespace1["ctios"]
         os_tags = root.findall(".//{}zprava".format(namespace_ns1))
         for os_tag in os_tags:
+            logger.info(" ")
             logger.info(os_tag.text)
 
         # Find all tags with 'os' name
@@ -286,6 +317,7 @@ class SestavyXMLParser:
         os_tags = root.findall(".//{}zprava".format(namespace_ns1))
         for os_tag in os_tags:
             xml_dict["zprava"] = os_tag.text
+            logger.info(" ")
             logger.info(os_tag.text)
 
         # Find all tags with 'report' name
@@ -297,9 +329,7 @@ class SestavyXMLParser:
             if xml_dict["idSestavy"]:
                 logger.info("ID sestavy: {}".format(xml_dict["idSestavy"]))
             else:
-                raise WSDPResponseError(
-                    logger,
-                    "ID sestavy nebylo vraceno")
+                raise WSDPResponseError(logger, "ID sestavy nebylo vraceno")
 
             # Nazev sestavy
             if os_tag.find("{}nazev".format(namespace_ns0)) is not None:
@@ -308,12 +338,16 @@ class SestavyXMLParser:
 
             # Pocet jednotek
             if os_tag.find("{}pocetJednotek".format(namespace_ns0)) is not None:
-                xml_dict["pocetJednotek"] = os_tag.find("{}pocetJednotek".format(namespace_ns0)).text
+                xml_dict["pocetJednotek"] = os_tag.find(
+                    "{}pocetJednotek".format(namespace_ns0)
+                ).text
                 logger.info("Pocet jednotek: {}".format(xml_dict["pocetJednotek"]))
 
             # Pocet stran
             if os_tag.find("{}pocetStran".format(namespace_ns0)) is not None:
-                xml_dict["pocetStran"] = os_tag.find("{}pocetStran".format(namespace_ns0)).text
+                xml_dict["pocetStran"] = os_tag.find(
+                    "{}pocetStran".format(namespace_ns0)
+                ).text
                 logger.info("Pocet stran: {}".format(xml_dict["pocetStran"]))
 
             # Cena
@@ -323,17 +357,23 @@ class SestavyXMLParser:
 
             # Datum pozadavku
             if os_tag.find("{}datumPozadavku".format(namespace_ns0)) is not None:
-                xml_dict["datumPozadavku"] = os_tag.find("{}datumPozadavku".format(namespace_ns0)).text
+                xml_dict["datumPozadavku"] = os_tag.find(
+                    "{}datumPozadavku".format(namespace_ns0)
+                ).text
                 logger.info("Datum pozadavku: {}".format(xml_dict["datumPozadavku"]))
 
             # Datum spusteni
             if os_tag.find("{}datumSpusteni".format(namespace_ns0)) is not None:
-                xml_dict["datumSpusteni"] = os_tag.find("{}datumSpusteni".format(namespace_ns0)).text
+                xml_dict["datumSpusteni"] = os_tag.find(
+                    "{}datumSpusteni".format(namespace_ns0)
+                ).text
                 logger.info("Datum spusteni: {}".format(xml_dict["datumSpusteni"]))
 
             # Datum vytvoreni
-            if os_tag.find("{}datumVytvoreni".format(namespace_ns0))is not None:
-                xml_dict["datumVytvoreni"] = os_tag.find("{}datumVytvoreni".format(namespace_ns0)).text
+            if os_tag.find("{}datumVytvoreni".format(namespace_ns0)) is not None:
+                xml_dict["datumVytvoreni"] = os_tag.find(
+                    "{}datumVytvoreni".format(namespace_ns0)
+                ).text
                 logger.info("Datum vytvoreni: {}".format(xml_dict["datumVytvoreni"]))
 
             # Stav sestavy
@@ -348,12 +388,16 @@ class SestavyXMLParser:
 
             # Elektronicka znacka
             if os_tag.find("{}elZnacka".format(namespace_ns0)) is not None:
-                xml_dict["elZnacka"] = os_tag.find("{}elZnacka".format(namespace_ns0)).text
+                xml_dict["elZnacka"] = os_tag.find(
+                    "{}elZnacka".format(namespace_ns0)
+                ).text
                 logger.info("Elektronicka znacka: {}".format(xml_dict["elZnacka"]))
 
             # Soubor sestavy
             if os_tag.find("{}souborSestavy".format(namespace_ns0)) is not None:
-                xml_dict["souborSestavy"] = os_tag.find("{}souborSestavy".format(namespace_ns0)).text
+                xml_dict["souborSestavy"] = os_tag.find(
+                    "{}souborSestavy".format(namespace_ns0)
+                ).text
 
         return xml_dict
 
@@ -387,6 +431,7 @@ class CtiOSAttributeConverter:
     CtiOS class for compiling attribute dictionary based on DB columns
     and mapping dict.
     """
+
     def __init__(self, mapping_dictionary, input_dictionary, db_columns, logger):
         self.mapping_dictionary = mapping_dictionary
         self.input_dictionary = input_dictionary
@@ -397,7 +442,7 @@ class CtiOSAttributeConverter:
         """
         Convert tags in XML to name in database (eg.StavDat to STAV_DAT)
         :param xml_tag: str - tag of xml attribute in xml response
-        :rtype: str - column name in database 
+        :rtype: str - column name in database
         """
         return re.sub("([A-Z]{1})", r"_\1", xml_tag).upper()
 
@@ -420,13 +465,13 @@ class CtiOSAttributeConverter:
                     new_key = self._transform(key)
                     if new_key not in self.db_columns:
                         raise WSDPError(
-                                self.logger,
-                                "XML attribute name cannot be converted to database column name"
+                            self.logger,
+                            "XML attribute name cannot be converted to database column name",
                         )
                 output_nested_dictionary[new_key] = input_nested_dictionary[key]
             output_dictionary[posident_id] = output_nested_dictionary
         return output_dictionary
-    
+
 
 class CtiOSDbManager:
     """
@@ -434,13 +479,13 @@ class CtiOSDbManager:
     """
 
     def __init__(self, db_path, logger):
-        """ 
+        """
         :param db_path: path to db file (str)
         :param logger: logger object (class Logger)
         """
         self.logger = logger
         self.db_path = db_path
-        self.schema = "OPSUB" # schema containning info about posidents
+        self.schema = "OPSUB"  # schema containning info about posidents
         self._check_db()
         self.conn = self._create_connection()
 
@@ -456,7 +501,7 @@ class CtiOSDbManager:
             my_file.resolve(strict=True)
 
         except FileNotFoundError as e:
-            raise WSDPError(self.logger, e)
+            raise WSDPError(self.logger, e) from e
 
     def _create_connection(self):
         """
@@ -468,7 +513,7 @@ class CtiOSDbManager:
         try:
             return sqlite3.connect(self.db_path)
         except sqlite3.Error as e:
-            raise WSDPError(self.logger, e)
+            raise WSDPError(self.logger, e) from e
 
     def get_posidents_from_db(self, sql=None):
         """
@@ -487,7 +532,7 @@ class CtiOSDbManager:
             self.conn.commit()
             ids = cur.fetchall()
         except sqlite3.Error as e:
-            raise WSDPError(self.logger, e)
+            raise WSDPError(self.logger, e) from e
 
         # Control if not empty
         if len(ids) <= 1:
@@ -513,7 +558,7 @@ class CtiOSDbManager:
             cur.execute("""select * from {0}""".format(self.schema))
             return list(map(lambda x: x[0], cur.description))
         except sqlite3.Error as e:
-            raise WSDPError(self.logger, e)
+            raise WSDPError(self.logger, e) from e
 
     def add_column_to_db(self, name, datatype):
         """
@@ -534,7 +579,7 @@ class CtiOSDbManager:
                     )
                 )
         except sqlite3.Error as e:
-            raise WSDPError(self.logger, e)
+            raise WSDPError(self.logger, e) from e
 
     def update_rows_in_db(self, dictionary):
         """
@@ -551,388 +596,122 @@ class CtiOSDbManager:
                 #  Update table OPSUB by database attributes items
                 for dat_name in posident_info:
                     cur.execute(
-                        """UPDATE TABLE {0} SET {1} = ? WHERE id = ?""".format(self.schema, dat_name),
+                        """UPDATE {0} SET {1} = ? WHERE id = ?""".format(
+                            self.schema, dat_name
+                        ),
                         (posident_info[dat_name], posident_id),
                     )
                 cur.execute("COMMIT TRANSACTION")
         except self.conn.Error as e:
             cur.execute("ROLLBACK TRANSACTION")
             cur.close()
-            raise WSDPError(self.logger, "Transaction failed!: {}".format(e))
+            raise WSDPError(self.logger, "Transaction failed!: {}".format(e)) from e
 
     def close_connection(self):
         if self.conn:
             self.conn.close()
-    
-    
+
+
 @pywsdp.register
 class CtiOsClient(WSDPClient):
-  """
-  Client for communicating with CtiOS WSDP service. 
-  """
-  service_name = "ctiOS"
-  service_group = "ctios" 
-    
-  def __init__(self):
-    super().__init__()
-    self.posidents_per_request = 10 # Set max number of posidents per request
-    self.number_of_posidents = 0
-    self.number_of_posidents_final = 0
-  
-  def send_request(self, dictionary):
     """
-    Send the request in the form of dictionary and get the response.
-    Raises:
-        WSDPRequestError: Zeep library request error
-    :param dictionary: input service attributes
-    :rtype: list - xml responses divided based on chunks
+    Client for communicating with CtiOS WSDP service.
     """
-    
-    def create_chunks(lst, n):
-        """"Create n-sized chunks from list as a generator"""
-        n = max(1, n)
-        return (lst[i : i + n] for i in range(0, len(lst), n))
 
-    # Save statistics
-    self.number_of_posidents = len(dictionary["pOSIdent"])
-        
-    # Remove duplicates
-    posidents = list(dict.fromkeys(dictionary["pOSIdent"]))
-    self.number_of_posidents_final = len(posidents)
-        
-    # create chunks
-    chunks = create_chunks(posidents, self.posidents_per_request)
-    
-    # process posident chunks and return xml response as the list
-    response_xml_list = []
-    for chunk in chunks:
-        try:
-            response_xml = self.client.service.ctios(pOSIdent=chunk)
-        except:
-            raise WSDPRequestError
-        response_xml_list.append(response_xml)
-    return response_xml_list
+    service_name = "ctiOS"
+    service_group = "ctios"
 
-
-@pywsdp.register
-class GenerujCenoveUdajeDleKuClient(WSDPClient):
-  """
-  Client for communicating with GenerujCenoveUdajeDleKu WSDP service.
-  """  
-  service_name = "generujCenoveUdajeDleKu"
-  service_group = "sestavy"
-
-  def send_request(self, dictionary):
-    """
-    Send the request with input dictionary and get the response.
-    Raises:
-        WSDPRequestError: Zeep library request error
-    :param dictionary: dictionary of input attributes
-    :rtype: list - xml responses
-    """
-    try:
-        return self.client.service.generujCenoveUdajeDleKu(katastrUzemiKod=dictionary["katastrUzemiKod"],
-                                                           rok=dictionary["rok"],
-                                                           mesicOd=dictionary["mesicOd"],
-                                                           mesicDo=dictionary["mesicDo"],
-                                                           format=dictionary["format"])
-    except:
-        raise WSDPRequestError
-
-@pywsdp.register
-class SeznamSestavClient(WSDPClient):
-  """
-  Client for communicating with SeznamSestav WSDP service.
-  """
-  service_name = "seznamSestav"
-  service_group = "sestavy"
-  
-  def send_request(self, id_sestavy):
-    """
-    Send the request on specific id and get the response.
-    Raises:
-        WSDPRequestError: Zeep library request error
-    :param id_sestavy: id (number)
-    :rtype: list - xml responses
-    """
-    try:
-        return self.client.service.seznamSestav(idSestavy=id_sestavy)
-    except:
-        raise WSDPRequestError
-    
-@pywsdp.register
-class VratSestavuClient(WSDPClient):
-  """
-  Client for communicating with VratSestavu WSDP service.
-  """
-  service_name = "vratSestavu"
-  service_group = "sestavy"
-  
-  def send_request(self, id_sestavy):
-    """
-    Send the request on specific id and get the response.
-    Raises:
-        WSDPRequestError: Zeep library request error
-    :param id_sestavy: id (number)
-    :rtype: list - xml responses
-    """
-    try:
-        return self.client.service.vratSestavu(idSestavy=id_sestavy)
-    except:
-        raise WSDPRequestError
-
-@pywsdp.register
-class SmazSestavuClient(WSDPClient):
-  """
-  Client for communicating with SmazSestavu WSDP service.
-  """
-  service_name = "smazSestavu"
-  service_group = "sestavy"
-  
-  def send_request(self, id_sestavy):
-    """
-    Send the request on specific id and get the response.
-    Raises:
-        WSDPRequestError: Zeep library request error
-    :param id_sestavy: id (number)
-    :rtype: list - xml responses
-    """
-    try:
-      return self.client.service.smazSestavu(idSestavy=id_sestavy)
-    except:
-        raise WSDPRequestError   
- 
-
-class WSDPBase(ABC):
-    """Abstraktni trida vytvarejici spolecne API pro WSDP sluzby.
-       Odvozene tridy musi mit property skupina_sluzeb a nazev_sluzby.
-       :param creds: slovnik pristupovych udaju [uzivatel, heslo]
-       :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
-    """    
-    def __init__(self, creds: dict, trial = False):
-        self.logger = WSDPLogger(self.nazev_sluzby)
-        self.client = pywsdp.create(self.skupina_sluzeb, self.nazev_sluzby, creds, self.logger, trial)
-        self._trial = trial
-        self._creds = creds
-        self._log_adresar = self._set_default_log_dir()
-
-    @property
-    @abstractmethod
-    def skupina_sluzeb(self):
-        """Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky etc.
-           Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.
-        """
-        pass
-            
-    @property
-    @abstractmethod
-    def nazev_sluzby(self):
-        """Nazev sluzby, napr. ctiOS, generujCenoveUdajeDleKu.
-           Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
-        """
-        pass
-                
-    @property    
-    def pristupove_udaje(self) -> dict:
-        """Vraci pristupove udaje pod kterymi doslo k pripojeni ke sluzbe
-        :rtype: dict
-        """
-        return self._creds
-
-    @property
-    def log_adresar(self) -> str:
-        """ Vypise cestu k adresari, ve kterem se budou vytvaret log soubory.
-        :rtype: str
-        """
-        return self._log_adresar
-        
-    @log_adresar.setter
-    def log_adresar(self, log_adresar: str):
-        """Nastavi cestu k adresari, ve kterem se budou vytvaret log soubory.        
-        :param log_adresar: cesta k adresari
-        """
-        if not os.path.exists( log_adresar):
-            os.makedirs(log_adresar)
-        self.logger.set_directory(log_adresar)
-        self._log_adresar = log_adresar
-
-    @property    
-    def testovaci_mod(self) -> dict:
-        """Vraci True/False podle toho zda uzivatel pristupuje k ostrym sluzbam (False)
-        nebo ke sluzbam na zkousku (True)
-        :rtype: bool
-        """
-        return self._trial
-    
-    def posli_pozadavek(self, slovnik_identifikatoru: dict) -> str:
-        """Zpracuje vstupni parametry pomoci sluzby CtiOS a vysledne osobni udaje
-        opravnenych subjektu ulozi do slovniku.
-        :param slovnik: slovnik ve formatu: {"posidents" : [pseudokod1, pseudokod2...]}.
-        :rtype: str - XML response"
-        """
-        return self.client.send_request(slovnik_identifikatoru)
-
-    def _set_default_log_dir(self) ->  str:
-        """Privatni metoda pro nasteveni logovaciho adresare.
-        """
-        def is_run_by_jupyter():
-            import __main__ as main
-            return not hasattr(main, '__file__')
-
-        if is_run_by_jupyter():
-            module_dir = os.path.abspath(os.path.join('../../', 'pywsdp', 'modules', self.nazev_sluzby))
-        else:
-            module_dir = os.path.dirname(__file__)
-        log_dir = os.path.join(module_dir, "logs")
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        self.logger.set_directory(log_dir)
-        return log_dir
-
-
-class CtiOS(WSDPBase):
-    """Trida definujici rozhrani pro praci se sluzbou ctiOS. 
-     Vyuzivani sluzby ctiOS je na strane CUZK logovano.
-    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
-    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
-    """    
-    def __init__(self, creds: dict, trial = False):
-        self._nazev_sluzby = "ctiOS"
-        self._skupina_sluzeb = "ctios"
-        
-        super().__init__(creds, trial=trial)
-        
-        self.counter = CtiOSCounter() # inicializace citace, ktery pocita pocty typu zpracovanych posidentu
-
-    @property
-    def skupina_sluzeb(self):
-        """Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky etc.
-           Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.
-        """
-        return self._skupina_sluzeb
-            
-    @property
-    def nazev_sluzby(self):
-        """Nazev sluzby, napr. ctiOS, generujCenoveUdajeDleKu.
-           Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
-        """
-        return self._nazev_sluzby
-    
-    def nacti_identifikatory_z_db(self, db_path: str, sql_dotaz=None) -> dict:
-        """Pripravi identifikatory z SQLITE databaze pro vstup do zavolani sluzby CtiOS.
-        :param db: cesta k SQLITE databazi ziskane rozbalenim VFK souboru
-        :param sql_dotaz: omezeni zpracovavanych identifikatoru pres SQL dotaz, napr. "SELECT * FROM OPSUB order by ID LIMIT 10"
-        :rtype: dict
-        """
-        db = CtiOSDbManager(db_path, self.logger) # pripojeni k SQLite databazi
-        
-        if sql_dotaz:
-            posidents = db.get_posidents_from_db(sql_dotaz)
-        else:
-            posidents = db.get_posidents_from_db()
-
-        db.close_connection()
-        return posidents
-    
-    def nacti_identifikatory_z_json_souboru(self, json: str) -> dict:
-        """Pripravi identifikatory z JSON souboru pro vstup do zavolani sluzby CtiOS.
-        Vnitrek json souboru je ve tvaru slovniku:
-        {"posidents" : [pseudokod1, pseudokod2...]}.
-        :param json: cesta k JSON souboru s pseudonymizovanymi identifikatory
-        :rtype: dict
-        """
-        file = Path(json)
-        if file.exists():
-            with open(file) as f:
-                data = json.load(f)
-                return data["posidents"]
-        else:
-            raise WSDPError(
-                self.logger,
-                "File is not found!"
-                )
-    
-    def preved_vysledek_na_slovnik(self, xml_response: list) -> dict:
-        """Prevede XML odpoved ze sluzby na slovnik.
-        :param xml_response: odpoved sluzby jako XML ve formatu str
-        :rtype: dict - atributy z XML odpovedi prevedeny do slovniku"
-        """
-        dictionary = {}
-        for item in xml_response:
-            partial_dictionary = helpers.serialize_object(item, dict)
-            dictionary = {**dictionary, **partial_dictionary}
-        return dictionary
+    def __init__(self):
+        super().__init__()
+        self.posidents_per_request = 10  # Set max number of posidents per request
+        self.number_of_posidents = 0
+        self.number_of_posidents_final = 0
+        self.response_xml = []
+        self.parser = CtiOSXMLParser()
+        self.counter = CtiOSCounter() # Counts statistics
         
         
-    def uloz_vystup(self, vysledny_slovnik: dict, vystupni_soubor: str, format_souboru: OutputFormat):
-        """Konvertuje osobni udaje typu slovnik ziskane ze sluzby CtiOS do souboru o definovanem
-        formatu a soubor ulozi do definovaneho vystupniho adresare.
-        :param slovnik: slovnik vraceny po zpracovani identifikatoru
-        :param vystupni_soubor: cesta k vystupnimu souboru
-        :param format_souboru: format typu OutputFormat.GdalDb, OutputFormat.Json nebo OutputFormat.Csv
+    def send_request(self, dictionary):
         """
-        if format_souboru == OutputFormat.GdalDb:
-            db = CtiOSDbManager(vystupni_soubor, self.logger)
-            db.add_column_to_db("OS_ID", "text")
-            input_db_columns = db.get_columns_names()
-            db_dictionary =  CtiOSAttributeConverter(XML2DB_mapping, vysledny_slovnik, input_db_columns, self.logger).convert_attributes()
-            db.save_attributes_to_db(db_dictionary)
-            db.close_connection()            
-            self.logger.info(
-                    "Soubor v ceste {} byl aktualizovan.".format(vystupni_soubor)
-            )            
-        elif format_souboru == OutputFormat.Json:
-            with open(vystupni_soubor, "w", newline="", encoding='utf-8') as f:
-                json.dump(vysledny_slovnik, f, ensure_ascii=False)
-                self.logger.info(
-                        "Vystup byl ulozen zde: {}".format(vystupni_soubor)
-                )
-        elif format_souboru == OutputFormat.Csv:
-            header = sorted(set(i for b in map(dict.keys, vysledny_slovnik.values()) for i in b))
-            with open(vystupni_soubor, "w", newline="") as f:
-                write = csv.writer(f)
-                write.writerow(["posident", *header])
-                for a, b in vysledny_slovnik.items():
-                    write.writerow([a] + [b.get(i, "") for i in header])
-                self.logger.info(
-                        "Vystup byl ulozen zde: {}".format(vystupni_soubor)
-                )
-        else:
-            raise WSDPError(
-                self.logger,
-                "Format {} is not supported".format(format_souboru)
+        Send the request in the form of dictionary and get the response.
+        Raises:
+            WSDPRequestError: Zeep library request error
+        :param dictionary: input service attributes
+        :rtype: list - xml responses divided based on chunks
+        """
+
+        def create_chunks(lst, n):
+            """ "Create n-sized chunks from list as a generator"""
+            n = max(1, n)
+            return (lst[i : i + n] for i in range(0, len(lst), n))
+
+        # Save statistics
+        self.number_of_posidents = len(dictionary["pOSIdent"])
+
+        # Remove duplicates
+        posidents = list(dict.fromkeys(dictionary["pOSIdent"]))
+        self.number_of_posidents_final = len(posidents)
+
+        # create chunks
+        chunks = create_chunks(posidents, self.posidents_per_request)
+
+        # process posident chunks and return xml response as the dict
+        response_dict = {}
+        for chunk in chunks:
+            try:
+                self.client.service.ctios(pOSIdent=chunk)
+                item = self.zeep_object_to_xml()
+            except Exception as e:
+                raise WSDPRequestError(self.logger, e) from e
+
+            # save to raw xml list
+            self.response_xml.append(item)
+
+            # create response dictionary
+            partial_dictionary = self.parser(
+                content=item, counter=self.counter, logger=self.logger
             )
-        
-    def vypis_statistiku(self):
-        """Vytiskne statistiku zpracovanych pseudonymizovanych identifikatoru (POSIdentu).
-            pocet neplatnych identifikatoru = pocet POSIdentu, ktere nebylo mozne rozsifrovat;
-            pocet expirovanych identifikatoru = pocet POSIdentu, kterym vyprsela casova platnost;
-            pocet identifikatoru k neexistujicim OS = pocet POSIdentu, ktere obsahuji neexistujici OS ID (neni na co je napojit);
-            pocet uspesne zpracovanych identifikatoru = pocet identifikatoru, ke kterym byly uspesne zjisteny osobni udaje;
-            pocet odstranenych duplicit = pocet vstupnich zaznamu, ktere byly pred samotnym zpracovanim smazany z duvodu duplicit;
-            pocet dotazu na server = pocet samostatnych dotazu, do kterych byl pozadavek rozdelen
+            response_dict = {**response_dict, **partial_dictionary}
+        return response_dict
+
+    def print_statistics(self):
         """
-        print( {"celkovy pocet identifikatoru na vstupu": self.ctios.number_of_posidents,
-                "pocet odstranenych duplicit": self.ctios.number_of_posidents -self.ctios.number_of_posidents_final,
-                "pocet dotazu na server":  math.ceil(self.ctios.number_of_posidents_final / self.ctios.posidents_per_request),
+        Print statistics of the process to the standard output device.
+        """
+        print(
+            {
+                "celkovy pocet identifikatoru na vstupu": self.number_of_posidents,
+                "pocet odstranenych duplicit": self.number_of_posidents
+                - self.number_of_posidents_final,
+                "pocet dotazu na server": math.ceil(
+                    self.number_of_posidents_final
+                    / self.posidents_per_request
+                ),
                 "pocet uspesne zpracovanych identifikatoru": self.counter.uspesne_stazeno,
                 "pocet neplatnych identifikatoru": self.counter.neplatny_identifikator,
                 "pocet expirovanych identifikatoru": self.counter.expirovany_identifikator,
-                "pocet identifikatoru k neexistujicim OS": self.counter.opravneny_subjekt_neexistuje} )
- 
-    def zaloguj_statistiku(self):
-        """Yaloguje statistiku zpracovanych pseudonymizovanych identifikatoru (POSIdentu)."""
+                "pocet identifikatoru k neexistujicim OS": self.counter.opravneny_subjekt_neexistuje,
+            }
+        )
+
+    def log_statistics(self):
+        """Log statistics of the process to the log file."""
         self.logger.info(
-            "Celkovy pocet dotazovanych identifikatoru na vstupu: {}".format(self.ctios.number_of_posidents)
+            "Celkovy pocet dotazovanych identifikatoru na vstupu: {}".format(
+                self.number_of_posidents
+            )
         )
         self.logger.info(
             "Pocet odstranenych duplicitnich identifikatoru: {}".format(
-                self.ctios.number_of_posidents - self.ctios.number_of_posidents_final
+                self.number_of_posidents - self.number_of_posidents_final
             )
         )
         self.logger.info(
             "Pocet pozadavku, do kterych byl dotaz rozdelen (pocet dotazu na server): {}".format(
-                math.ceil(self.ctios.number_of_posidents_final / self.ctios.posidents_per_request)
+                math.ceil(
+                    self.number_of_posidents_final
+                    / self.posidents_per_request
+                )
             )
         )
         self.logger.info(
@@ -956,55 +735,365 @@ class CtiOS(WSDPBase):
             )
         )
 
-            
+@pywsdp.register
+class GenerujCenoveUdajeDleKuClient(SestavyClient):
+    """
+    Client for communicating with GenerujCenoveUdajeDleKu WSDP service.
+    """
+
+    service_name = "generujCenoveUdajeDleKu"
+    service_group = "sestavy"
+
+    def send_request(self, dictionary):
+        """
+        Send the request with input dictionary and get the response.
+        Raises:
+            WSDPRequestError: Zeep library request error
+        :param dictionary: dictionary of input attributes
+        :rtype: str - xml responses
+        """
+        try:
+            self.client.service.generujCenoveUdajeDleKu(
+                katastrUzemiKod=dictionary["katastrUzemiKod"],
+                rok=dictionary["rok"],
+                mesicOd=dictionary["mesicOd"],
+                mesicDo=dictionary["mesicDo"],
+                format=dictionary["format"],
+            )
+            return self.zeep_object_to_dict()
+        except Exception as e:
+            raise WSDPRequestError(self.logger, e) from e
+
+
+@pywsdp.register
+class SeznamSestavClient(SestavyClient):
+    """
+    Client for communicating with SeznamSestav WSDP service.
+    """
+
+    service_name = "seznamSestav"
+    service_group = "sestavy"
+
+    def send_request(self, id_sestavy):
+        """
+        Send the request on specific id and get the response.
+        Raises:
+            WSDPRequestError: Zeep library request error
+        :param id_sestavy: id (number)
+        :rtype: list - xml responses
+        """
+        try:
+            self.client.service.seznamSestav(idSestavy=id_sestavy)
+            return self.zeep_object_to_dict()
+        except Exception as e:
+            raise WSDPRequestError(self.logger, e) from e
+
+
+@pywsdp.register
+class VratSestavuClient(SestavyClient):
+    """
+    Client for communicating with VratSestavu WSDP service.
+    """
+
+    service_name = "vratSestavu"
+    service_group = "sestavy"
+
+    def send_request(self, id_sestavy):
+        """
+        Send the request on specific id and get the response.
+        Raises:
+            WSDPRequestError: Zeep library request error
+        :param id_sestavy: id (number)
+        :rtype: list - xml responses
+        """
+        try:
+            self.client.service.vratSestavu(idSestavy=id_sestavy)
+            return self.zeep_object_to_dict()
+        except Exception as e:
+            raise WSDPRequestError(self.logger, e)
+
+
+@pywsdp.register
+class SmazSestavuClient(SestavyClient):
+    """
+    Client for communicating with SmazSestavu WSDP service.
+    """
+
+    service_name = "smazSestavu"
+    service_group = "sestavy"
+
+    def send_request(self, id_sestavy):
+        """
+        Send the request on specific id and get the response.
+        Raises:
+            WSDPRequestError: Zeep library request error
+        :param id_sestavy: id (number)
+        :rtype: list - xml responses
+        """
+        try:
+            self.client.service.smazSestavu(idSestavy=id_sestavy)
+            return self.zeep_object_to_dict()
+        except Exception as e:
+            raise WSDPRequestError(self.logger, e) from e
+
+
+class WSDPBase(ABC):
+    """Abstraktni trida vytvarejici spolecne API pro WSDP sluzby.
+    Odvozene tridy musi mit property skupina_sluzeb a nazev_sluzby.
+    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
+    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    """
+
+    def __init__(self, creds: dict, trial=False):
+        self.logger = WSDPLogger(self.nazev_sluzby)
+        self.client = pywsdp.create(
+            self.skupina_sluzeb, self.nazev_sluzby, creds, self.logger, trial
+        )
+        self._trial = trial
+        self._creds = creds
+        self._log_adresar = self._set_default_log_dir()
+
+    @property
+    def skupina_sluzeb(self):
+        """Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky etc.
+        Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.
+        """
+        return self._skupina_sluzeb
+
+    @property
+    def nazev_sluzby(self):
+        """Nazev sluzby, napr. ctiOS, generujCenoveUdajeDleKu.
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        """
+        return self._nazev_sluzby
+
+    @property
+    def pristupove_udaje(self) -> dict:
+        """Vraci pristupove udaje pod kterymi doslo k pripojeni ke sluzbe
+        :rtype: dict
+        """
+        return self._creds
+
+    @property
+    def log_adresar(self) -> str:
+        """Vypise cestu k adresari, ve kterem se budou vytvaret log soubory.
+        :rtype: str
+        """
+        return self._log_adresar
+
+    @log_adresar.setter
+    def log_adresar(self, log_adresar: str):
+        """Nastavi cestu k adresari, ve kterem se budou vytvaret log soubory.
+        :param log_adresar: cesta k adresari
+        """
+        if not os.path.exists(log_adresar):
+            os.makedirs(log_adresar)
+        self.logger.set_directory(log_adresar)
+        self._log_adresar = log_adresar
+
+    @property
+    def testovaci_mod(self) -> dict:
+        """Vraci True/False podle toho zda uzivatel pristupuje k ostrym sluzbam (False)
+        nebo ke sluzbam na zkousku (True)
+        :rtype: bool
+        """
+        return self._trial
+
+    @property
+    def raw_xml(self):
+        """Vraci surove XML ktere je vystupem ze sluzby, jeste nez bylo
+        prevedeno na slovnik. U sluzby CtiOS vraci XML odpoved ve forme listu,
+        rozdelenou po prvcich podle poctu dotazu na server.
+        :rtype: list or str
+        """
+        return self.response_xml
+
+    def posli_pozadavek(self, slovnik_identifikatoru: dict) -> dict:
+        """Zpracuje vstupni parametry pomoci nektere ze sluzeb a
+        vysledek ulozi do slovniku.
+        :param slovnik: slovnik ve formatu specifickem pro danou sluzbu.
+        :rtype: dict - XML odpoved rozparsovana do slovniku"
+        """
+        return self.client.send_request(slovnik_identifikatoru)
+
+    def _set_default_log_dir(self) -> str:
+        """Privatni metoda pro nasteveni logovaciho adresare."""
+
+        def is_run_by_jupyter():
+            import __main__ as main
+
+            return not hasattr(main, "__file__")
+
+        if is_run_by_jupyter():
+            module_dir = os.path.abspath(
+                os.path.join("../../", "pywsdp", "modules", self.nazev_sluzby)
+            )
+        else:
+            module_dir = os.path.dirname(__file__)
+        log_dir = os.path.join(module_dir, "logs")
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        self.logger.set_directory(log_dir)
+        return log_dir
+
+
+class CtiOS(WSDPBase):
+    """Trida definujici rozhrani pro praci se sluzbou ctiOS.
+     Vyuzivani sluzby ctiOS je na strane CUZK logovano.
+    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
+    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    """
+
+    def __init__(self, creds: dict, trial=False):
+        self._nazev_sluzby = "ctiOS"
+        self._skupina_sluzeb = "ctios"
+        self.input_db = None
+        self.input_json = None
+
+        super().__init__(creds, trial=trial)
+
+    def nacti_identifikatory_z_db(self, db_path: str, sql_dotaz=None) -> dict:
+        """Pripravi identifikatory z SQLITE databaze pro vstup do zavolani sluzby CtiOS.
+        :param db: cesta k SQLITE databazi ziskane rozbalenim VFK souboru
+        :param sql_dotaz: omezeni zpracovavanych identifikatoru pres SQL dotaz, napr. "SELECT * FROM OPSUB order by ID LIMIT 10"
+        :rtype: dict
+        """
+        db = CtiOSDbManager(db_path, self.logger)  # pripojeni k SQLite databazi
+
+        if sql_dotaz:
+            posidents = db.get_posidents_from_db(sql_dotaz)
+        else:
+            posidents = db.get_posidents_from_db()
+
+        self.input_db = db_path # zpristupneni cesty k vstupni databazi
+        
+        db.close_connection()
+        return {"pOSIdent": posidents}
+
+    def nacti_identifikatory_z_json_souboru(self, json_path: str) -> dict:
+        """Pripravi identifikatory z JSON souboru pro vstup do zavolani sluzby CtiOS.
+        Vnitrek json souboru je ve tvaru slovniku:
+        {"posidents" : [pseudokod1, pseudokod2...]}.
+        :param json: cesta k JSON souboru s pseudonymizovanymi identifikatory
+        :rtype: dict
+        """
+        file = Path(json_path)
+        if file.exists():
+            with open(file) as f:
+                data = json.load(f)
+                return data
+        else:
+            raise WSDPError(self.logger, "File is not found!")
+
+    def posli_pozadavek(self, slovnik_identifikatoru: dict) -> dict:
+        """Zpracuje vstupni parametry pomoci nektere ze sluzeb a
+        vysledek ulozi do slovniku.
+        :param slovnik: slovnik ve formatu specifickem pro danou sluzbu.
+        :rtype: dict - XML odpoved rozparsovana do slovniku"
+        """
+        response = self.client.send_request(slovnik_identifikatoru)
+        self.client.log_statistics()
+        return response
+
+    def uloz_vystup(
+        self, vysledny_slovnik: dict, vystupni_adresar: str, format_souboru: OutputFormat
+    ):
+        """Konvertuje osobni udaje typu slovnik ziskane ze sluzby CtiOS do souboru o definovanem
+        formatu a soubor ulozi do definovaneho vystupniho adresare.
+        :param slovnik: slovnik vraceny po zpracovani identifikatoru
+        :param vystupni_adresar: cesta k vystupnimu adresari
+        :param format_souboru: format typu OutputFormat.GdalDb, OutputFormat.Json nebo OutputFormat.Csv
+        :rtype: str: cesta k vystupnimu souboru
+        """
+        cas = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
+        
+        if format_souboru == OutputFormat.GdalDb:
+            vystupni_soubor="".join(["ctios_",cas,".db"])
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            shutil.copyfile(self.input_db, vystupni_cesta) # prekopirovani souboru db do cilove cesty
+            db = CtiOSDbManager(vystupni_cesta, self.logger)
+            db.add_column_to_db("OS_ID", "text")
+            input_db_columns = db.get_columns_names()
+            db_dictionary = CtiOSAttributeConverter(
+                XML2DB_mapping, vysledny_slovnik, input_db_columns, self.logger
+            ).convert_attributes()
+            db.update_rows_in_db(db_dictionary)
+            db.close_connection()
+            self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
+        elif format_souboru == OutputFormat.Json:
+            vystupni_soubor="".join(["ctios_",cas,".json"])
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
+                json.dump(vysledny_slovnik, f, ensure_ascii=False)
+                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
+        elif format_souboru == OutputFormat.Csv:
+            vystupni_soubor="".join(["ctios_",cas,".csv"])
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            header = sorted(
+                set(i for b in map(dict.keys, vysledny_slovnik.values()) for i in b)
+            )
+            with open(vystupni_cesta, "w", newline="") as f:
+                write = csv.writer(f)
+                write.writerow(["posident", *header])
+                for a, b in vysledny_slovnik.items():
+                    write.writerow([a] + [b.get(i, "") for i in header])
+                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
+        else:
+            raise WSDPError(
+                self.logger, "Format {} is not supported".format(format_souboru)
+        )
+        return vystupni_cesta
+        
+
+    def vypis_statistiku(self):
+        """Vytiskne statistiku zpracovanych pseudonymizovanych identifikatoru (POSIdentu).
+        pocet neplatnych identifikatoru = pocet POSIdentu, ktere nebylo mozne rozsifrovat;
+        pocet expirovanych identifikatoru = pocet POSIdentu, kterym vyprsela casova platnost;
+        pocet identifikatoru k neexistujicim OS = pocet POSIdentu, ktere obsahuji neexistujici OS ID (neni na co je napojit);
+        pocet uspesne zpracovanych identifikatoru = pocet identifikatoru, ke kterym byly uspesne zjisteny osobni udaje;
+        pocet odstranenych duplicit = pocet vstupnich zaznamu, ktere byly pred samotnym zpracovanim smazany z duvodu duplicit;
+        pocet dotazu na server = pocet samostatnych dotazu, do kterych byl pozadavek rozdelen
+        """
+        self.client.print_statistics()
+
+
 class SestavyBase(WSDPBase):
     """Abstraktni trida definujici rozhrani pro praci se sestavami
-        :param creds: slovnik pristupovych udaju [uzivatel, heslo]
-        :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
+    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
     """
-    def __init__(self, creds: dict, trial = True):
+
+    def __init__(self, creds: dict, trial=True):
         self._skupina_sluzeb = "sestavy"
-        
+
         super().__init__(creds, trial=trial)
 
     @property
     @abstractmethod
     def nazev_sluzby(self):
         """Nazev sluzby, napr. generujCenoveUdajeDleKu.
-           Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
         """
-        pass
 
     @property
     def skupina_sluzeb(self):
         """Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky etc.
-           Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.
+        Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.
         """
         return self._skupina_sluzeb
-            
-    def nacti_identifikatory_z_json_souboru(self, json: str) -> dict:
+
+    def nacti_identifikatory_z_json_souboru(self, json_path: str) -> dict:
         """Pripravi identifikatory z JSON souboru pro vstup do zavolani sluzby ze skupiny WSDP sestavy.
+        :param json_path: cesta ke vstupnimu json souboru
         :rtype: dict
         """
-        file = Path(json)
+        file = Path(json_path)
         if file.exists():
             with open(file) as f:
                 data = json.load(f)
                 return data
         else:
-            raise WSDPError(
-                self.logger,
-                "File is not found!"
-                )
-            
-    def preved_vysledek_na_slovnik(self, xml_response: str) -> dict:
-        """Prevede XML odpoved ze sluzby na slovnik
-        :param xml_response: odpoved sluzby jako XML ve formatu str
-        :rtype: dict - atributy z XML odpovedi prevedeny do slovniku"
-        """
-        return SestavyXMLParser()(
-           content=xml_response, logger=self.logger
-        )
+            raise WSDPError(self.logger, "Soubor nebyl nalezen!")
 
     def vypis_info_o_sestave(self, sestava: dict) -> dict:
         """S parametrem id sestavy zavola sluzbu SeznamSestav, ktera vypise info o sestave.
@@ -1022,9 +1111,15 @@ class SestavyBase(WSDPBase):
          'format': '',
          'elZnacka': ''}
         """
-        seznamSestav = pywsdp.create("sestavy", "seznamSestav", self.pristupove_udaje, self.logger, trial=self.testovaci_mod)
-        xml_response = seznamSestav.send_request(sestava["idSestavy"])
-        return self.preved_vysledek_na_slovnik(xml_response)
+        service = "seznamSestav"
+        seznam_sestav = pywsdp.create(
+            self._skupina_sluzeb,
+            service,
+            self.pristupove_udaje,
+            self.logger,
+            self.testovaci_mod,
+        )
+        return seznam_sestav.send_request(sestava["idSestavy"])
 
     def zauctuj_sestavu(self, sestava: dict) -> dict:
         """Vezme id sestavy z vytvorene sestavy a zavola sluzbu VratSestavu, ktera danou sestavu zauctuje.
@@ -1041,122 +1136,230 @@ class SestavyBase(WSDPBase):
          'stav': '',
          'format': '',
          'elZnacka': '',
-         'souborSestavy': ''}"""
-        vratSestavu = pywsdp.create("sestavy", "vratSestavu", self.pristupove_udaje, self.logger, trial=self.testovaci_mod)
-        xml_response = vratSestavu.send_request(sestava["idSestavy"])
-        return self.preved_vysledek_na_slovnik(xml_response)
+         'souborSestavy': ''}
+        """
+        service = "vratSestavu"
+        vrat_sestavu = pywsdp.create(
+            self._skupina_sluzeb,
+            service,
+            self.pristupove_udaje,
+            self.logger,
+            self.testovaci_mod,
+        )
+        return vrat_sestavu.send_request(sestava["idSestavy"])
 
     def vymaz_sestavu(self, sestava: dict) -> dict:
         """Vezme id sestavy z vytvorene sestavy a zavola sluzbu SmazSestavu, ktera danou sestavu z uctu smaze.
         :param sestava: slovnik vraceny pri vytvoreni sestavy
         :rtype: slovnik ve tvaru {'zprava': ''}
         """
-        smazSestavu = pywsdp.create("sestavy", "smazSestavu", self.pristupove_udaje, self.logger, trial=self.testovaci_mod)
-        xml_response = smazSestavu.send_request(sestava["idSestavy"])
-        return self.preved_vysledek_na_slovnik(xml_response)
-                                
-                        
+        service = "smazSestavu"
+        smaz_sestavu = pywsdp.create(
+            self._skupina_sluzeb,
+            service,
+            self.pristupove_udaje,
+            self.logger,
+            self.testovaci_mod,
+        )
+        return smaz_sestavu.send_request(sestava["idSestavy"])
+
+
 class GenerujCenoveUdajeDleKu(SestavyBase):
     """Trida definujici rozhrani pro praci se sluzbou Generuj cenove udaje dle katastralnich uzemi
     :param creds: slovnik pristupovych udaju [uzivatel, heslo]
     :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
-    """    
-    def __init__(self, creds: dict, trial = True):
+    """
+
+    def __init__(self, creds: dict, trial=True):
         self._nazev_sluzby = "generujCenoveUdajeDleKu"
-        
+
         super().__init__(creds, trial=trial)
-        
+
     @property
     def nazev_sluzby(self):
         """Nazev sluzby, napr. ctiOS, generujCenoveUdajeDleKu.
-           Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
         """
         return self._nazev_sluzby
-    
+
     def uloz_vystup(self, zauctovana_sestava: dict, vystupni_adresar: str) -> str:
         """Rozkoduje soubor z vystupnich hodnot sluzby VratSestavu a ulozi ho na disk.
         :param zauctovana_sestava: slovnik vraceny po zauctovani sestavy
         :rtype: string - cesta k vystupnimu souboru
         """
         import base64
+
         datum = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
         vystupni_soubor = "cen_udaje_{}.{}".format(datum, zauctovana_sestava["format"])
-        output = os.path.join(vystupni_adresar, vystupni_soubor)       
+        vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
         binary = base64.b64decode(zauctovana_sestava["souborSestavy"])
-        with open(output, 'wb') as f:
+        with open(vystupni_cesta, "wb") as f:
             f.write(binary)
-            self.logger.info(
-                    "Vystupni soubor je k dispozici zde: {}".format(output)
-            )
+            self.logger.info("Vystupni soubor je k dispozici zde: {}".format(vystupni_cesta))
+        return vystupni_cesta
 
 
+class SeznamSestav(WSDPBase):
+    """Trida definujici rozhrani pro praci se sluzbou Seznam sestav.
+    Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.
+    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
+    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    """
+
+    def __init__(self, creds: dict, trial=True):
+        self._nazev_sluzby = "seznamSestav"
+        self._skupina_sluzeb = "sestavy"
+
+        super().__init__(creds, trial=trial)
+
+    @property
+    def nazev_sluzby(self):
+        """
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        """
+        return self._nazev_sluzby
+
+    @property
+    def skupina_sluzeb(self):
+        """
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        """
+        return self._skupina_sluzeb
+
+
+class VratSestavu(WSDPBase):
+    """Trida definujici rozhrani pro praci se sluzbou Vrat sestavu.
+    Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.
+    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
+    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    """
+
+    def __init__(self, creds: dict, trial=True):
+        self._nazev_sluzby = "vratSestavu"
+        self._skupina_sluzeb = "sestavy"
+
+        super().__init__(creds, trial=trial)
+
+    @property
+    def nazev_sluzby(self):
+        """
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        """
+        return self._nazev_sluzby
+
+    @property
+    def skupina_sluzeb(self):
+        """
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        """
+        return self._skupina_sluzeb
+    
+
+class SmazSestavu(WSDPBase):
+    """Trida definujici rozhrani pro praci se sluzbou Smaz sestavu.
+    Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.
+    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
+    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    """
+
+    def __init__(self, creds: dict, trial=True):
+        self._nazev_sluzby = "smazSestavu"
+        self._skupina_sluzeb = "sestavy"
+
+        super().__init__(creds, trial=trial)
+
+    @property
+    def nazev_sluzby(self):
+        """
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        """
+        return self._nazev_sluzby
+
+    @property
+    def skupina_sluzeb(self):
+        """
+        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        """
+        return self._skupina_sluzeb
+
+    
 if __name__ == "__main__":
 
     creds_test = ["WSTEST", "WSHESLO"]
-    
-    # CtiOS
+
     ctios = CtiOS(creds_test, trial=True)
-    #print(ctios)
-    ##print(ctios.skupina_sluzeb)
-    #print(ctios.nazev_sluzby)
-    #print(ctios.pristupove_udaje)
-    #print(ctios.log_adresar)
-    #print(ctios.testovaci_mod)
-    parametry = {"pOSIdent": ["im+o3Qoxrit4ZwyJIPjx3X788EOgtJieiZYw/eqwxTPERjsqLramxBhGoAaAnooYAliQoVBYy7Q7fN2cVAxsAoUoPFaReqsfYWOZJjMBj/6Q=",
-                              "4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyBI=",
-                              "5wQRil9Nd5KIrn5KWTf8+sksZslnMqy2tveDvYPIsd1cd9qHYs1V9d9uZVwBEVe5Sknvonhh+FDiaYEJa+RdHM3VtvGsIqsc2Hm3mX0xYfs=",
-                              "UKcYWvUUTpNi8flxUzlm+Ss5iq0JV3CiStJSAMOk6xHFQncZraFeO9yj8OGraKiDJ8eLB0FegdXYuyYWsEXiv2H9ws95ezlKNTqR6ze7aOnR3a7NWzWJfe+R5VHfU13+"]}
-    
-    xml_odpoved = ctios.posli_pozadavek(parametry)
-    print(xml_odpoved)
-    print(type(xml_odpoved))
-    slovnik = ctios.preved_vysledek_na_slovnik(xml_odpoved)
-    print(slovnik)    
-    print(type(slovnik))    
+    # parametry = {
+    #     "pOSIdent": [
+    #         "im+o3Qoxrit4ZwyJIPjx3X788EOgtJieiZYw/eqwxTPERjsqLramxBhGoAaAnooYAliQoVBYy7Q7fN2cVAxsAoUoPFaReqsfYWOZJjMBj/6Q=",
+    #         "4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyBI=",
+    #         "5wQRil9Nd5KIrn5KWTf8+sksZslnMqy2tveDvYPIsd1cd9qHYs1V9d9uZVwBEVe5Sknvonhh+FDiaYEJa+RdHM3VtvGsIqsc2Hm3mX0xYfs=",
+    #         "UKcYWvUUTpNi8flxUzlm+Ss5iq0JV3CiStJSAMOk6xHFQncZraFeO9yj8OGraKiDJ8eLB0FegdXYuyYWsEXiv2H9ws95ezlKNTqR6ze7aOnR3a7NWzWJfe+R5VHfU13+",
+    #     ]
+    # }
+    # json_path = os.path.abspath(
+    #   os.path.join(os.path.dirname(__file__), "data", "input", "ctios_template_all.json")
+    # )
+    # parametry = ctios.nacti_identifikatory_z_json_souboru(json_path)
+    # print("parametryyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+    # print(parametry)
 
-    #print(os.path.dirname( __file__ ))
-    vystupni_soubor = os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'data', 'output', 'ctios.json'))
+    db_path = os.path.abspath(
+      os.path.join(os.path.dirname(__file__), "data", "input", "ctios_template.db")
+    )
+    parametry = ctios.nacti_identifikatory_z_db(db_path)
+    print("parametryyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+    print(parametry)
+    print(ctios.log_adresar)
     
-    ctios.uloz_vystup(slovnik, vystupni_soubor , OutputFormat.Json)
-    # ctios.uloz_vystup(slovnik, vystupni_soubor , OutputFormat.Csv)
+    slovnik = ctios.posli_pozadavek(parametry)
+    # print(slovnik)
 
-    # vystupni_soubor = os.path.join('../', 'data', 'output', 'ctios.json')
-    # ctios.uloz_vystup(slovnik, vystupni_soubor , OutputFormat.Json)
-    
+    vystupni_adresar = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "data", "output")
+      )
+
+    vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Json)
+    vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Csv)
+    vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.GdalDb)
+    ctios.vypis_statistiku()
+
+
     # Generuj cenove udaje dle ku
-    # gen = GenerujCenoveUdajeDleKu(creds_test, trial=True)
-    # print(gen)
-    # print(gen.skupina_sluzeb)
-    # print(gen.nazev_sluzby)
-    # print(gen.pristupove_udaje)
-    # print(gen.log_adresar)
-    # print(gen.testovaci_mod)
-    
-    # parametry = {"katastrUzemiKod": 732630,
-    #               "rok": 2020,
-    #               "mesicOd": 9,
-    #               "mesicDo": 12,
-    #               "format": "zip"}
-    
-    # xml_odpoved = gen.posli_pozadavek(parametry)
-    # print(xml_odpoved)
-    # sestava = gen.preved_vysledek_na_slovnik(xml_odpoved)
-    # print(sestava) 
-    
+    gen = GenerujCenoveUdajeDleKu(creds_test, trial=True)
+    parametry = {
+        "katastrUzemiKod": 732630,
+        "rok": 2020,
+        "mesicOd": 9,
+        "mesicDo": 12,
+        "format": "zip",
+    }
+
+    ses = gen.posli_pozadavek(parametry)
+    print(ses)
+
     # # Seznam sestav
-    # xml_info = gen.vypis_info_o_sestave(sestava)
-    # print(xml_info)
-    # info = gen.preved_vysledek_na_slovnik(xml_info)
-    # print(info) 
+    # info = gen.vypis_info_o_sestave(ses)
+    # #print(info)
 
     # # Vrat sestavu
-    # xml_info = gen.zauctuj_sestavu(sestava)
-    # print(xml_info)
-    # info = gen.preved_vysledek_na_slovnik(xml_info)
-    # print(info) 
+    # zauctovani = gen.zauctuj_sestavu(ses)
+    # #print(zauctovani)
 
     # # Smaz sestavu
-    # xml_info = gen.smaz_sestavu(sestava)
-    # print(xml_info)
-    # info = gen.preved_vysledek_na_slovnik(xml_info)
-    # print(info) 
+    # smazani = gen.vymaz_sestavu(ses)
+    # #print(smazani)
+
+    # cesta = gen.uloz_vystup(zauctovani, vystupni_adresar)
+    # print(cesta)
+    
+    seznam = SeznamSestav(creds_test, trial=True)
+    slovnik = seznam.posli_pozadavek(ses["idSestavy"])
+    print(slovnik)
+    
+    vrat = VratSestavu(creds_test, trial=True)
+    slovnik = vrat.posli_pozadavek(ses["idSestavy"])
+    print(slovnik)
+    
+    smaz = SmazSestavu(creds_test, trial=True)
+    slovnik = smaz.posli_pozadavek(ses["idSestavy"])
+    print(slovnik)
