@@ -4,15 +4,25 @@ Veřejné API
 
 .. module:: pywsdp
 
-Základní API modulů
----------
+Společné API pro všechny moduly
+========================================================
 
 .. autoclass:: pywsdp.base.WSDPBase
    :members:
 
+
+Společné API pro všechny sestavy
+========================================================
+
 .. autoclass:: pywsdp.base.SestavyBase
    :members:
+   
+
+API k jednotlivým modulům
+========================================================
       
+.. module:: pywsdp
+
 Čti OS
 ---------
 
