@@ -1,51 +1,46 @@
 """
-@brief Base script for general classes needed for Sestavy
+@package clients.helpers
+
+@brief Helpers for any Sestavy client
 
 Classes:
- - sestavy::SestavyXMLParser
-
+ - helpers::XMLParser
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the MIT License.
 """
 
-
 import xml.etree.ElementTree as et
 
+from pywsdp.base.globalvars import xmlNamespace0, xmlNamespace1
 from pywsdp.base.exceptions import WSDPResponseError
 
 
-class SestavyXMLParser:
+class XMLParser:
     """Class parsing sestavy XML response into a dictionary"""
 
     def __call__(self, content, logger):
         """
-        Read content from XML and parses it
-
-        Args:
-            content (str): content of XML response
-            logger (class): log class
-        Returns:
-            xml_attributes (nested dictonary): parsed XML attributes
+        Read content from XML and parses it.
+        Raises:
+            WSDPResponseError
+        :param content: XML response (str)
+        :param logger: logging class (Logger)
+        :rtype: parsed XML attributes (nested dictonary)
         """
-        def get_xml_namespace_ns0():
-            return "{http://katastr.cuzk.cz/sestavy/types/v2.9}"
-
-        def get_xml_namespace_ns1():
-            return "{http://katastr.cuzk.cz/commonTypes/v2.9}"
-
         root = et.fromstring(content)
 
         # Find tags with 'zprava' name
         xml_dict = {}
-        namespace_ns1 = get_xml_namespace_ns1()
+        namespace_ns1 = xmlNamespace1["sestavy"]
         os_tags = root.findall(".//{}zprava".format(namespace_ns1))
         for os_tag in os_tags:
             xml_dict["zprava"] = os_tag.text
+            logger.info(" ")
             logger.info(os_tag.text)
 
         # Find all tags with 'report' name
-        namespace_ns0 = get_xml_namespace_ns0()
+        namespace_ns0 = xmlNamespace0["sestavy"]
         for os_tag in root.findall(".//{}report".format(namespace_ns0)):
 
             # Id sestavy
@@ -53,9 +48,7 @@ class SestavyXMLParser:
             if xml_dict["idSestavy"]:
                 logger.info("ID sestavy: {}".format(xml_dict["idSestavy"]))
             else:
-                raise WSDPResponseError(
-                    logger,
-                    "ID sestavy nebylo vraceno")
+                raise WSDPResponseError(logger, "ID sestavy nebylo vraceno")
 
             # Nazev sestavy
             if os_tag.find("{}nazev".format(namespace_ns0)) is not None:
@@ -64,12 +57,16 @@ class SestavyXMLParser:
 
             # Pocet jednotek
             if os_tag.find("{}pocetJednotek".format(namespace_ns0)) is not None:
-                xml_dict["pocetJednotek"] = os_tag.find("{}pocetJednotek".format(namespace_ns0)).text
+                xml_dict["pocetJednotek"] = os_tag.find(
+                    "{}pocetJednotek".format(namespace_ns0)
+                ).text
                 logger.info("Pocet jednotek: {}".format(xml_dict["pocetJednotek"]))
 
             # Pocet stran
             if os_tag.find("{}pocetStran".format(namespace_ns0)) is not None:
-                xml_dict["pocetStran"] = os_tag.find("{}pocetStran".format(namespace_ns0)).text
+                xml_dict["pocetStran"] = os_tag.find(
+                    "{}pocetStran".format(namespace_ns0)
+                ).text
                 logger.info("Pocet stran: {}".format(xml_dict["pocetStran"]))
 
             # Cena
@@ -79,17 +76,23 @@ class SestavyXMLParser:
 
             # Datum pozadavku
             if os_tag.find("{}datumPozadavku".format(namespace_ns0)) is not None:
-                xml_dict["datumPozadavku"] = os_tag.find("{}datumPozadavku".format(namespace_ns0)).text
+                xml_dict["datumPozadavku"] = os_tag.find(
+                    "{}datumPozadavku".format(namespace_ns0)
+                ).text
                 logger.info("Datum pozadavku: {}".format(xml_dict["datumPozadavku"]))
 
             # Datum spusteni
             if os_tag.find("{}datumSpusteni".format(namespace_ns0)) is not None:
-                xml_dict["datumSpusteni"] = os_tag.find("{}datumSpusteni".format(namespace_ns0)).text
+                xml_dict["datumSpusteni"] = os_tag.find(
+                    "{}datumSpusteni".format(namespace_ns0)
+                ).text
                 logger.info("Datum spusteni: {}".format(xml_dict["datumSpusteni"]))
 
             # Datum vytvoreni
-            if os_tag.find("{}datumVytvoreni".format(namespace_ns0))is not None:
-                xml_dict["datumVytvoreni"] = os_tag.find("{}datumVytvoreni".format(namespace_ns0)).text
+            if os_tag.find("{}datumVytvoreni".format(namespace_ns0)) is not None:
+                xml_dict["datumVytvoreni"] = os_tag.find(
+                    "{}datumVytvoreni".format(namespace_ns0)
+                ).text
                 logger.info("Datum vytvoreni: {}".format(xml_dict["datumVytvoreni"]))
 
             # Stav sestavy
@@ -104,11 +107,15 @@ class SestavyXMLParser:
 
             # Elektronicka znacka
             if os_tag.find("{}elZnacka".format(namespace_ns0)) is not None:
-                xml_dict["elZnacka"] = os_tag.find("{}elZnacka".format(namespace_ns0)).text
+                xml_dict["elZnacka"] = os_tag.find(
+                    "{}elZnacka".format(namespace_ns0)
+                ).text
                 logger.info("Elektronicka znacka: {}".format(xml_dict["elZnacka"]))
 
             # Soubor sestavy
             if os_tag.find("{}souborSestavy".format(namespace_ns0)) is not None:
-                xml_dict["souborSestavy"] = os_tag.find("{}souborSestavy".format(namespace_ns0)).text
+                xml_dict["souborSestavy"] = os_tag.find(
+                    "{}souborSestavy".format(namespace_ns0)
+                ).text
 
         return xml_dict
