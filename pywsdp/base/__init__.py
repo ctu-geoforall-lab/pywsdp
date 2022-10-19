@@ -33,7 +33,7 @@ class WSDPBase(ABC):
     :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
     """
 
-    def __init__(self, creds: dict, trial=False):
+    def __init__(self, creds: dict, trial:  dict=False):
         self.logger = WSDPLogger(self.nazev_sluzby)
         self.client = pywsdp.create(
             self.skupina_sluzeb, self.nazev_sluzby, creds, self.logger, trial
@@ -136,7 +136,7 @@ class SestavyBase(WSDPBase):
     :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
     """
 
-    def __init__(self, creds: dict, trial=True):
+    def __init__(self, creds: dict, trial:  dict=False):
         self._skupina_sluzeb = "sestavy"
 
         super().__init__(creds, trial=trial)
