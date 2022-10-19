@@ -20,7 +20,7 @@ class SeznamSestav(WSDPBase):
     :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
     """
 
-    def __init__(self, creds: dict, trial=True):
+    def __init__(self, creds: dict, trial:  dict=False):
         self._nazev_sluzby = "seznamSestav"
         self._skupina_sluzeb = "sestavy"
 

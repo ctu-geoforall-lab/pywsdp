@@ -31,7 +31,7 @@ class CtiOS(WSDPBase):
     :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
     """
 
-    def __init__(self, creds: dict, trial=False):
+    def __init__(self, creds: dict, trial:  dict=False):
         self._nazev_sluzby = "ctiOS"
         self._skupina_sluzeb = "ctios"
         self.input_db = None

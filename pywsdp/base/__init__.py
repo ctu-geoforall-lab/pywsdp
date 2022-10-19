@@ -28,7 +28,7 @@ __version__ = '1.1'
 
 class WSDPBase(ABC):
     """Abstraktni trida vytvarejici spolecne API pro WSDP sluzby.
-    Odvozene tridy musi mit property skupina_sluzeb a nazev_sluzby.
+     Odvozene tridy musi mit property skupina_sluzeb a nazev_sluzby.
     :param creds: slovnik pristupovych udaju [uzivatel, heslo]
     :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
     """
@@ -43,16 +43,18 @@ class WSDPBase(ABC):
         self._log_adresar = self._set_default_log_dir()
 
     @property
-    def skupina_sluzeb(self):
+    def skupina_sluzeb(self) -> dict:
         """Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky etc.
         Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.
+        :rtype: str
         """
         return self._skupina_sluzeb
 
     @property
-    def nazev_sluzby(self):
+    def nazev_sluzby(self) -> dict:
         """Nazev sluzby, napr. ctiOS, generujCenoveUdajeDleKu.
         Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
+        :rtype: str
         """
         return self._nazev_sluzby
 
