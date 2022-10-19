@@ -71,15 +71,15 @@ class WSDPLogger(logging.getLoggerClass()):
 
         log_filename = datetime.now().strftime("%H_%M_%S_%d_%m_%Y.log")
 
-        self.file_handler = logging.FileHandler(
+        file_handler = logging.FileHandler(
             filename=log_dir + "/" + log_filename, mode="w"
         )
 
         formatter = logging.Formatter("%(name)-12s %(asctime)s %(levelname)-8s %(message)s")
-        self.file_handler.setFormatter(formatter)
+        file_handler.setFormatter(formatter)
 
         # Add handlers to the logger
-        self.addHandler(self.file_handler)
+        self.addHandler(file_handler)
 
     def __del__(self):
         logging.shutdown()
@@ -233,12 +233,13 @@ class CtiOSXMLParser:
         :param content: XML response (str)
         :param counter: counts posident errors (CtiOSCounter class)
         :param logger: logging class (Logger)
-        :rtype: parsed XML attributes (nested dictonary)
+        :rtype: tuple (parsed XML attributes (nested dictonary), errors (dictionary))
         """
         root = et.fromstring(content)
 
         # Find tags with 'zprava' name
         xml_dict = {}
+        xml_dict_errors = {}
         namespace_ns1 = xmlNamespace1["ctios"]
         os_tags = root.findall(".//{}zprava".format(namespace_ns1))
         for os_tag in os_tags:
@@ -279,6 +280,7 @@ class CtiOSXMLParser:
                         logger,
                         "POSIDENT {} {}".format(posident, identifier.replace("_", " ")),
                     )
+                xml_dict_errors[posident] = identifier
             else:
                 # No errors detected
                 xml_dict[posident] = {}
@@ -294,7 +296,7 @@ class CtiOSXMLParser:
                     ).text
                 os_id = os_tag.find("{}osId".format(namespace_ns0)).text
                 xml_dict[posident]["osId"] = os_id
-        return xml_dict
+        return xml_dict, xml_dict_errors
 
 
 class SestavyXMLParser:
@@ -637,7 +639,7 @@ class CtiOsClient(WSDPClient):
         Raises:
             WSDPRequestError: Zeep library request error
         :param dictionary: input service attributes
-        :rtype: list - xml responses divided based on chunks
+        :rtype: tuple (dict - xml response, dict - errorneous posidents)
         """
 
         def create_chunks(lst, n):
@@ -657,6 +659,7 @@ class CtiOsClient(WSDPClient):
 
         # process posident chunks and return xml response as the dict
         response_dict = {}
+        response_dict_errors = {}
         for chunk in chunks:
             try:
                 self.client.service.ctios(pOSIdent=chunk)
@@ -668,11 +671,12 @@ class CtiOsClient(WSDPClient):
             self.response_xml.append(item)
 
             # create response dictionary
-            partial_dictionary = self.parser(
+            partial_dictionary, partial_dictionary_errors = self.parser(
                 content=item, counter=self.counter, logger=self.logger
             )
             response_dict = {**response_dict, **partial_dictionary}
-        return response_dict
+            response_dict_errors = {**response_dict_errors, **partial_dictionary_errors}
+        return response_dict, response_dict_errors
 
     def print_statistics(self):
         """
@@ -989,18 +993,19 @@ class CtiOS(WSDPBase):
         """Zpracuje vstupni parametry pomoci nektere ze sluzeb a
         vysledek ulozi do slovniku.
         :param slovnik: slovnik ve formatu specifickem pro danou sluzbu.
-        :rtype: dict - XML odpoved rozparsovana do slovniku"
+        :rtype: tuple (dict - XML odpoved rozparsovana do slovniku, dict - chyby v posidentech)"
         """
-        response = self.client.send_request(slovnik_identifikatoru)
+        response, response_errors = self.client.send_request(slovnik_identifikatoru)
         self.client.log_statistics()
-        return response
+        return response, response_errors
 
     def uloz_vystup(
-        self, vysledny_slovnik: dict, vystupni_adresar: str, format_souboru: OutputFormat
+        self, vysledny_slovnik: dict, vystupni_adresar: str, format_souboru: OutputFormat, slovnik_chybnych_identifikatoru: dict=None
     ):
         """Konvertuje osobni udaje typu slovnik ziskane ze sluzby CtiOS do souboru o definovanem
         formatu a soubor ulozi do definovaneho vystupniho adresare.
-        :param slovnik: slovnik vraceny po zpracovani identifikatoru
+        :param vysledny_slovnik: slovnik vraceny pro uspesne zpracovane identifikatory
+        :param slovnik_chybnych_identifikatoru: slovnik vraceny pro neuspesne zpracovane identifikatory
         :param vystupni_adresar: cesta k vystupnimu adresari
         :param format_souboru: format typu OutputFormat.GdalDb, OutputFormat.Json nebo OutputFormat.Csv
         :rtype: str: cesta k vystupnimu souboru
@@ -1010,7 +1015,11 @@ class CtiOS(WSDPBase):
         if format_souboru == OutputFormat.GdalDb:
             vystupni_soubor="".join(["ctios_",cas,".db"])
             vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
-            shutil.copyfile(self.input_db, vystupni_cesta) # prekopirovani souboru db do cilove cesty
+            try:
+                shutil.copyfile(self.input_db, vystupni_cesta) # prekopirovani souboru db do cilove cesty
+            except:
+                raise WSDPError(
+                    self.logger, "Databazi nelze prekopirovat do cilove cesty")
             db = CtiOSDbManager(vystupni_cesta, self.logger)
             db.add_column_to_db("OS_ID", "text")
             input_db_columns = db.get_columns_names()
@@ -1040,8 +1049,15 @@ class CtiOS(WSDPBase):
                 self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         else:
             raise WSDPError(
-                self.logger, "Format {} is not supported".format(format_souboru)
+                self.logger, "Format {} neni podporovan".format(format_souboru)
         )
+        # zapsani chybnych identifikatoru do json souboru
+        if slovnik_chybnych_identifikatoru:
+            vystupni_soubor="".join(["ctios_errors_",cas,".json"])
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
+                json.dump(slovnik_chybnych_identifikatoru, f, ensure_ascii=False)
+                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         return vystupni_cesta
         
 
@@ -1288,14 +1304,16 @@ if __name__ == "__main__":
     creds_test = ["WSTEST", "WSHESLO"]
 
     ctios = CtiOS(creds_test, trial=True)
-    # parametry = {
-    #     "pOSIdent": [
-    #         "im+o3Qoxrit4ZwyJIPjx3X788EOgtJieiZYw/eqwxTPERjsqLramxBhGoAaAnooYAliQoVBYy7Q7fN2cVAxsAoUoPFaReqsfYWOZJjMBj/6Q=",
-    #         "4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyBI=",
-    #         "5wQRil9Nd5KIrn5KWTf8+sksZslnMqy2tveDvYPIsd1cd9qHYs1V9d9uZVwBEVe5Sknvonhh+FDiaYEJa+RdHM3VtvGsIqsc2Hm3mX0xYfs=",
-    #         "UKcYWvUUTpNi8flxUzlm+Ss5iq0JV3CiStJSAMOk6xHFQncZraFeO9yj8OGraKiDJ8eLB0FegdXYuyYWsEXiv2H9ws95ezlKNTqR6ze7aOnR3a7NWzWJfe+R5VHfU13+",
-    #     ]
-    # }
+    parametry = {
+        "pOSIdent": [
+            "im+o3Qoxrit4ZwyJIPjx3X788EOgtJieiZYw/eqwxTPERjsqLramxBhGoAaAnooYAliQoVBYy7Q7fN2cVAxsAoUoPFaReqsfYWOZJjMBj/6Q",
+            "4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyB",
+            "im+o3Qoxrit4ZwyJIPjx3X788EOgtJieiZYw/eqwxTPERjsqLramxBhGoAaAnooYAliQoVBYy7Q7fN2cVAxsAoUoPFaReqsfYWOZJjMBj/6Q",
+            "4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyBI",
+            "5wQRil9Nd5KIrn5KWTf8+sksZslnMqy2tveDvYPIsd1cd9qHYs1V9d9uZVwBEVe5Sknvonhh+FDiaYEJa+RdHM3VtvGsIqsc2Hm3mX0xYfs=",
+            "UKcYWvUUTpNi8flxUzlm+Ss5iq0JV3CiStJSAMOk6xHFQncZraFeO9yj8OGraKiDJ8eLB0FegdXYuyYWsEXiv2H9ws95ezlKNTqR6ze7aOnR3a7NWzWJfe+R5VHfU13+",
+        ]
+    }
     # json_path = os.path.abspath(
     #   os.path.join(os.path.dirname(__file__), "data", "input", "ctios_template_all.json")
     # )
@@ -1311,55 +1329,55 @@ if __name__ == "__main__":
     print(parametry)
     print(ctios.log_adresar)
     
-    slovnik = ctios.posli_pozadavek(parametry)
+    slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry)
     # print(slovnik)
 
     vystupni_adresar = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "data", "output")
       )
 
-    vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Json)
-    vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Csv)
-    vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.GdalDb)
-    ctios.vypis_statistiku()
+    #vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Json, slovnik_chybnych)
+    #vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Csv)
+    vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.GdalDb, slovnik_chybnych)
+    # ctios.vypis_statistiku()
 
 
-    # Generuj cenove udaje dle ku
-    gen = GenerujCenoveUdajeDleKu(creds_test, trial=True)
-    parametry = {
-        "katastrUzemiKod": 732630,
-        "rok": 2020,
-        "mesicOd": 9,
-        "mesicDo": 12,
-        "format": "zip",
-    }
+    # # Generuj cenove udaje dle ku
+    # gen = GenerujCenoveUdajeDleKu(creds_test, trial=True)
+    # parametry = {
+    #     "katastrUzemiKod": 732630,
+    #     "rok": 2020,
+    #     "mesicOd": 9,
+    #     "mesicDo": 12,
+    #     "format": "zip",
+    # }
 
-    ses = gen.posli_pozadavek(parametry)
-    print(ses)
+    # ses = gen.posli_pozadavek(parametry)
+    # print(ses)
 
-    # # Seznam sestav
-    # info = gen.vypis_info_o_sestave(ses)
-    # #print(info)
+    # # # Seznam sestav
+    # # info = gen.vypis_info_o_sestave(ses)
+    # # #print(info)
 
-    # # Vrat sestavu
-    # zauctovani = gen.zauctuj_sestavu(ses)
-    # #print(zauctovani)
+    # # # Vrat sestavu
+    # # zauctovani = gen.zauctuj_sestavu(ses)
+    # # #print(zauctovani)
 
-    # # Smaz sestavu
-    # smazani = gen.vymaz_sestavu(ses)
-    # #print(smazani)
+    # # # Smaz sestavu
+    # # smazani = gen.vymaz_sestavu(ses)
+    # # #print(smazani)
 
-    # cesta = gen.uloz_vystup(zauctovani, vystupni_adresar)
-    # print(cesta)
+    # # cesta = gen.uloz_vystup(zauctovani, vystupni_adresar)
+    # # print(cesta)
     
-    seznam = SeznamSestav(creds_test, trial=True)
-    slovnik = seznam.posli_pozadavek(ses["idSestavy"])
-    print(slovnik)
+    # seznam = SeznamSestav(creds_test, trial=True)
+    # slovnik = seznam.posli_pozadavek(ses["idSestavy"])
+    # print(slovnik)
     
-    vrat = VratSestavu(creds_test, trial=True)
-    slovnik = vrat.posli_pozadavek(ses["idSestavy"])
-    print(slovnik)
+    # vrat = VratSestavu(creds_test, trial=True)
+    # slovnik = vrat.posli_pozadavek(ses["idSestavy"])
+    # print(slovnik)
     
-    smaz = SmazSestavu(creds_test, trial=True)
-    slovnik = smaz.posli_pozadavek(ses["idSestavy"])
-    print(slovnik)
+    # smaz = SmazSestavu(creds_test, trial=True)
+    # slovnik = smaz.posli_pozadavek(ses["idSestavy"])
+    # print(slovnik)
