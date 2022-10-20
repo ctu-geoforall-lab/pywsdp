@@ -17,8 +17,7 @@ class ProcessDictionary:
     def __call__(self, input_dict, logger):
         """
         Process dictionary for output.
-        Raised:
-            WSDPResponseError
+
         :param input_dict: input dictioonary gained from zeep object
         :param logger: logging class (WSDPLogger)
         :rtype: dict: successfully processed attributes (nested dictonary))
@@ -26,7 +25,6 @@ class ProcessDictionary:
         akce = input_dict["vysledek"]["zprava"][0]["_value_1"]
         logger.info(" ")
         logger.info(akce)
-        print(input_dict)
         
         if input_dict["reportList"]:
             report = input_dict["reportList"]["report"][0]
@@ -38,4 +36,4 @@ class ProcessDictionary:
             if report["datumVytvoreni"]:
                 report["datumVytvoreni"] = report["datumVytvoreni"].strftime("%Y-%m-%dT%H:%M:%S")  
             return report
-        return None
+        return {"zprava": akce}

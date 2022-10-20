@@ -5,7 +5,6 @@
 
 Classes:
  - factory::WSDPClient
- - factory::SestavyClient
  - factory::ClientFactory
  - factory::CtiOsClient
  - factory::GenerujCenoveUdajeDleKuClient
@@ -26,7 +25,6 @@ from zeep.wsse.username import UsernameToken
 from zeep.plugins import HistoryPlugin
 
 from pywsdp.base.exceptions import WSDPRequestError
-from pywsdp.base.globalvars import trialWsdls, prodWsdls
 from pywsdp.clients.helpers.ctiOS import ProcessDictionary as CtiOSDict
 from pywsdp.clients.helpers.ctiOS import Counter
 from pywsdp.clients.helpers.generujCenoveUdajeDleKu import ProcessDictionary as SestavyDict
@@ -36,6 +34,18 @@ transport = Transport(cache=SqliteCache())
 settings = Settings(raw_response=False, strict=False, xml_huge_tree=True)
 settings = Settings(strict=False, xml_huge_tree=True)
 history = HistoryPlugin()
+
+
+# WSDL endpoints
+_trialWsdls = {
+    "sestavy": "https://wsdptrial.cuzk.cz/trial/dokumentace/ws29/wsdp/sestavy_v29.wsdl",
+    "ctios": "https://wsdptrial.cuzk.cz/trial/dokumentace/ws28/ctios/ctios_v28.wsdl",
+}
+
+_prodWsdls = {
+    "sestavy": "https://katastr.cuzk.cz/dokumentace/ws29/wsdp/sestavy_v29.wsdl",
+    "ctios": "https://katastr.cuzk.cz/dokumentace/ws28/ctios/ctios_v28.wsdl",
+}
 
 
 class WSDPClient(ABC):
@@ -51,7 +61,7 @@ class WSDPClient(ABC):
         result = cls()
         if trial is True:
             result.client = Client(
-                trialWsdls[wsdl],
+                _trialWsdls[wsdl],
                 transport=transport,
                 wsse=UsernameToken(*creds),
                 settings=settings,
@@ -59,7 +69,7 @@ class WSDPClient(ABC):
             )
         else:
             result.client = Client(
-                prodWsdls[wsdl],
+                _prodWsdls[wsdl],
                 transport=transport,
                 wsse=UsernameToken(*creds),
                 settings=settings,

@@ -54,6 +54,8 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
+autodoc_member_order = 'bysource'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -69,7 +71,7 @@ language = 'cs'
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-
+q
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for

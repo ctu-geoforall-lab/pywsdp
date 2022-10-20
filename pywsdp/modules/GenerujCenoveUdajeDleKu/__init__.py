@@ -18,9 +18,10 @@ from pywsdp.base import SestavyBase
 
 
 class GenerujCenoveUdajeDleKu(SestavyBase):
-    """Trida definujici rozhrani pro praci se sluzbou Generuj cenove udaje dle katastralnich uzemi
-    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
-    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    """Trida definujici rozhrani pro praci se sluzbou Generuj cenove udaje dle katastralnich uzemi.
+    
+    :param creds:
+    :param trial:
     """
 
     def __init__(self, creds: dict, trial:  dict=False):
@@ -28,20 +29,12 @@ class GenerujCenoveUdajeDleKu(SestavyBase):
 
         super().__init__(creds, trial=trial)
 
-    @property
-    def nazev_sluzby(self):
-        """Nazev sluzby, napr. ctiOS, generujCenoveUdajeDleKu.
-        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
-        """
-        return self._nazev_sluzby
-
     def uloz_vystup(self, zauctovana_sestava: dict, vystupni_adresar: str) -> str:
         """Rozkoduje soubor z vystupnich hodnot sluzby VratSestavu a ulozi ho na disk.
+        
         :param zauctovana_sestava: slovnik vraceny po zauctovani sestavy
         :rtype: string - cesta k vystupnimu souboru
         """
-        
-
         datum = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
         vystupni_soubor = "cen_udaje_{}.{}".format(datum, zauctovana_sestava["format"])
         vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)

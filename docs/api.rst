@@ -11,23 +11,23 @@ Společné API pro všechny moduly
    :members:
 
 
-Společné API pro všechny sestavy
+Společné API pro hlavní moduly typu sestava
 ========================================================
 
 .. autoclass:: pywsdp.base.SestavyBase
    :members:
+   :show-inheritance:
    
 
-API k jednotlivým modulům
+API k hlavním modulům
 ========================================================
-      
-.. module:: pywsdp
 
 Čti OS
 ---------
 
 .. autoclass:: pywsdp.modules.CtiOS
    :members:
+   :show-inheritance:
 
 
 Generuj cenové údaje dle katastrálních území
@@ -35,13 +35,18 @@ Generuj cenové údaje dle katastrálních území
 
 .. autoclass:: pywsdp.modules.GenerujCenoveUdajeDleKu
    :members:
+   :show-inheritance:
    
+
+API k modulům na správu sestav
+========================================================
    
 Seznam Sestav
 -----------------------------------------------
 
 .. autoclass:: pywsdp.modules.SeznamSestav
    :members:
+   :show-inheritance:
    
 
 Vrácení sestavy
@@ -49,6 +54,7 @@ Vrácení sestavy
 
 .. autoclass:: pywsdp.modules.VratSestavu
    :members:
+   :show-inheritance:
    
 
 Smazání sestavy
@@ -56,3 +62,4 @@ Smazání sestavy
 
 .. autoclass:: pywsdp.modules.SmazSestavu
    :members:
+   :show-inheritance:

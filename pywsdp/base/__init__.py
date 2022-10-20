@@ -16,7 +16,6 @@ This library is free under the MIT License.
 import os
 import json
 from pathlib import Path
-from abc import ABC, abstractmethod
 
 from pywsdp.clients.factory import pywsdp
 from pywsdp.base.logger import WSDPLogger
@@ -26,11 +25,13 @@ from pywsdp.base.exceptions import WSDPError
 __version__ = '1.1'
 
 
-class WSDPBase(ABC):
-    """Abstraktni trida vytvarejici spolecne API pro WSDP sluzby.
-     Odvozene tridy musi mit property skupina_sluzeb a nazev_sluzby.
+class WSDPBase:
+    """Trida vytvarejici spolecne API pro WSDP sluzby.
+    Odvozene tridy musi mit nastavit skupinu sluzeb a nazev sluzby.
+
     :param creds: slovnik pristupovych udaju [uzivatel, heslo]
-    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    :param trial: True/False - dotazovani na SOAP sluzbu na zkousku/dotazovani na ostrou SOAP sluzbu
+    
     """
 
     def __init__(self, creds: dict, trial:  dict=False):
@@ -44,9 +45,9 @@ class WSDPBase(ABC):
 
     @property
     def skupina_sluzeb(self) -> dict:
-        """Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky etc.
+        """Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky atd.
         Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.
-        :rtype: str
+        
         """
         return self._skupina_sluzeb
 
@@ -54,28 +55,30 @@ class WSDPBase(ABC):
     def nazev_sluzby(self) -> dict:
         """Nazev sluzby, napr. ctiOS, generujCenoveUdajeDleKu.
         Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
-        :rtype: str
+        
         """
         return self._nazev_sluzby
 
     @property
     def pristupove_udaje(self) -> dict:
-        """Vraci pristupove udaje pod kterymi doslo k pripojeni ke sluzbe
-        :rtype: dict
+        """Vraci pristupove udaje pod kterymi doslo k pripojeni ke sluzbe.
+        
         """
         return self._creds
 
     @property
     def log_adresar(self) -> str:
         """Vypise cestu k adresari, ve kterem se budou vytvaret log soubory.
-        :rtype: str
+        
         """
         return self._log_adresar
 
     @log_adresar.setter
     def log_adresar(self, log_adresar: str):
         """Nastavi cestu k adresari, ve kterem se budou vytvaret log soubory.
+        
         :param log_adresar: cesta k adresari
+        
         """
         if not os.path.exists(log_adresar):
             os.makedirs(log_adresar)
@@ -83,32 +86,27 @@ class WSDPBase(ABC):
         self._log_adresar = log_adresar
 
     @property
-    def testovaci_mod(self) -> dict:
-        """Vraci True/False podle toho zda uzivatel pristupuje k ostrym sluzbam (False)
+    def testovaci_mod(self) -> bool:
+        """Vraci boolean hodnotu podle toho zda uzivatel pristupuje k ostrym sluzbam (False)
         nebo ke sluzbam na zkousku (True)
-        :rtype: bool
+         
         """
         return self._trial
-
-    @property
-    def raw_xml(self):
-        """Vraci surove XML ktere je vystupem ze sluzby, jeste nez bylo
-        prevedeno na slovnik. U sluzby CtiOS vraci XML odpoved ve forme listu,
-        rozdelenou po prvcich podle poctu dotazu na server.
-        :rtype: list or str
-        """
-        return self.response_xml
 
     def posli_pozadavek(self, slovnik_identifikatoru: dict) -> dict:
         """Zpracuje vstupni parametry pomoci nektere ze sluzeb a
         vysledek ulozi do slovniku.
-        :param slovnik: slovnik ve formatu specifickem pro danou sluzbu.
-        :rtype: dict - XML odpoved rozparsovana do slovniku"
+         
+        :param slovnik: vstupni parametry specificke pro danou sluzbu.
+        :return: objekt zeep knihovny prevedeny na slovnik a upraveny pro vystup
+        
         """
         return self.client.send_request(slovnik_identifikatoru)
 
     def _set_default_log_dir(self) -> str:
-        """Privatni metoda pro nasteveni logovaciho adresare."""
+        """Privatni metoda pro nasteveni logovaciho adresare.
+        
+        """
 
         def is_run_by_jupyter():
             import __main__ as main
@@ -131,9 +129,12 @@ class WSDPBase(ABC):
     
     
 class SestavyBase(WSDPBase):
-    """Abstraktni trida definujici rozhrani pro praci se sestavami
-    :param creds: slovnik pristupovych udaju [uzivatel, heslo]
-    :param trial: True: dotazovani na SOAP sluzbu na zkousku, False: dotazovani na ostrou SOAP sluzbu
+    """Trida definujici spolecne API pro moduly pracujici se sestavami.
+    Z teto tridy nededi specificke sestavy, ktere slouzi pro praci s jinymi sestavami, jako napriklad SeznamSestav.
+
+    :param creds:
+    :param trial:
+    
     """
 
     def __init__(self, creds: dict, trial:  dict=False):
@@ -141,24 +142,12 @@ class SestavyBase(WSDPBase):
 
         super().__init__(creds, trial=trial)
 
-    @property
-    @abstractmethod
-    def nazev_sluzby(self):
-        """Nazev sluzby, napr. generujCenoveUdajeDleKu.
-        Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.
-        """
-
-    @property
-    def skupina_sluzeb(self):
-        """Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky etc.
-        Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.
-        """
-        return self._skupina_sluzeb
-
     def nacti_identifikatory_z_json_souboru(self, json_path: str) -> dict:
         """Pripravi identifikatory z JSON souboru pro vstup do zavolani sluzby ze skupiny WSDP sestavy.
+        
         :param json_path: cesta ke vstupnimu json souboru
-        :rtype: dict
+        :return: slovnik dat pro vstup do sluzby
+        
         """
         file = Path(json_path)
         if file.exists():
@@ -170,19 +159,21 @@ class SestavyBase(WSDPBase):
 
     def vypis_info_o_sestave(self, sestava: dict) -> dict:
         """S parametrem id sestavy zavola sluzbu SeznamSestav, ktera vypise info o sestave.
+        
         :param sestava: slovnik vraceny pri vytvoreni sestavy
-        :rtype: slovnik ve tvaru {'zprava': '',
-         'idSestavy': '',
-         'nazev': '',
-         'pocetJednotek': '',
-         'pocetStran': '',
-         'cena': '',
-         'datumPozadavku': '',
-         'datumSpusteni': '',
-         'datumVytvoreni': '',
-         'stav': '',
-         'format': '',
-         'elZnacka': ''}
+        :return: vraci slovnik ve tvaru {'zprava': '',
+             'idSestavy': '',
+             'nazev': '',
+             'pocetJednotek': '',
+             'pocetStran': '',
+             'cena': '',
+             'datumPozadavku': '',
+             'datumSpusteni': '',
+             'datumVytvoreni': '',
+             'stav': '',
+             'format': '',
+             'elZnacka': ''}
+        
         """
         service = "seznamSestav"
         seznam_sestav = pywsdp.create(
@@ -196,20 +187,22 @@ class SestavyBase(WSDPBase):
 
     def zauctuj_sestavu(self, sestava: dict) -> dict:
         """Vezme id sestavy z vytvorene sestavy a zavola sluzbu VratSestavu, ktera danou sestavu zauctuje.
+        
         :param sestava: slovnik vraceny pri vytvoreni sestavy
-        :rtype: slovnik ve tvaru {'zprava': '',
-         'idSestavy': '',
-         'nazev': '',
-         'pocetJednotek': '',
-         'pocetStran': '',
-         'cena': '',
-         'datumPozadavku': '',
-         'datumSpusteni': '',
-         'datumVytvoreni': '',
-         'stav': '',
-         'format': '',
-         'elZnacka': '',
-         'souborSestavy': ''}
+        :return: vraci slovnik ve tvaru {'zprava': '',
+            'idSestavy': '',
+            'nazev': '',
+            'pocetJednotek': '',
+            'pocetStran': '',
+            'cena': '',
+            'datumPozadavku': '',
+            'datumSpusteni': '',
+            'datumVytvoreni': '',
+            'stav': '',
+            'format': '',
+            'elZnacka': '',
+            'souborSestavy': ''}
+
         """
         service = "vratSestavu"
         vrat_sestavu = pywsdp.create(
@@ -223,8 +216,10 @@ class SestavyBase(WSDPBase):
     
     def vymaz_sestavu(self, sestava: dict) -> dict:
         """Vezme id sestavy z vytvorene sestavy a zavola sluzbu SmazSestavu, ktera danou sestavu z uctu smaze.
+        
         :param sestava: slovnik vraceny pri vytvoreni sestavy
-        :rtype: slovnik ve tvaru {'zprava': ''}
+        :return: slovnik ve tvaru {'zprava': ''}
+        
         """
         service = "smazSestavu"
         smaz_sestavu = pywsdp.create(
