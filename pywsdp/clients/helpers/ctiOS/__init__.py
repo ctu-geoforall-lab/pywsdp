@@ -32,40 +32,47 @@ class ProcessDictionary:
         dictionary = {}
         dictionary_errors = {}
         posident_list = input_dict["osList"]["os"]
-    
+
         for identifikator in posident_list:
-           posident = identifikator["pOSIdent"]
-           if identifikator["chybaPOSIdent"]:                        
-               chyba_posident = identifikator["chybaPOSIdent"]
-               if chyba_posident == "NEPLATNY_IDENTIFIKATOR":
-                   counter.add_neplatny_identifikator()
-               elif chyba_posident == "EXPIROVANY_IDENTIFIKATOR":
-                   counter.add_expirovany_identifikator()
-               elif chyba_posident == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
-                   counter.add_opravneny_subjekt_neexistuje()
-               logger.info(
-                   "POSIDENT {} {}".format(posident, chyba_posident.replace("_", " "))
-               )
-               dictionary_errors[posident] = chyba_posident
-           else:
-               os_detail = identifikator["osDetail"][0] 
-               os_detail["osId"] = identifikator["osId"]
-               if os_detail["datumVzniku"]:
-                   os_detail["datumVzniku"] = os_detail["datumVzniku"].strftime("%Y-%m-%dT%H:%M:%S")
-               if os_detail["datumZaniku"]:
-                   os_detail["datumZaniku"] = os_detail["datumZaniku"].strftime("%Y-%m-%dT%H:%M:%S")  
-               counter.add_uspesne_stazeno()
-               logger.info("POSIDENT {} USPESNE STAZEN".format(posident))
-               dictionary[posident] = os_detail
+            posident = identifikator["pOSIdent"]
+            if identifikator["chybaPOSIdent"]:
+                chyba_posident = identifikator["chybaPOSIdent"]
+                if chyba_posident == "NEPLATNY_IDENTIFIKATOR":
+                    counter.add_neplatny_identifikator()
+                elif chyba_posident == "EXPIROVANY_IDENTIFIKATOR":
+                    counter.add_expirovany_identifikator()
+                elif chyba_posident == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
+                    counter.add_opravneny_subjekt_neexistuje()
+                logger.info(
+                    "POSIDENT {} {}".format(posident, chyba_posident.replace("_", " "))
+                )
+                dictionary_errors[posident] = chyba_posident
+            else:
+                os_detail = identifikator["osDetail"][0]
+                os_detail["osId"] = identifikator["osId"]
+                if os_detail["datumVzniku"]:
+                    os_detail["datumVzniku"] = os_detail["datumVzniku"].strftime(
+                        "%Y-%m-%dT%H:%M:%S"
+                    )
+                if os_detail["datumZaniku"]:
+                    os_detail["datumZaniku"] = os_detail["datumZaniku"].strftime(
+                        "%Y-%m-%dT%H:%M:%S"
+                    )
+                counter.add_uspesne_stazeno()
+                logger.info("POSIDENT {} USPESNE STAZEN".format(posident))
+                dictionary[posident] = os_detail
         return dictionary, dictionary_errors
 
 
 class Counter:
     """
-    CtiOS class which counts posident stats
+    Counts posident stats.
     """
 
     def __init__(self):
+        """
+        Initialize posidents stats.
+        """
         self.neplatny_identifikator = 0
         self.expirovany_identifikator = 0
         self.opravneny_subjekt_neexistuje = 0

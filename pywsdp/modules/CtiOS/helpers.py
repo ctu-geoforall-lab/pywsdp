@@ -92,8 +92,8 @@ class DbManager:
             # Control if database file exists
             my_file.resolve(strict=True)
 
-        except FileNotFoundError as e:
-            raise WSDPError(self.logger, e) from e
+        except FileNotFoundError as exc:
+            raise WSDPError(self.logger, exc) from exc
 
     def _create_connection(self):
         """
@@ -104,8 +104,8 @@ class DbManager:
 
         try:
             return sqlite3.connect(self.db_path)
-        except sqlite3.Error as e:
-            raise WSDPError(self.logger, e) from e
+        except sqlite3.Error as exc:
+            raise WSDPError(self.logger, exc) from exc
 
     def get_posidents_from_db(self, sql=None):
         """
@@ -123,8 +123,8 @@ class DbManager:
             cur.execute(sql)
             self.conn.commit()
             ids = cur.fetchall()
-        except sqlite3.Error as e:
-            raise WSDPError(self.logger, e) from e
+        except sqlite3.Error as exc:
+            raise WSDPError(self.logger, exc) from exc
 
         # Control if not empty
         if len(ids) <= 1:
@@ -149,8 +149,8 @@ class DbManager:
             cur.execute("PRAGMA read_committed = true;")
             cur.execute("""select * from {0}""".format(self.schema))
             return list(map(lambda x: x[0], cur.description))
-        except sqlite3.Error as e:
-            raise WSDPError(self.logger, e) from e
+        except sqlite3.Error as exc:
+            raise WSDPError(self.logger, exc) from exc
 
     def add_column_to_db(self, name, datatype):
         """
@@ -170,8 +170,8 @@ class DbManager:
                         self.schema, name, datatype
                     )
                 )
-        except sqlite3.Error as e:
-            raise WSDPError(self.logger, e) from e
+        except sqlite3.Error as exc:
+            raise WSDPError(self.logger, exc) from exc
 
     def update_rows_in_db(self, dictionary):
         """
@@ -194,10 +194,10 @@ class DbManager:
                         (posident_info[dat_name], posident_id),
                     )
                 cur.execute("COMMIT TRANSACTION")
-        except self.conn.Error as e:
+        except self.conn.Error as exc:
             cur.execute("ROLLBACK TRANSACTION")
             cur.close()
-            raise WSDPError(self.logger, "Transaction failed!: {}".format(e)) from e
+            raise WSDPError(self.logger, "Transaction failed!: {}".format(exc)) from exc
 
     def close_connection(self):
         if self.conn:

@@ -19,19 +19,19 @@ from pywsdp.base import SestavyBase
 
 class GenerujCenoveUdajeDleKu(SestavyBase):
     """Trida definujici rozhrani pro praci se sluzbou Generuj cenove udaje dle katastralnich uzemi.
-    
+
     :param creds:
     :param trial:
     """
 
-    def __init__(self, creds: dict, trial:  dict=False):
+    def __init__(self, creds: dict, trial: dict = False):
         self._nazev_sluzby = "generujCenoveUdajeDleKu"
 
         super().__init__(creds, trial=trial)
 
     def uloz_vystup(self, zauctovana_sestava: dict, vystupni_adresar: str) -> str:
         """Rozkoduje soubor z vystupnich hodnot sluzby VratSestavu a ulozi ho na disk.
-        
+
         :param zauctovana_sestava: slovnik vraceny po zauctovani sestavy
         :rtype: string - cesta k vystupnimu souboru
         """
@@ -41,5 +41,7 @@ class GenerujCenoveUdajeDleKu(SestavyBase):
         binary = base64.b64decode(zauctovana_sestava["souborSestavy"])
         with open(vystupni_cesta, "wb") as f:
             f.write(binary)
-            self.logger.info("Vystupni soubor je k dispozici zde: {}".format(vystupni_cesta))
+            self.logger.info(
+                "Vystupni soubor je k dispozici zde: {}".format(vystupni_cesta)
+            )
         return vystupni_cesta

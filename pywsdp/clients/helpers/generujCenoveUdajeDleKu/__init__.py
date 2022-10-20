@@ -25,15 +25,21 @@ class ProcessDictionary:
         akce = input_dict["vysledek"]["zprava"][0]["_value_1"]
         logger.info(" ")
         logger.info(akce)
-        
+
         if input_dict["reportList"]:
             report = input_dict["reportList"]["report"][0]
-            
+
             if report["datumPozadavku"]:
-                report["datumPozadavku"] = report["datumPozadavku"].strftime("%Y-%m-%dT%H:%M:%S")
+                report["datumPozadavku"] = report["datumPozadavku"].strftime(
+                    "%Y-%m-%dT%H:%M:%S"
+                )
             if report["datumSpusteni"]:
-                report["datumSpusteni"] = report["datumSpusteni"].strftime("%Y-%m-%dT%H:%M:%S")  
+                report["datumSpusteni"] = report["datumSpusteni"].strftime(
+                    "%Y-%m-%dT%H:%M:%S"
+                )
             if report["datumVytvoreni"]:
-                report["datumVytvoreni"] = report["datumVytvoreni"].strftime("%Y-%m-%dT%H:%M:%S")  
+                report["datumVytvoreni"] = report["datumVytvoreni"].strftime(
+                    "%Y-%m-%dT%H:%M:%S"
+                )
             return report
         return {"zprava": akce}

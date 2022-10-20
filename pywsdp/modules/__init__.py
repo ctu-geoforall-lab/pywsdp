@@ -1,4 +1,3 @@
-
 from pywsdp.modules.CtiOS import CtiOS
 from pywsdp.modules.CtiOS import formats
 from pywsdp.modules.GenerujCenoveUdajeDleKu import GenerujCenoveUdajeDleKu

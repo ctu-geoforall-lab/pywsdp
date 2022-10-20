@@ -52,7 +52,9 @@ class WSDPLogger(logging.getLoggerClass()):
             filename=log_dir + "/" + log_filename, mode="w"
         )
 
-        formatter = logging.Formatter("%(name)-12s %(asctime)s %(levelname)-8s %(message)s")
+        formatter = logging.Formatter(
+            "%(name)-12s %(asctime)s %(levelname)-8s %(message)s"
+        )
         file_handler.setFormatter(formatter)
 
         # Add handlers to the logger

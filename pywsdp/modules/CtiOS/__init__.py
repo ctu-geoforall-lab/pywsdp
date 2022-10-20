@@ -36,13 +36,13 @@ _XML2DB_mapping = {
 
 class CtiOS(WSDPBase):
     """Trida definujici rozhrani pro praci se sluzbou ctiOS.
-     
+
     :param creds:
     :param trial:
-    
+
     """
 
-    def __init__(self, creds: dict, trial:  dict=False):
+    def __init__(self, creds: dict, trial: dict = False):
         self._nazev_sluzby = "ctiOS"
         self._skupina_sluzeb = "ctios"
         self.input_db = None
@@ -52,7 +52,7 @@ class CtiOS(WSDPBase):
 
     def nacti_identifikatory_z_db(self, db_path: str, sql_dotaz=None) -> dict:
         """Pripravi identifikatory z SQLITE databaze pro vstup do zavolani sluzby ctiOS.
-        
+
         :param db_path: cesta k SQLITE databazi ziskane rozbalenim VFK souboru
         :param sql_dotaz: omezeni zpracovavanych identifikatoru pres SQL dotaz, napr. SELECT * FROM OPSUB order by ID LIMIT 10
         :return: data pro vstup do sluzby ctiOS
@@ -64,8 +64,8 @@ class CtiOS(WSDPBase):
         else:
             posidents = db.get_posidents_from_db()
 
-        self.input_db = db_path # zpristupneni cesty k vstupni databazi
-        
+        self.input_db = db_path  # zpristupneni cesty k vstupni databazi
+
         db.close_connection()
         return {"pOSIdent": posidents}
 
@@ -74,7 +74,7 @@ class CtiOS(WSDPBase):
 
         :param json_path: cesta k JSON souboru s pseudonymizovanymi identifikatory.
         :return: data pro vstup do sluzby ctiOS
-        
+
         """
         file = Path(json_path)
         if file.exists():
@@ -87,7 +87,7 @@ class CtiOS(WSDPBase):
     def posli_pozadavek(self, slovnik_identifikatoru: dict) -> dict:
         """Zpracuje vstupni parametry pomoci nektere ze sluzeb a
         vysledek ulozi do slovniku. Zaroven vypocte zaloguje statistiku procesu.
-        
+
         :param slovnik: vstupni parametry specificke pro danou sluzbu.
         :return: objekt zeep knihovny prevedeny na slovnik a upraveny pro vystup
         """
@@ -96,11 +96,15 @@ class CtiOS(WSDPBase):
         return response, response_errors
 
     def uloz_vystup(
-        self, vysledny_slovnik: dict, vystupni_adresar: str, format_souboru: OutputFormat, slovnik_chybnych_identifikatoru: dict=None
+        self,
+        vysledny_slovnik: dict,
+        vystupni_adresar: str,
+        format_souboru: OutputFormat,
+        slovnik_chybnych_identifikatoru: dict = None,
     ):
         """Konvertuje osobni udaje typu slovnik ziskane ze sluzby ctiOS do souboru o definovanem
         formatu a soubor ulozi do definovaneho vystupniho adresare.
-        
+
         :param vysledny_slovnik: slovnik vraceny pro uspesne zpracovane identifikatory
         :param vystupni_adresar: cesta k vystupnimu adresari
         :param format_souboru: format typu OutputFormat.GdalDb, OutputFormat.Json nebo OutputFormat.Csv
@@ -108,15 +112,18 @@ class CtiOS(WSDPBase):
         :return: cesta k vystupnimu souboru
         """
         cas = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
-        
+
         if format_souboru == OutputFormat.GdalDb:
-            vystupni_soubor="".join(["ctios_",cas,".db"])
+            vystupni_soubor = "".join(["ctios_", cas, ".db"])
             vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
             try:
-                shutil.copyfile(self.input_db, vystupni_cesta) # prekopirovani souboru db do cilove cesty
+                shutil.copyfile(
+                    self.input_db, vystupni_cesta
+                )  # prekopirovani souboru db do cilove cesty
             except:
                 raise WSDPError(
-                    self.logger, "Databazi nelze prekopirovat do cilove cesty")
+                    self.logger, "Databazi nelze prekopirovat do cilove cesty"
+                )
             db = DbManager(vystupni_cesta, self.logger)
             db.add_column_to_db("OS_ID", "text")
             input_db_columns = db.get_columns_names()
@@ -127,13 +134,13 @@ class CtiOS(WSDPBase):
             db.close_connection()
             self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         elif format_souboru == OutputFormat.Json:
-            vystupni_soubor="".join(["ctios_",cas,".json"])
+            vystupni_soubor = "".join(["ctios_", cas, ".json"])
             vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
             with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
                 json.dump(vysledny_slovnik, f, ensure_ascii=False)
                 self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         elif format_souboru == OutputFormat.Csv:
-            vystupni_soubor="".join(["ctios_",cas,".csv"])
+            vystupni_soubor = "".join(["ctios_", cas, ".csv"])
             vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
             header = sorted(
                 set(i for b in map(dict.keys, vysledny_slovnik.values()) for i in b)
@@ -147,16 +154,15 @@ class CtiOS(WSDPBase):
         else:
             raise WSDPError(
                 self.logger, "Format {} neni podporovan".format(format_souboru)
-        )
+            )
         # zapsani chybnych identifikatoru do json souboru
         if slovnik_chybnych_identifikatoru:
-            vystupni_soubor="".join(["ctios_errors_",cas,".json"])
+            vystupni_soubor = "".join(["ctios_errors_", cas, ".json"])
             vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
             with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
                 json.dump(slovnik_chybnych_identifikatoru, f, ensure_ascii=False)
                 self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         return vystupni_cesta
-        
 
     def vypis_statistiku(self):
         """Vytiskne statistiku zpracovanych pseudonymizovanych identifikatoru (POSIdentu).

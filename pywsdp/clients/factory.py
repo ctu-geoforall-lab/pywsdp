@@ -27,7 +27,9 @@ from zeep.plugins import HistoryPlugin
 from pywsdp.base.exceptions import WSDPRequestError
 from pywsdp.clients.helpers.ctiOS import ProcessDictionary as CtiOSDict
 from pywsdp.clients.helpers.ctiOS import Counter
-from pywsdp.clients.helpers.generujCenoveUdajeDleKu import ProcessDictionary as SestavyDict
+from pywsdp.clients.helpers.generujCenoveUdajeDleKu import (
+    ProcessDictionary as SestavyDict,
+)
 
 
 transport = Transport(cache=SqliteCache())
@@ -49,6 +51,9 @@ _prodWsdls = {
 
 
 class WSDPClient(ABC):
+    """
+    Abstract class creating interface for all WSDP clients.
+    """
     @classmethod
     def from_recipe(cls, wsdl, service_name, creds, logger, trial):
         """
@@ -88,14 +93,24 @@ class WSDPClient(ABC):
 
 
 class ClientFactory:
+    """
+    Factory for creating WSDP clients.
+    """
+
     def __init__(self):
         self.classes = {}
 
     def register(self, cls):
+        """
+        Register class clients to factory.
+        """
         self.classes[cls.service_name] = cls
         return cls
 
     def create(self, *args):
+        """
+        Create instances of client objects.
+        """
         if args[1]:
             service_name = args[1]
         cls = self.classes[service_name]
@@ -120,9 +135,8 @@ class CtiOsClient(WSDPClient):
         self.number_of_posidents = 0
         self.number_of_posidents_final = 0
         self.response_xml = []
-        self.counter = Counter() # Counts statistics
-        
-        
+        self.counter = Counter()  # Counts statistics
+
     def send_request(self, dictionary):
         """
         Send the request in the form of dictionary and get the response.
@@ -132,10 +146,10 @@ class CtiOsClient(WSDPClient):
         :rtype: tuple (dict - xml response, dict - errorneous posidents)
         """
 
-        def create_chunks(lst, n):
+        def create_chunks(lst, chunk_size):
             """ "Create n-sized chunks from list as a generator"""
-            n = max(1, n)
-            return (lst[i : i + n] for i in range(0, len(lst), n))
+            chunk_size = max(1, chunk_size)
+            return (lst[i : i + chunk_size] for i in range(0, len(lst), chunk_size))
 
         # Save statistics
         self.number_of_posidents = len(dictionary["pOSIdent"])
@@ -155,9 +169,11 @@ class CtiOsClient(WSDPClient):
             partial_dictionary_errors = {}
             try:
                 vysledek = self.client.service.ctios(pOSIdent=chunk)
-                partial_dictionary, partial_dictionary_errors = CtiOSDict()(helpers.serialize_object(vysledek, dict), self.counter, self.logger)
-            except Exception as e:
-                raise WSDPRequestError(self.logger, e) from e
+                partial_dictionary, partial_dictionary_errors = CtiOSDict()(
+                    helpers.serialize_object(vysledek, dict), self.counter, self.logger
+                )
+            except Exception as exc:
+                raise WSDPRequestError(self.logger, exc) from exc
 
             dictionary = {**dictionary, **partial_dictionary}
             dictionary_errors = {**dictionary_errors, **partial_dictionary_errors}
@@ -173,8 +189,7 @@ class CtiOsClient(WSDPClient):
                 "pocet odstranenych duplicit": self.number_of_posidents
                 - self.number_of_posidents_final,
                 "pocet dotazu na server": math.ceil(
-                    self.number_of_posidents_final
-                    / self.posidents_per_request
+                    self.number_of_posidents_final / self.posidents_per_request
                 ),
                 "pocet uspesne zpracovanych identifikatoru": self.counter.uspesne_stazeno,
                 "pocet neplatnych identifikatoru": self.counter.neplatny_identifikator,
@@ -197,10 +212,7 @@ class CtiOsClient(WSDPClient):
         )
         self.logger.info(
             "Pocet pozadavku, do kterych byl dotaz rozdelen (pocet dotazu na server): {}".format(
-                math.ceil(
-                    self.number_of_posidents_final
-                    / self.posidents_per_request
-                )
+                math.ceil(self.number_of_posidents_final / self.posidents_per_request)
             )
         )
         self.logger.info(
@@ -224,6 +236,7 @@ class CtiOsClient(WSDPClient):
             )
         )
 
+
 @pywsdp.register
 class GenerujCenoveUdajeDleKuClient(WSDPClient):
     """
@@ -239,7 +252,7 @@ class GenerujCenoveUdajeDleKuClient(WSDPClient):
         Raises:
             WSDPRequestError: Zeep library request error
         :param dictionary: dictionary of input attributes
-        :rtype: str - xml responses
+        :rtype: dict
         """
         try:
             zeep_object = self.client.service.generujCenoveUdajeDleKu(
@@ -249,9 +262,11 @@ class GenerujCenoveUdajeDleKuClient(WSDPClient):
                 mesicDo=dictionary["mesicDo"],
                 format=dictionary["format"],
             )
-            return SestavyDict()(helpers.serialize_object(zeep_object, dict), self.logger)
-        except Exception as e:
-            raise WSDPRequestError(self.logger, e) from e
+            return SestavyDict()(
+                helpers.serialize_object(zeep_object, dict), self.logger
+            )
+        except Exception as exc:
+            raise WSDPRequestError(self.logger, exc) from exc
 
 
 @pywsdp.register
@@ -269,13 +284,15 @@ class SeznamSestavClient(WSDPClient):
         Raises:
             WSDPRequestError: Zeep library request error
         :param id_sestavy: id (number)
-        :rtype: list - xml responses
+        :rtype: dict
         """
         try:
             zeep_object = self.client.service.seznamSestav(idSestavy=id_sestavy)
-            return SestavyDict()(helpers.serialize_object(zeep_object, dict), self.logger)
-        except Exception as e:
-            raise WSDPRequestError(self.logger, e) from e
+            return SestavyDict()(
+                helpers.serialize_object(zeep_object, dict), self.logger
+            )
+        except Exception as exc:
+            raise WSDPRequestError(self.logger, exc) from exc
 
 
 @pywsdp.register
@@ -297,9 +314,11 @@ class VratSestavuClient(WSDPClient):
         """
         try:
             zeep_object = self.client.service.vratSestavu(idSestavy=id_sestavy)
-            return SestavyDict()(helpers.serialize_object(zeep_object, dict), self.logger)
-        except Exception as e:
-            raise WSDPRequestError(self.logger, e)
+            return SestavyDict()(
+                helpers.serialize_object(zeep_object, dict), self.logger
+            )
+        except Exception as exc:
+            raise WSDPRequestError(self.logger, exc) from exc
 
 
 @pywsdp.register
@@ -321,6 +340,8 @@ class SmazSestavuClient(WSDPClient):
         """
         try:
             zeep_object = self.client.service.smazSestavu(idSestavy=id_sestavy)
-            return SestavyDict()(helpers.serialize_object(zeep_object, dict), self.logger)
-        except Exception as e:
-            raise WSDPRequestError(self.logger, e) from e
+            return SestavyDict()(
+                helpers.serialize_object(zeep_object, dict), self.logger
+            )
+        except Exception as exc:
+            raise WSDPRequestError(self.logger, exc) from exc
