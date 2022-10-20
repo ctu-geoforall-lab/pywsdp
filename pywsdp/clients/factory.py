@@ -4,9 +4,9 @@
 @brief Factory class for WSDP services
 
 Classes:
- - factory::ClientFactory
  - factory::WSDPClient
  - factory::SestavyClient
+ - factory::ClientFactory
  - factory::CtiOsClient
  - factory::GenerujCenoveUdajeDleKuClient
  - factory::SeznamSestavClient
@@ -18,9 +18,8 @@ This library is free under the MIT License.
 """
 
 import math
-from lxml import etree
 from abc import ABC, abstractmethod
-from zeep import Client, Settings
+from zeep import Client, Settings, helpers
 from zeep.cache import SqliteCache
 from zeep.transports import Transport
 from zeep.wsse.username import UsernameToken
@@ -28,9 +27,9 @@ from zeep.plugins import HistoryPlugin
 
 from pywsdp.base.exceptions import WSDPRequestError
 from pywsdp.base.globalvars import trialWsdls, prodWsdls
-from pywsdp.clients.helpers.ctiOS import XMLParser as CtiOSParser
+from pywsdp.clients.helpers.ctiOS import ProcessDictionary as CtiOSDict
 from pywsdp.clients.helpers.ctiOS import Counter
-from pywsdp.clients.helpers.generujCenoveUdajeDleKu import XMLParser as SestavyParser
+from pywsdp.clients.helpers.generujCenoveUdajeDleKu import ProcessDictionary as SestavyDict
 
 
 transport = Transport(cache=SqliteCache())
@@ -77,31 +76,6 @@ class WSDPClient(ABC):
         Method for sending a request to a service. Must be defined by all child classes.
         """
 
-    def zeep_object_to_xml(self):
-        """
-        Convert output zeep object to XML object using lxml library.
-        """
-        try:
-            for hist in [history.last_sent, history.last_received]:
-                response_xml = etree.tostring(
-                    hist["envelope"], encoding="unicode", pretty_print=True
-                )
-            return response_xml
-        except (IndexError, TypeError) as e:
-            raise WSDPRequestError(self.logger, e) from e
-            
-
-class SestavyClient(WSDPClient):
-
-    service_group = "sestavy"
-
-    def zeep_object_to_dict(self):
-        """
-        Convert output zeep object to dict object using lxml library and own parsering class.
-        """
-        response_xml = self.zeep_object_to_xml()
-        return SestavyParser()(content=response_xml, logger=self.logger)
-
 
 class ClientFactory:
     def __init__(self):
@@ -136,7 +110,6 @@ class CtiOsClient(WSDPClient):
         self.number_of_posidents = 0
         self.number_of_posidents_final = 0
         self.response_xml = []
-        self.parser = CtiOSParser()
         self.counter = Counter() # Counts statistics
         
         
@@ -165,25 +138,20 @@ class CtiOsClient(WSDPClient):
         chunks = create_chunks(posidents, self.posidents_per_request)
 
         # process posident chunks and return xml response as the dict
-        response_dict = {}
-        response_dict_errors = {}
+        dictionary = {}
+        dictionary_errors = {}
         for chunk in chunks:
+            partial_dictionary = {}
+            partial_dictionary_errors = {}
             try:
-                self.client.service.ctios(pOSIdent=chunk)
-                item = self.zeep_object_to_xml()
+                vysledek = self.client.service.ctios(pOSIdent=chunk)
+                partial_dictionary, partial_dictionary_errors = CtiOSDict()(helpers.serialize_object(vysledek, dict), self.counter, self.logger)
             except Exception as e:
                 raise WSDPRequestError(self.logger, e) from e
 
-            # save to raw xml list
-            self.response_xml.append(item)
-
-            # create response dictionary
-            partial_dictionary, partial_dictionary_errors = self.parser(
-                content=item, counter=self.counter, logger=self.logger
-            )
-            response_dict = {**response_dict, **partial_dictionary}
-            response_dict_errors = {**response_dict_errors, **partial_dictionary_errors}
-        return response_dict, response_dict_errors
+            dictionary = {**dictionary, **partial_dictionary}
+            dictionary_errors = {**dictionary_errors, **partial_dictionary_errors}
+        return dictionary, dictionary_errors
 
     def print_statistics(self):
         """
@@ -247,7 +215,7 @@ class CtiOsClient(WSDPClient):
         )
 
 @pywsdp.register
-class GenerujCenoveUdajeDleKuClient(SestavyClient):
+class GenerujCenoveUdajeDleKuClient(WSDPClient):
     """
     Client for communicating with GenerujCenoveUdajeDleKu WSDP service.
     """
@@ -264,20 +232,20 @@ class GenerujCenoveUdajeDleKuClient(SestavyClient):
         :rtype: str - xml responses
         """
         try:
-            self.client.service.generujCenoveUdajeDleKu(
+            zeep_object = self.client.service.generujCenoveUdajeDleKu(
                 katastrUzemiKod=dictionary["katastrUzemiKod"],
                 rok=dictionary["rok"],
                 mesicOd=dictionary["mesicOd"],
                 mesicDo=dictionary["mesicDo"],
                 format=dictionary["format"],
             )
-            return self.zeep_object_to_dict()
+            return SestavyDict()(helpers.serialize_object(zeep_object, dict), self.logger)
         except Exception as e:
             raise WSDPRequestError(self.logger, e) from e
 
 
 @pywsdp.register
-class SeznamSestavClient(SestavyClient):
+class SeznamSestavClient(WSDPClient):
     """
     Client for communicating with SeznamSestav WSDP service.
     """
@@ -294,14 +262,14 @@ class SeznamSestavClient(SestavyClient):
         :rtype: list - xml responses
         """
         try:
-            self.client.service.seznamSestav(idSestavy=id_sestavy)
-            return self.zeep_object_to_dict()
+            zeep_object = self.client.service.seznamSestav(idSestavy=id_sestavy)
+            return SestavyDict()(helpers.serialize_object(zeep_object, dict), self.logger)
         except Exception as e:
             raise WSDPRequestError(self.logger, e) from e
 
 
 @pywsdp.register
-class VratSestavuClient(SestavyClient):
+class VratSestavuClient(WSDPClient):
     """
     Client for communicating with VratSestavu WSDP service.
     """
@@ -315,17 +283,17 @@ class VratSestavuClient(SestavyClient):
         Raises:
             WSDPRequestError: Zeep library request error
         :param id_sestavy: id (number)
-        :rtype: list - xml responses
+        :rtype: dict
         """
         try:
-            self.client.service.vratSestavu(idSestavy=id_sestavy)
-            return self.zeep_object_to_dict()
+            zeep_object = self.client.service.vratSestavu(idSestavy=id_sestavy)
+            return SestavyDict()(helpers.serialize_object(zeep_object, dict), self.logger)
         except Exception as e:
             raise WSDPRequestError(self.logger, e)
 
 
 @pywsdp.register
-class SmazSestavuClient(SestavyClient):
+class SmazSestavuClient(WSDPClient):
     """
     Client for communicating with SmazSestavu WSDP service.
     """
@@ -339,10 +307,10 @@ class SmazSestavuClient(SestavyClient):
         Raises:
             WSDPRequestError: Zeep library request error
         :param id_sestavy: id (number)
-        :rtype: list - xml responses
+        :rtype: dict
         """
         try:
-            self.client.service.smazSestavu(idSestavy=id_sestavy)
-            return self.zeep_object_to_dict()
+            zeep_object = self.client.service.smazSestavu(idSestavy=id_sestavy)
+            return SestavyDict()(helpers.serialize_object(zeep_object, dict), self.logger)
         except Exception as e:
             raise WSDPRequestError(self.logger, e) from e

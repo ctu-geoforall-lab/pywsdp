@@ -4,94 +4,60 @@
 @brief Helpers for CtiOS client
 
 Classes:
- - helpers::XMLParser
+ - helpers::ProcessDictionary
  - helpers::Counter
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the MIT License.
 """
 
-import xml.etree.ElementTree as et
 
-from pywsdp.base.globalvars import xmlNamespace0, xmlNamespace1
-from pywsdp.base.exceptions import WSDPResponseError
+class ProcessDictionary:
+    """Class processing ctiOS dict response."""
 
-
-class XMLParser:
-    """Class parsing ctiOS XML response into a dictionary."""
-
-    def __call__(self, content, counter, logger):
+    def __call__(self, input_dict, counter, logger):
         """
-        Read content from XML and parses it.
+        Process dictionary for output.
         Raised:
             WSDPResponseError
-        :param content: XML response (str)
-        :param counter: counts posident errors (CtiOSCounter class)
-        :param logger: logging class (Logger)
-        :rtype: tuple (parsed XML attributes (nested dictonary), errors (dictionary))
+        :param input_dict: input dictioonary gained from zeep object
+        :param counter: counts posident errors (Counter class)
+        :param logger: logging class (WSDPLogger)
+        :rtype: tuple (successfully processed attributes (nested dictonary), errors (dictionary))
         """
-        root = et.fromstring(content)
+        akce = input_dict["vysledek"]["zprava"][0]["_value_1"]
+        logger.info(" ")
+        logger.info(akce)
 
-        # Find tags with 'zprava' name
-        xml_dict = {}
-        xml_dict_errors = {}
-        namespace_ns1 = xmlNamespace1["ctios"]
-        os_tags = root.findall(".//{}zprava".format(namespace_ns1))
-        for os_tag in os_tags:
-            logger.info(" ")
-            logger.info(os_tag.text)
-
-        # Find all tags with 'os' name
-        namespace_ns0 = xmlNamespace0["ctios"]
-        namespace_length = len(namespace_ns0)
-        for os_tag in root.findall(".//{}os".format(namespace_ns0)):
-
-            # Save posident variable
-            posident = os_tag.find("{}pOSIdent".format(namespace_ns0)).text
-
-            if os_tag.find("{}chybaPOSIdent".format(namespace_ns0)) is not None:
-
-                # Detect errors
-                identifier = os_tag.find("{}chybaPOSIdent".format(namespace_ns0)).text
-
-                if identifier == "NEPLATNY_IDENTIFIKATOR":
-                    counter.add_neplatny_identifikator()
-                elif identifier == "EXPIROVANY_IDENTIFIKATOR":
-                    counter.add_expirovany_identifikator()
-                elif identifier == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
-                    counter.add_opravneny_subjekt_neexistuje()
-
-                # Write to log
-                if identifier in (
-                    "NEPLATNY_IDENTIFIKATOR",
-                    "EXPIROVANY_IDENTIFIKATOR",
-                    "OPRAVNENY_SUBJEKT_NEEXISTUJE",
-                ):
-                    logger.info(
-                        "POSIDENT {} {}".format(posident, identifier.replace("_", " "))
-                    )
-                else:
-                    raise WSDPResponseError(
-                        logger,
-                        "POSIDENT {} {}".format(posident, identifier.replace("_", " ")),
-                    )
-                xml_dict_errors[posident] = identifier
-            else:
-                # No errors detected
-                xml_dict[posident] = {}
-                counter.add_uspesne_stazeno()
-                logger.info("POSIDENT {} USPESNE STAZEN".format(posident))
-
-                # Create the dictionary with XML child attribute names and particular texts
-                for child in os_tag.find(".//{}osDetail".format(namespace_ns0)):
-                    # key: remove namespace from element name
-                    name = child.tag
-                    xml_dict[posident][name[namespace_length:]] = os_tag.find(
-                        ".//{}".format(name)
-                    ).text
-                os_id = os_tag.find("{}osId".format(namespace_ns0)).text
-                xml_dict[posident]["osId"] = os_id
-        return xml_dict, xml_dict_errors
+        dictionary = {}
+        dictionary_errors = {}
+        posident_list = input_dict["osList"]["os"]
+    
+        for identifikator in posident_list:
+           posident = identifikator["pOSIdent"]
+           if identifikator["chybaPOSIdent"]:                        
+               chyba_posident = identifikator["chybaPOSIdent"]
+               if chyba_posident == "NEPLATNY_IDENTIFIKATOR":
+                   counter.add_neplatny_identifikator()
+               elif chyba_posident == "EXPIROVANY_IDENTIFIKATOR":
+                   counter.add_expirovany_identifikator()
+               elif chyba_posident == "OPRAVNENY_SUBJEKT_NEEXISTUJE":
+                   counter.add_opravneny_subjekt_neexistuje()
+               logger.info(
+                   "POSIDENT {} {}".format(posident, chyba_posident.replace("_", " "))
+               )
+               dictionary_errors[posident] = chyba_posident
+           else:
+               os_detail = identifikator["osDetail"][0] 
+               os_detail["osId"] = identifikator["osId"]
+               if os_detail["datumVzniku"]:
+                   os_detail["datumVzniku"] = os_detail["datumVzniku"].strftime("%Y-%m-%dT%H:%M:%S")
+               if os_detail["datumZaniku"]:
+                   os_detail["datumZaniku"] = os_detail["datumZaniku"].strftime("%Y-%m-%dT%H:%M:%S")  
+               counter.add_uspesne_stazeno()
+               logger.info("POSIDENT {} USPESNE STAZEN".format(posident))
+               dictionary[posident] = os_detail
+        return dictionary, dictionary_errors
 
 
 class Counter:

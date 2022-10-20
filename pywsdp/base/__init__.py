@@ -192,7 +192,7 @@ class SestavyBase(WSDPBase):
             self.logger,
             self.testovaci_mod,
         )
-        return seznam_sestav.send_request(sestava["idSestavy"])
+        return seznam_sestav.send_request(sestava["id"])
 
     def zauctuj_sestavu(self, sestava: dict) -> dict:
         """Vezme id sestavy z vytvorene sestavy a zavola sluzbu VratSestavu, ktera danou sestavu zauctuje.
@@ -219,7 +219,7 @@ class SestavyBase(WSDPBase):
             self.logger,
             self.testovaci_mod,
         )
-        return vrat_sestavu.send_request(sestava["idSestavy"])
+        return vrat_sestavu.send_request(sestava["id"])
     
     def vymaz_sestavu(self, sestava: dict) -> dict:
         """Vezme id sestavy z vytvorene sestavy a zavola sluzbu SmazSestavu, ktera danou sestavu z uctu smaze.
@@ -234,4 +234,4 @@ class SestavyBase(WSDPBase):
             self.logger,
             self.testovaci_mod,
         )
-        return smaz_sestavu.send_request(sestava["idSestavy"])
+        return smaz_sestavu.send_request(sestava["id"])
