@@ -4,7 +4,7 @@
 @brief Helpers for CtiOS client
 
 Classes:
- - helpers::ProcessDictionary
+ - helpers::DictEditor
  - helpers::Counter
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
@@ -12,7 +12,7 @@ This library is free under the MIT License.
 """
 
 
-class ProcessDictionary:
+class DictEditor:
     """Class processing ctiOS dict response."""
 
     def __call__(self, input_dict, counter, logger):

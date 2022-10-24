@@ -25,10 +25,10 @@ from zeep.wsse.username import UsernameToken
 from zeep.plugins import HistoryPlugin
 
 from pywsdp.base.exceptions import WSDPRequestError
-from pywsdp.clients.helpers.ctiOS import ProcessDictionary as CtiOSDict
+from pywsdp.clients.helpers.ctiOS import DictEditor as CtiOSDict
 from pywsdp.clients.helpers.ctiOS import Counter
 from pywsdp.clients.helpers.generujCenoveUdajeDleKu import (
-    ProcessDictionary as SestavyDict,
+    DictEditor as SestavyDict,
 )
 
 

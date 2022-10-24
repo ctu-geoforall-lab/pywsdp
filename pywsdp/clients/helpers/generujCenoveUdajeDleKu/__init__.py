@@ -4,14 +4,14 @@
 @brief Helpers for any Sestavy client
 
 Classes:
- - helpers::ProcessDictionary
+ - helpers::DictEditor
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the MIT License.
 """
 
 
-class ProcessDictionary:
+class DictEditor:
     """Class processing Sestavy dict response."""
 
     def __call__(self, input_dict, logger):
