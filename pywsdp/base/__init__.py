@@ -113,9 +113,7 @@ class WSDPBase:
             module_dir = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "..", "..")
             )
-            print(module_dir)
         log_dir = os.path.join(module_dir, "logs")
-        print(log_dir)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         self.logger.set_directory(log_dir)
