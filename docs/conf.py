@@ -32,6 +32,7 @@ release = '1.0'
 # ones.
 extensions = [
     'nbsphinx',  # Integrate Jupyter Notebooks and Sphinx
+    'sphinx.ext.autodoc'
 ]
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
@@ -52,6 +53,8 @@ source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
+
+autodoc_member_order = 'bysource'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

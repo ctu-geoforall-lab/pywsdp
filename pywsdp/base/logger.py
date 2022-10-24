@@ -16,19 +16,19 @@ from datetime import datetime
 
 class WSDPLogger(logging.getLoggerClass()):
     """
-    CTIOS class for logging
+    General WSDP class for logging
     """
 
-    def __init__(self, name, level=logging.DEBUG):
+    def __init__(self, name: str, level=logging.DEBUG):
         """
         Contructor of WSDPLogger class, format console handler
-
-        Args:
-            level=logging.DEBUG
+        :param name: service name (str)
+        :param level: logging level ()
         """
-        super(WSDPLogger, self).__init__(name)
+        super().__init__(name)
 
-        self.level = level
+        # Define a level of log messages
+        logging.basicConfig(level=level)
 
         # Define a Stream Console Handler
         console = logging.StreamHandler()
@@ -40,12 +40,10 @@ class WSDPLogger(logging.getLoggerClass()):
         # Add handlers to the logger
         self.addHandler(console)
 
-    def set_directory(self, log_dir):
+    def set_directory(self, log_dir: dir):
         """
-        Set logging directory
-
-        Args:
-            log_dir (str): Log directory
+        Set log directory
+        :param log_dir: path to log directory (str)
         """
 
         log_filename = datetime.now().strftime("%H_%M_%S_%d_%m_%Y.log")
@@ -54,8 +52,13 @@ class WSDPLogger(logging.getLoggerClass()):
             filename=log_dir + "/" + log_filename, mode="w"
         )
 
-        formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s")
+        formatter = logging.Formatter(
+            "%(name)-12s %(asctime)s %(levelname)-8s %(message)s"
+        )
         file_handler.setFormatter(formatter)
 
         # Add handlers to the logger
         self.addHandler(file_handler)
+
+    def __del__(self):
+        logging.shutdown()

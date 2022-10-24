@@ -41,6 +41,13 @@ Vyzkoušejte interaktivní jupyter notebooky, kde je práce s jednotlivými modu
    :maxdepth: 1
 
    notebooks/GenerujCenoveUdajeDleKu
+   
+API dokumentace
+=================
+.. toctree::
+   :maxdepth: 2
+   
+   api
 
 Podrobnější informace o této aplikaci, poskytovaných výstupech a technických předpokladech použití aplikace naleznete  v "Popisu knihovny PYWSDP". Zájemci se s touto knihovnou a službami WSDP mohou seznámit bezplatně prostřednictví zákaznického účtu „na zkoušku“.
 

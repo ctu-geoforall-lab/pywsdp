@@ -1,211 +1,176 @@
 """
-@package modules
+@package modules.CtiOS
 
-@brief Trida typu fasady zastresujici modul pro ziskani osobnich udaju
-opravnenych subjektu.
+@brief Public API for CtiOS module
 
-Tridy:
- - CtiOS
-
-Metody:
- - uzivatel - getter
- - heslo - getter
- - uzivatel(uzivatel) - setter
- - heslo(heslo) - setter
- - pristupove_udaje(uzivatel, heslo) - getter
- - log_adresar - getter
- - log_adresar(log_adresar) - setter
- - nacti_identifikatory_ze_slovniku(ctios_slovnik: dict)
- - nacti_identifikatory_z_json_souboru(cesta_k_json_souboru: str)
- - nacti_identifikatory_z_databaze(cesta_k_databazi: str, sql: str)
- - zpracuj_identifikatory
- - uloz_vystup(osobni_udaje, vystupni_soubor, format_souboru)
+Classes:
+ - CtiOS:CtiOS
 
 (C) 2021 Linda Kladivova lindakladivova@gmail.com
 This library is free under the MIT License.
 """
 
 import os
+import csv
+import json
+from pathlib import Path
+from datetime import datetime
+import shutil
 
-from pywsdp.formats import OutputFormat
-from pywsdp.base.factory import pywsdp
+from pywsdp.base import WSDPBase
 from pywsdp.base.exceptions import WSDPError
-from pywsdp.base.logger import WSDPLogger
+from pywsdp.modules.CtiOS.formats import OutputFormat
+from pywsdp.modules.CtiOS.helpers import AttributeConverter, DbManager
 
 
-class CtiOS():
-    """Trida typu fasady pro obsluhu ziskavani osobnich udaje opravnenych
-    subjektu z KN"""
-    def __init__(self):
-        # Nazev modulu
-        self.nazev_modulu = "CtiOS"
+# Mapping dictionary for conversion from XML response and DB Gdal SQLITE db
+_XML2DB_mapping = {
+    "priznakKontext": "PRIZNAK_KONTEXTU",
+    "partnerBsm1": "ID_JE_1_PARTNER_BSM",
+    "partnerBsm2": "ID_JE_2_PARTNER_BSM",
+    "charOsType": "CHAROS_KOD",
+    "kodAdresnihoMista": "KOD_ADRM",
+    "idNadrizenePravnickeOsoby": "ID_NADRIZENE_PO",
+}
 
-        # Inicializace sluzeb
-        self.ctios = None
 
-        # Nastaveni logovani
-        self.logger = WSDPLogger(self.nazev_modulu)
-        self._log_adresar = self._set_default_log_dir()
+class CtiOS(WSDPBase):
+    """Trida definujici rozhrani pro praci se sluzbou ctiOS.
 
-        # Defaultni pristupove udaje
-        self._uzivatel = "WSTEST"
-        self._heslo = "WSHESLO"
+    :param creds:
+    :param trial:
 
-    @property
-    def uzivatel(self):
-        """Vypise uzivatelske jmeno ke sluzbe."""
-        return self._uzivatel
+    """
 
-    @property
-    def heslo(self):
-        """Vypise heslo ke sluzbe."""
-        return self._heslo
+    def __init__(self, creds: dict, trial: dict = False):
+        self._nazev_sluzby = "ctiOS"
+        self._skupina_sluzeb = "ctios"
+        self.input_db = None
+        self.input_json = None
 
-    @uzivatel.setter
-    def uzivatel(self, uzivatel):
-        """Nastavi uzivatelske jmeno ke sluzbe."""
-        if self.ctios:
-            self.ctios.username(uzivatel)
-        self._uzivatel = uzivatel
+        super().__init__(creds, trial=trial)
 
-    @heslo.setter
-    def heslo(self, heslo):
-        """Nastavi heslo ke sluzbe."""
-        if self.ctios:
-            self.ctios.password(heslo)
-        self._heslo = heslo
+    def nacti_identifikatory_z_db(self, db_path: str, sql_dotaz=None) -> dict:
+        """Pripravi identifikatory z SQLITE databaze pro vstup do zavolani sluzby ctiOS.
 
-    @property
-    def pristupove_udaje(self):
-        """Vypise pristupove udaje ke sluzbe ve forme uzivatelskeho jmeno a hesla."""
-        return (self._uzivatel, self._heslo)
-
-    @property
-    def log_adresar(self):
-        """ Vypise cestu k adresari, ve kterem se budou vytvaret log soubory."""
-        return self._log_adresar
-
-    @log_adresar.setter
-    def log_adresar(self, log_adresar):
-        """Nastavi cestu k adresari, ve kterem se budou vytvaret log soubory."""
-        self._ensure_dir_exists(log_adresar)
-        self.logger.set_directory(log_adresar)
-        self._log_adresar = log_adresar
-
-    @property
-    def pocet_dotazovanych_identifikatoru(self):
-        """Vypise pocet identifikatoru na vstupu."""
-        return self.ctios.number_of_posidents
-
-    @property
-    def pocet_neplatnych_identifikatoru(self):
-        """Vypise pocet neplatnych identifikatoru opravnenych subjektu"""
-        return self.ctios.counter.neplatny_identifikator
-
-    @property
-    def pocet_expirovanych_identifikatoru(self):
-        """Vypise pocet expirovanych identifikatoru opravnenych subjektu"""
-        return self.ctios.counter.expirovany_identifikator
-
-    @property
-    def pocet_neexistujicich_os(self):
-        """Vypise pocet neexistujicich opravnenych subjektu"""
-        return self.ctios.counter.opravneny_subjekt_neexistuje
-
-    @property
-    def pocet_uspesne_stazenych_os(self):
-        """Vypise pocet uspesne stazenych opravnenych subjektu."""
-        return self.ctios.counter.uspesne_stazeno
-
-    @property
-    def pocet_odstranenych_duplicit(self):
-        """Vypise pocet nalezenych duplicit ve vstupnich datech,
-        Duplicity jsou pri vypoctu automaticky odstraneny."""
-        return self.ctios.number_of_posidents -self.ctios.number_of_posidents_final
-
-    @property
-    def pocet_dotazu_na_server(self):
-        """Vypise pocet samostatnych dotazu, do kterych byl pozadavek rozdelen."""
-        return self.ctios.number_of_chunks
-
-    def otestuj_sluzbu(self):
-        """Otestuje zda je CtiOS sluzba funkcni."""
-        return self.ctios._test_service()
-
-    def nacti_identifikatory_ze_slovniku(self, ctios_slovnik):
-        """Vezme parametry ze slovniku
-        a vytvori instanci sluzby CtiOSDict
-        Jedna se o slovnik ve formatu:
-        {"posidents" : [pseudokod1, pseudokod2...]}.
+        :param db_path: cesta k SQLITE databazi ziskane rozbalenim VFK souboru
+        :param sql_dotaz: omezeni zpracovavanych identifikatoru pres SQL dotaz, napr. SELECT * FROM OPSUB order by ID LIMIT 10
+        :return: data pro vstup do sluzby ctiOS
         """
-        dictionary = {"ctiOSDict": ctios_slovnik}
-        self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
-        self.ctios.set_credentials(username=self._uzivatel, password=self._heslo)
-        self.ctios.write_preprocessing_stats()
+        db = DbManager(db_path, self.logger)  # pripojeni k SQLite databazi
 
-    def nacti_identifikatory_z_json_souboru(self, cesta_k_json_souboru):
-        """Vezme parametry ze souboru typu *.JSON
-        a vytvori instanci sluzby CtiOSJson
-        Vnitrek json souboru je ve tvaru slovniku:
-        {"posidents" : [pseudokod1, pseudokod2...]}.
-        """
-        dictionary = {"ctiOSJson": cesta_k_json_souboru}
-        self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
-        self.ctios.set_credentials(username=self._uzivatel, password=self._heslo)
-        self.ctios.write_preprocessing_stats()
-
-    def nacti_identifikatory_z_databaze(self, cesta_k_databazi, sql_dotaz=None):
-        """Vezme parametry ze souboru typu *.db, ktery byl vytvoren z VFK souboru,
-        a vytvori instanci sluzby CtiOSDb. Vstupem muze byt sql_dotaz pro
-        vyber identifikatoru, prikladem: "SELECT * FROM OPSUB order by ID LIMIT 10".
-        """
         if sql_dotaz:
-            dictionary = {"ctiOSDb": [cesta_k_databazi, sql_dotaz]}
+            posidents = db.get_posidents_from_db(sql_dotaz)
         else:
-            dictionary = {"ctiOSDb": cesta_k_databazi}
-        self.ctios = pywsdp.create(recipe=dictionary, logger=self.logger)
-        self.ctios.set_credentials(username=self._uzivatel, password=self._heslo)
-        self.ctios.write_preprocessing_stats()
+            posidents = db.get_posidents_from_db()
 
-    def zpracuj_identifikatory(self):
-        """Zpracuje vstupni parametry pomoci sluzby CtiOS a vysledne osobni udaje
-        opravnenych subjektu ulozi do slovniku.
+        self.input_db = db_path  # zpristupneni cesty k vstupni databazi
+
+        db.close_connection()
+        return {"pOSIdent": posidents}
+
+    def nacti_identifikatory_z_json_souboru(self, json_path: str) -> dict:
+        """Pripravi identifikatory z JSON souboru pro vstup do zavolani sluzby ctiOS.
+
+        :param json_path: cesta k JSON souboru s pseudonymizovanymi identifikatory.
+        :return: data pro vstup do sluzby ctiOS
+
         """
-        return self.ctios._process()
+        file = Path(json_path)
+        if file.exists():
+            with open(file) as f:
+                data = json.load(f)
+                return data
+        else:
+            raise WSDPError(self.logger, "File is not found!")
 
-    def uloz_vystup(self, osobni_udaje, vystupni_soubor, format_souboru):
-        """Konvertuje osobni udaje typu slovnik do souboru o definovanem
+    def posli_pozadavek(self, slovnik_identifikatoru: dict) -> dict:
+        """Zpracuje vstupni parametry pomoci nektere ze sluzeb a
+        vysledek ulozi do slovniku. Zaroven vypocte zaloguje statistiku procesu.
+
+        :param slovnik: vstupni parametry specificke pro danou sluzbu.
+        :return: objekt zeep knihovny prevedeny na slovnik a upraveny pro vystup
+        """
+        response, response_errors = self.client.send_request(slovnik_identifikatoru)
+        self.client.log_statistics()
+        return response, response_errors
+
+    def uloz_vystup(
+        self,
+        vysledny_slovnik: dict,
+        vystupni_adresar: str,
+        format_souboru: OutputFormat,
+        slovnik_chybnych_identifikatoru: dict = None,
+    ):
+        """Konvertuje osobni udaje typu slovnik ziskane ze sluzby ctiOS do souboru o definovanem
         formatu a soubor ulozi do definovaneho vystupniho adresare.
+
+        :param vysledny_slovnik: slovnik vraceny pro uspesne zpracovane identifikatory
+        :param vystupni_adresar: cesta k vystupnimu adresari
+        :param format_souboru: format typu OutputFormat.GdalDb, OutputFormat.Json nebo OutputFormat.Csv
+        :param slovnik_chybnych_identifikatoru: slovnik vraceny pro neuspesne zpracovane identifikatory
+        :return: cesta k vystupnimu souboru
         """
+        cas = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
+
         if format_souboru == OutputFormat.GdalDb:
-            self.ctios._write_output_to_db(osobni_udaje, vystupni_soubor)
+            vystupni_soubor = "".join(["ctios_", cas, ".db"])
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            try:
+                shutil.copyfile(
+                    self.input_db, vystupni_cesta
+                )  # prekopirovani souboru db do cilove cesty
+            except:
+                raise WSDPError(
+                    self.logger, "Databazi nelze prekopirovat do cilove cesty"
+                )
+            db = DbManager(vystupni_cesta, self.logger)
+            db.add_column_to_db("OS_ID", "text")
+            input_db_columns = db.get_columns_names()
+            db_dictionary = AttributeConverter(
+                _XML2DB_mapping, vysledny_slovnik, input_db_columns, self.logger
+            ).convert_attributes()
+            db.update_rows_in_db(db_dictionary)
+            db.close_connection()
+            self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         elif format_souboru == OutputFormat.Json:
-            self.ctios._write_output_to_json(osobni_udaje, vystupni_soubor)
+            vystupni_soubor = "".join(["ctios_", cas, ".json"])
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
+                json.dump(vysledny_slovnik, f, ensure_ascii=False)
+                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         elif format_souboru == OutputFormat.Csv:
-            self.ctios._write_output_to_csv(osobni_udaje, vystupni_soubor)
+            vystupni_soubor = "".join(["ctios_", cas, ".csv"])
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            header = sorted(
+                set(i for b in map(dict.keys, vysledny_slovnik.values()) for i in b)
+            )
+            with open(vystupni_cesta, "w", newline="") as f:
+                write = csv.writer(f)
+                write.writerow(["posident", *header])
+                for a, b in vysledny_slovnik.items():
+                    write.writerow([a] + [b.get(i, "") for i in header])
+                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         else:
             raise WSDPError(
-                self.ctios.logger,
-                "Format {} is not supported".format(format_souboru)
+                self.logger, "Format {} neni podporovan".format(format_souboru)
             )
+        # zapsani chybnych identifikatoru do json souboru
+        if slovnik_chybnych_identifikatoru:
+            vystupni_soubor = "".join(["ctios_errors_", cas, ".json"])
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
+                json.dump(slovnik_chybnych_identifikatoru, f, ensure_ascii=False)
+                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
+        return vystupni_cesta
 
-    def _set_default_log_dir(self):
-        """Method for getting default log dir"""
-        def is_run_by_jupyter():
-            import __main__ as main
-            return not hasattr(main, '__file__')
-
-        if is_run_by_jupyter():
-            module_dir = os.path.abspath(os.path.join('../../', 'pywsdp', 'modules', self.nazev_modulu))
-        else:
-            module_dir = os.path.dirname(__file__)
-        log_dir = os.path.join(module_dir, "logs")
-        self._ensure_dir_exists(log_dir)
-        self.logger.set_directory(log_dir)
-        return log_dir
-
-    def _ensure_dir_exists(self, directory):
-        """Method for checking if dir exists.
-        If does not exist, it creates a new dir"""
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+    def vypis_statistiku(self):
+        """Vytiskne statistiku zpracovanych pseudonymizovanych identifikatoru (POSIdentu).
+        Pocet neplatnych identifikatoru = pocet POSIdentu, ktere nebylo mozne rozsifrovat;
+        Pocet expirovanych identifikatoru = pocet POSIdentu, kterym vyprsela casova platnost;
+        Pocet identifikatoru k neexistujicim OS = pocet POSIdentu, ktere obsahuji neexistujici OS ID (neni na co je napojit);
+        Pocet uspesne zpracovanych identifikatoru = pocet identifikatoru, ke kterym byly uspesne zjisteny osobni udaje;
+        Pocet odstranenych duplicit = pocet vstupnich zaznamu, ktere byly pred samotnym zpracovanim smazany z duvodu duplicit;
+        Pocet dotazu na server = pocet samostatnych dotazu, do kterych byl pozadavek rozdelen
+        """
+        self.client.print_statistics()
