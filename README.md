@@ -1,5 +1,7 @@
 # PyWSDP
 
+[![pytest](https://github.com/ctu-geoforall-lab/pywsdp/actions/workflows/pytest.yml/badge.svg?branch=master)](https://github.com/ctu-geoforall-lab/pywsdp/actions/workflows/pytest.yml)
+
 Python CUZK WSDP Library
 
 Library for communication with WSDP CUZK services.
