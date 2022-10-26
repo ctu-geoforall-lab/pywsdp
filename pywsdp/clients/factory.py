@@ -54,6 +54,7 @@ class WSDPClient(ABC):
     """
     Abstract class creating interface for all WSDP clients.
     """
+
     @classmethod
     def from_recipe(cls, wsdl, service_name, creds, logger, trial):
         """
@@ -64,22 +65,26 @@ class WSDPClient(ABC):
         :rtype: Cient class
         """
         result = cls()
-        if trial is True:
-            result.client = Client(
-                _trialWsdls[wsdl],
-                transport=transport,
-                wsse=UsernameToken(*creds),
-                settings=settings,
-                plugins=[history],
-            )
-        else:
-            result.client = Client(
-                _prodWsdls[wsdl],
-                transport=transport,
-                wsse=UsernameToken(*creds),
-                settings=settings,
-                plugins=[history],
-            )
+        try:
+            if trial is True:
+                result.client = Client(
+                    _trialWsdls[wsdl],
+                    transport=transport,
+                    wsse=UsernameToken(*creds),
+                    settings=settings,
+                    plugins=[history],
+                )
+            else:
+                result.client = Client(
+                    _prodWsdls[wsdl],
+                    transport=transport,
+                    wsse=UsernameToken(*creds),
+                    settings=settings,
+                    plugins=[history],
+                )
+        except Exception as exc:
+            raise WSDPRequestError(logger, exc) from exc
+
         result.service_name = service_name
         result.logger = logger
         result.creds = creds

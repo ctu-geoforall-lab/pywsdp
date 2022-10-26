@@ -112,6 +112,7 @@ class CtiOS(WSDPBase):
         :return: cesta k vystupnimu souboru
         """
         cas = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
+        vystupni_cesta_chybnych = None
 
         if format_souboru == OutputFormat.GdalDb:
             vystupni_soubor = "".join(["ctios_", cas, ".db"])
@@ -158,11 +159,15 @@ class CtiOS(WSDPBase):
         # zapsani chybnych identifikatoru do json souboru
         if slovnik_chybnych_identifikatoru:
             vystupni_soubor = "".join(["ctios_errors_", cas, ".json"])
-            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
-            with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
+            vystupni_cesta_chybnych = os.path.join(vystupni_adresar, vystupni_soubor)
+            with open(vystupni_cesta_chybnych, "w", newline="", encoding="utf-8") as f:
                 json.dump(slovnik_chybnych_identifikatoru, f, ensure_ascii=False)
-                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
-        return vystupni_cesta
+                self.logger.info(
+                    "Vystup s chybnymi identifikatory, ktere nebyly z nejakeho duvodu zpracovany, byl ulozen zde: {}".format(
+                        vystupni_cesta_chybnych
+                    )
+                )
+        return vystupni_cesta, vystupni_cesta_chybnych
 
     def vypis_statistiku(self):
         """Vytiskne statistiku zpracovanych pseudonymizovanych identifikatoru (POSIdentu).
