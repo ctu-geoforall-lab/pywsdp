@@ -40,6 +40,10 @@ vystupni_adresar = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "data", "output")
 )
 
+# create output directory if not exists
+if os.path.exists(vystupni_adresar) == False:
+    os.mkdir(vystupni_adresar)
+
 # definice parametru
 parametry_ctiOS_dict = {
     "pOSIdent": [
