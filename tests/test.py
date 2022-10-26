@@ -43,7 +43,7 @@ vystupni_adresar = os.path.abspath(
 # create output directory if not exists
 if os.path.exists(vystupni_adresar) == False:
     os.mkdir(vystupni_adresar)
-    
+
 # definice parametru
 parametry_ctiOS_dict = {
     "pOSIdent": [
@@ -300,4 +300,3 @@ class TestOutputs:
         os.remove(cesta)
         smazani = gen.vymaz_sestavu(ses)
         assert smazani == {"zprava": "Požadovaná akce byla úspěšně provedena."}
-    
