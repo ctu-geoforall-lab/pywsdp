@@ -50,7 +50,7 @@ V naklonovaném adresáři je pak možné si sestavit Docker image. Stačí spus
     
 Pro otestování knihovny lze připojit testovací skript::
 
-    docker run -it --rm --volume $(pwd)/tests:/tests pywsdp python3 -m pytest /tests/test_ctios.py
+    docker run -it --rm --volume $(pwd)/tests:/tests pywsdp python3 -m pytest /tests/test.py
 
 
 Průvodce PyWSDP službami

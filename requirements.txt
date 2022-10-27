@@ -1,3 +1,2 @@
-sphinx==4.1.2
-notebook==6.2.0
-
+pytest==6.2.5
+zeep==4.1.0
