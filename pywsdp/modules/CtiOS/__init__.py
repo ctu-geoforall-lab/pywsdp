@@ -102,7 +102,7 @@ class CtiOS(WSDPBase):
         slovnik_chybnych_identifikatoru: dict = None,
     ):
         """Konvertuje osobni udaje typu slovnik ziskane ze sluzby ctiOS do souboru o definovanem
-        formatu a soubor ulozi do definovaneho vystupniho adresare.
+        formatu a soubor ulozi do definovaneho vystupniho adresare. Pokud adresar neexistuje, vytvori ho.
 
         :param vysledny_slovnik: slovnik vraceny pro uspesne zpracovane identifikatory
         :param vystupni_adresar: cesta k vystupnimu adresari
@@ -112,6 +112,13 @@ class CtiOS(WSDPBase):
         """
         cas = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
         vystupni_cesta_chybnych = None
+        
+        # kontrola existence vystupniho souboru
+        if os.path.exists(vystupni_adresar) == False:
+            try:
+                os.mkdir(vystupni_adresar)
+            except:
+                raise WSDPError(self.logger, "Cilovy adresar se nepodarilo vytvorit.")
 
         if format_souboru == OutputFormat.GdalDb:
             vystupni_soubor = "".join(["ctios_", cas, ".db"])
