@@ -34,7 +34,7 @@ release = "1.0"
 extensions = [
     "nbsphinx",  # Integrate Jupyter Notebooks and Sphinx
     "sphinx.ext.autodoc",
-    'sphinx.ext.inheritance_diagram'
+    "sphinx.ext.inheritance_diagram",
 ]
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
