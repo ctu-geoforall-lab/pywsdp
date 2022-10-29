@@ -43,10 +43,8 @@ Získaná data oprávněných subjektů je možné uložit do tří formátů - 
 V případě SQLite databáze je nutné mít i vstupní data ve formě SQLite databáze.
 Na základě vstupní databáze modul vytvoří ve zvolené cestě novou databázi s updatovanými atributy oprávněných subjektů.
 
-
 Sestavy
 #######################
-
 
 GenerujCenoveUdajeDleKu
 ------------------------

@@ -31,9 +31,3 @@ Podobně pro modul GenerujCenoveUdajeDleKu:
     ucet = ["WSTEST", "WSHESLO"]
 
     cen_udaje = GenerujCenoveUdajeDleKu(ucet, trial=True)
-    
-
-
-
-
-

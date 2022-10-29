@@ -33,10 +33,8 @@ release = "2.0"
 # ones.
 extensions = [
     "nbsphinx",  # Integrate Jupyter Notebooks and Sphinx
-    "sphinx.ext.autodoc",  # Create documentation from docstrings
+    "sphinx.ext.autodoc",
 ]
-
-plantuml = "java -jar ../utils/plantum.jar"
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 autoclass_content = "both"  # Add __init__ doc (ie. params) to class summaries
@@ -104,5 +102,3 @@ html_static_path = ["_static"]
 html_sidebars = {
     "**": ["sidebar-intro.html", "globaltoc.html", "sourcelink.html", "searchbox.html"]
 }
-
-htmlhelp_basename = "PyWSDPdoc"
