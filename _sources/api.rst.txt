@@ -4,6 +4,12 @@ Veřejné API
 
 .. module:: pywsdp
 
+Veřejné API knihovny tvoří moduly.
+Ty umožňují intuitivní dotazování vybraných WSDP služeb a ukládání odpovědí do různých formátů.
+
+.. automodule:: pywsdp.modules
+   :members:
+
 Společné API pro všechny moduly
 ========================================================
 
