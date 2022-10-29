@@ -6,7 +6,7 @@ Open-source knihovna zpřístupňující Webové služby dálkového přístupu 
 
 Poskytované moduly vycházející z podporovaných WSDP služeb:
  * ČtiOS - zjištění osobních údajů opravněných subjektů z VFK souboru
- * GenerujCernoveUdajeDleKu - vytvoření sestavy pro generování cenových údajů dle katastrálních území  
+ * GenerujCernoveUdajeDleKu - vytvoření sestavy pro generování cenových údajů podle katastrálního území  
  * SeznamSestav, VratSestavu, SmazSestavu - spravování sestav
 
 Příklad použití ukázaný na modulu ČtiOS:
@@ -35,7 +35,7 @@ Příklad použití ukázaný na modulu ČtiOS:
 PyWSDP je open-source knihovna vyvíjená na katedře geomatiky fakulty stavební ČVUT. Zpřístupňuje Webové služby dálkového přístupu do Katastru nemovitostí (dále jen WSDP).
 Tyto služby poskytované Českým úřadem zeměměřickým a katastrálním jsou programovým rozhraním pro aplikaci Dálkový přístup do KN (DP). Podobně jako DP jsou WSDP služby z větší části placené a využít je mohou pouze registrovaní uživatelé. 
 
-Knihovna PyWSDP poskytuje rozhraní pro práci se dvěma WSDP službami -- samostatně stojící službou Čti OS a službou Generování cenových údajů dle katastrálních území, která je na poli WSDP služeb součástí většího celku s názvem Sestavy.
+Knihovna PyWSDP poskytuje rozhraní pro práci se dvěma WSDP službami -- samostatně stojící službou Čti OS a službou Generování cenových údajů podle katastrálního území, která je na poli WSDP služeb součástí většího celku s názvem Sestavy.
 Pro výše zmíněné dvě služby nabízí knihovna PyWSDP intuitivní rozhraní, které zpracuje XML odpovědi služeb do konkrétních formátů s možností uložení výstupů na disk.
 
 Služba je jednoduše rozšiřitelná o další sestavy i další skupiny služeb jako jsou číselníky, informace, správa účtu a vyhledávání.

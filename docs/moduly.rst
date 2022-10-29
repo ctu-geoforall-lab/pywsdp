@@ -4,7 +4,7 @@ Poskytované moduly
 
 Knihovna poskytuje rozhraní ve formě modulů pro tyto WSDP služby:
  * ctiOS - zjištění osobních údajů opravněných subjektů z VFK souboru
- * generujCernoveUdajeDleKu - vytvoření sestavy pro generování cenových údajů dle katastrálních území  
+ * generujCernoveUdajeDleKu - vytvoření sestavy pro generování cenových údajů podle katastrálního území  
  * seznamSestav, vratSestavu, smazSestavu - spravování sestav
  
 Jednotlivé moduly budou na dalších řádcích podrobněji popsány.
@@ -48,7 +48,6 @@ Sestavy
 
 GenerujCenoveUdajeDleKu
 ------------------------
-
 Rozhraní umožňuje práci se sestavou na generování údajů o dosažených cenách nemovitostí podle zadaného kódu k.ú. pro dané časové období.
 Po dotazu na server modul vytvoří sestavu, se kterou je poté možné přes rozhraní dále pracovat - vypsat údaje o sestavě (cena, stav sestavy apod.), zaúčtovat sestavu a smazat sestavu.
 
