@@ -50,7 +50,7 @@ Pokud máte nainstalovaný a aktualizovaný pip klient, můžete spustit::
 
     pip install pywsdp
     
-Verze 2.0 podporuje python verze 3.8 a vyšší.
+Verze 2.0 podporuje python verze 3.7 a vyšší.
 
 
 Docker image
