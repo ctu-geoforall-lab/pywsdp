@@ -1,7 +1,12 @@
+[![PyWSDP Logo](https://raw.githubusercontent.com/ctu-geoforall-lab/pywsdp/docs/_static/pywsdp-logo.png)](https://ctu-geoforall-lab.github.io/pywsdp/)
+
 # PyWSDP
 
 [![pytest](https://github.com/ctu-geoforall-lab/pywsdp/actions/workflows/pytest.yml/badge.svg?branch=master)](https://github.com/ctu-geoforall-lab/pywsdp/actions/workflows/pytest.yml)
+[![pypi](https://pypi.org/project/pywsdp/)](https://img.shields.io/pypi/v/pywsdp)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+
 
 Python CUZK WSDP Library
 

@@ -4,15 +4,30 @@ PyWSDP
 
 Open-source knihovna zpřístupňující Webové služby dálkového přístupu do Katastru nemovitostí
 
-Podporované služby s možností několika vstupních a výstupních formátů:
- * Čti OS - zjištění osobních údajů opravněných subjektů z VFK souboru
- * Sestava pro generování cenových údajů dle katastrálních území  
+Poskytované moduly vycházející z podporovaných WSDP služeb:
+ * ČtiOS - zjištění osobních údajů opravněných subjektů z VFK souboru
+ * GenerujCernoveUdajeDleKu - vytvoření sestavy pro generování cenových údajů dle katastrálních území  
+ * SeznamSestav, VratSestavu, SmazSestavu - spravování sestav
 
-Příklad použití:
+Příklad použití ukázaný na modulu ČtiOS:
 
 .. code-block:: python
 
-    print("TBD")
+    from pywsdp.modules import CtiOS
+    
+    ucet = ["uzivatel", "heslo"] # platne pristupove udaje k WSDP uctu
+
+    ctios = CtiOS(creds_test) # pripojeni ke sluzbe CtiOS
+    
+    # pseudonymizovane opravnene subjekty
+    identifikatory = ["4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyBI",
+                      "5wQRil9Nd5KIrn5KWTf8+sksZslnMqy2tveDvYPIsd1cd9qHYs1V9d9uZVwBEVe5Sknvonhh+FDiaYEJa+RdHM3VtvGsIqsc2Hm3mX0xYfs="]
+
+    # poslani pozadavku
+    slovnik, slovnik_chybnych = ctios.posli_pozadavek({"pOSIdent": identifikatory})
+    
+    assert slovnik[identifikatory[0]]['jmeno'] == 'Josef'
+    assert slovnik[identifikatory[0]]['prijmeni'] == 'Just'
 
 Úvod
 ==================
@@ -21,10 +36,10 @@ PyWSDP je open-source knihovna vyvíjená na katedře geomatiky fakulty stavebn�
 Tyto služby poskytované Českým úřadem zeměměřickým a katastrálním jsou programovým rozhraním pro aplikaci Dálkový přístup do KN (DP). Podobně jako DP jsou WSDP služby z větší části placené a využít je mohou pouze registrovaní uživatelé. 
 
 Knihovna PyWSDP poskytuje rozhraní pro práci se dvěma WSDP službami -- samostatně stojící službou Čti OS a službou Generování cenových údajů dle katastrálních území, která je na poli WSDP služeb součástí většího celku s názvem Sestavy.
-Pro výše zmíněné dvě služby nabízí knihovna PyWSDP výstup do několika formatů, které jsou popsány v dokumentaci.
+Pro výše zmíněné dvě služby nabízí knihovna PyWSDP intuitivní rozhraní, které zpracuje XML odpovědi služeb do konkrétních formátů s možností uložení výstupů na disk.
 
-Služba je jednoduše rozšiřitelná o další sestavy. Pro rozšíření je nutné doplnit dané službě specifické XML konvertory pro výstupy do požadovaných výstupních formátů.
-Konvertory a SOAP komunikace s WSDP službami společně tvoří API jednotlivých PyWSDP služeb.
+Služba je jednoduše rozšiřitelná o další sestavy i další skupiny služeb jako jsou číselníky, informace, správa účtu a vyhledávání.
+Pro rozšíření je nutné doplnit dané službě specifické části kódu pro zpracování odpovědí serveru do požadovaných výstupních formátů.
 
 Instalace
 ============
@@ -35,7 +50,7 @@ Pokud máte nainstalovaný a aktualizovaný pip klient, můžete spustit::
 
     pip install pywsdp
     
-Verze 1.1 podporuje python verze 3.8 a vyšší.
+Verze 2.0 podporuje python verze 3.8 a vyšší.
 
 
 Docker image
@@ -53,31 +68,41 @@ Pro otestování knihovny lze připojit testovací skript::
     docker run -it --rm --volume $(pwd)/tests:/tests pywsdp python3 -m pytest /tests/test.py
 
 
-Průvodce PyWSDP službami
+Průvodce PyWSDP moduly
 =========================
+Podívejte se na podporované moduly a vyzkoušejte si PyWSDP knihovnu nanečisto skrze testovací účet.
 
 .. toctree::
    :maxdepth: 2
 
    getting_started
-   ctios
-   sestavy
-
-   
-API dokumentace
-=================
-.. toctree::
-   :maxdepth: 2
-
-   api
+   moduly
 
 
-Jupyter notebooky
-=================
+Jak moduly použít?
+==================
+Konkrétní možnosti knihovny jsou názorně ukázany na platformě Jupyter Notebooks:
+
 .. toctree::
    :maxdepth: 2
 
    notebooks
+
+   
+API dokumentace
+=================
+
+.. toctree::
+   :maxdepth: 2
+   
+   api
+   
+.. uml::
+   
+   @startuml 
+   Alice -> Bob: Hi!
+   Alice <- Bob: How are you?
+   @enduml
 
 
 

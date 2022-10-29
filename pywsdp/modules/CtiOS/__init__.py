@@ -45,8 +45,7 @@ class CtiOS(WSDPBase):
     def __init__(self, creds: dict, trial: dict = False):
         self._nazev_sluzby = "ctiOS"
         self._skupina_sluzeb = "ctios"
-        self.input_db = None
-        self.input_json = None
+        self._input_db = None
 
         super().__init__(creds, trial=trial)
 
@@ -64,7 +63,7 @@ class CtiOS(WSDPBase):
         else:
             posidents = db.get_posidents_from_db()
 
-        self.input_db = db_path  # zpristupneni cesty k vstupni databazi
+        self._input_db = db_path  # zpristupneni cesty k vstupni databazi
 
         db.close_connection()
         return {"pOSIdent": posidents}
@@ -119,12 +118,10 @@ class CtiOS(WSDPBase):
             vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
             try:
                 shutil.copyfile(
-                    self.input_db, vystupni_cesta
+                    self._input_db, vystupni_cesta
                 )  # prekopirovani souboru db do cilove cesty
             except:
-                raise WSDPError(
-                    self.logger, "Databazi nelze prekopirovat do cilove cesty"
-                )
+                raise WSDPError(self.logger, "Soubor nelze ulozit do ciloveho adresare")
             db = DbManager(vystupni_cesta, self.logger)
             db.add_column_to_db("OS_ID", "text")
             input_db_columns = db.get_columns_names()
@@ -133,29 +130,35 @@ class CtiOS(WSDPBase):
             ).convert_attributes()
             db.update_rows_in_db(db_dictionary)
             db.close_connection()
-            self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
         elif format_souboru == OutputFormat.Json:
             vystupni_soubor = "".join(["ctios_", cas, ".json"])
             vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
-            with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
-                json.dump(vysledny_slovnik, f, ensure_ascii=False)
-                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
+            try:
+                with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
+                    json.dump(vysledny_slovnik, f, ensure_ascii=False)
+            except:
+                raise WSDPError(self.logger, "Soubor nelze ulozit do ciloveho adresare")
         elif format_souboru == OutputFormat.Csv:
             vystupni_soubor = "".join(["ctios_", cas, ".csv"])
             vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
             header = sorted(
                 set(i for b in map(dict.keys, vysledny_slovnik.values()) for i in b)
             )
-            with open(vystupni_cesta, "w", newline="") as f:
-                write = csv.writer(f)
-                write.writerow(["posident", *header])
-                for a, b in vysledny_slovnik.items():
-                    write.writerow([a] + [b.get(i, "") for i in header])
-                self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
+            try:
+                with open(vystupni_cesta, "w", newline="") as f:
+                    write = csv.writer(f)
+                    write.writerow(["posident", *header])
+                    for a, b in vysledny_slovnik.items():
+                        write.writerow([a] + [b.get(i, "") for i in header])
+            except:
+                raise WSDPError(self.logger, "Soubor nelze ulozit do ciloveho adresare")
         else:
             raise WSDPError(
                 self.logger, "Format {} neni podporovan".format(format_souboru)
             )
+        # logovani ulozeni vystupu
+        self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
+
         # zapsani chybnych identifikatoru do json souboru
         if slovnik_chybnych_identifikatoru:
             vystupni_soubor = "".join(["ctios_errors_", cas, ".json"])
@@ -163,7 +166,7 @@ class CtiOS(WSDPBase):
             with open(vystupni_cesta_chybnych, "w", newline="", encoding="utf-8") as f:
                 json.dump(slovnik_chybnych_identifikatoru, f, ensure_ascii=False)
                 self.logger.info(
-                    "Vystup s chybnymi identifikatory, ktere nebyly z nejakeho duvodu zpracovany, byl ulozen zde: {}".format(
+                    "Zaznam o nezpracovanych identifikatorech byl ulozen zde: {}".format(
                         vystupni_cesta_chybnych
                     )
                 )
