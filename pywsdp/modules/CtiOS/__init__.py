@@ -112,7 +112,7 @@ class CtiOS(WSDPBase):
         """
         cas = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
         vystupni_cesta_chybnych = None
-        
+
         # kontrola existence vystupniho souboru
         if os.path.exists(vystupni_adresar) == False:
             try:
