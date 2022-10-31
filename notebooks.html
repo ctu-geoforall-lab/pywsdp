@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Jupyter notebooky &#8212; Dokumentace pro PyWSDP 2.0</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/translations.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Rejstřík" href="genindex.html" />
+    <link rel="search" title="Vyhledávání" href="search.html" />
+    <link rel="next" title="Ukázka zpracování dat z SQLite databáze" href="notebooks/ctios_db.html" />
+    <link rel="prev" title="Poskytované moduly" href="moduly.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="jupyter-notebooky">
+<h1>Jupyter notebooky<a class="headerlink" href="#jupyter-notebooky" title="Permalink to this heading">¶</a></h1>
+<p>Na následujících řádcích si ukážeme příklady použití jednotlivých modulů pomocí nástroje Jupyter Notebooks,
+který nám zpřístupní interaktivní prostředí založené na použití webového rozhraní.</p>
+<section id="ctios">
+<h2>CtiOS<a class="headerlink" href="#ctios" title="Permalink to this heading">¶</a></h2>
+<p>Pro tento modul máme připraveny dva Jupyter sešity.</p>
+<p>První se věnuje nejčastějšímu případu, kdy máme na vstupu SQLite databázi obsahující data VFK.
+Osobní data jako jméno, příjmení apod. zde nejsou vyplněna. Co je ovšem součástí databáze (konkrétně tabulky OPSUB) jsou tzv. pseudonymizované identifikátory OS,
+které jsou určeny pro rozklíčování pravých OS a jejich osobních údajů. Modul ČtiOS data rozklíčuje a novou „doplněnou“ databázi uloží do námi zvoleného adresáře.
+Dešifrovaná data můžeme uložit i do CSV nebo JSON souboru, jako je ukázáno v druhém sešitu.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/ctios_db.html">Ukázka zpracování dat z SQLite databáze</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/ctios_json_csv.html">Ukázka práce s dalšími typy formátů</a></li>
+</ul>
+</div>
+</section>
+<section id="sestavy">
+<h2>Sestavy<a class="headerlink" href="#sestavy" title="Permalink to this heading">¶</a></h2>
+<p>Pro sestavy máme připravenou ukázku použití modulu GenerujCenoveUdajeDleKu s využitím veřejného API sestav,
+které využívá WSDP služby seznamSestav, vratSestavu a smazSestavu.
+Modul umí na základě vstupního JSON souboru vytvořit sestavu, zaúčtovat sestavu a smazat sestavu z účtu.
+Dále umožňuje dešifrovat soubor sestavy formátu ZIP a uložit ho do námi zvoleného adresáře.</p>
+<section id="generujcenoveudajedleku">
+<h3>GenerujCenoveUdajeDleKu<a class="headerlink" href="#generujcenoveudajedleku" title="Permalink to this heading">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/cenove_udaje_dle_ku_json_zip.html">Ukázka zpracování cenových údajů, uložení souboru sestavy</a></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="spravovani-sestav">
+<h2>Spravování sestav<a class="headerlink" href="#spravovani-sestav" title="Permalink to this heading">¶</a></h2>
+<p>Na příkladu modulu GenerujCenoveUdajeDleKu si ukážeme, že můžeme získávat informace o sestávách, zaúčtovávat sestavy a mazat sestavy i pomocí samostatných modulů.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/spravuj_sestavy.html">Ukázka použití samostatných modulů na spravování sestav</a></li>
+</ul>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><a href="index.html">
+    <img class="logo" src="_static\pywsdp-logo.png">
+</a>
+
+<p>PyWSDP knihovna</p>
+
+<h3>Odkazy</h3>
+<ul>
+  <li><a href="https://github.com/ctu-geoforall-lab/pywsdp">PyWSDP @ GitHub</a></li>
+  <li><a href="https://pypi.org/project/pywsdp/">PyWSDP @ PyPI</a></li>
+</ul>
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Testovací prostředí</a></li>
+<li class="toctree-l1"><a class="reference internal" href="moduly.html">Poskytované moduly</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Jupyter notebooky</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ctios">CtiOS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sestavy">Sestavy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spravovani-sestav">Spravování sestav</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Veřejné API</a></li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>Tato stránka</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/notebooks.rst.txt"
+            rel="nofollow">Ukázat zdroj</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Rychlé vyhledávání</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="OK" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Linda Kladivova.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/notebooks.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/ctu-geoforall-lab/pywsdp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

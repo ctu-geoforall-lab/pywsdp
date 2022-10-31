@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Poskytované moduly &#8212; Dokumentace pro PyWSDP 2.0</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/translations.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Rejstřík" href="genindex.html" />
+    <link rel="search" title="Vyhledávání" href="search.html" />
+    <link rel="next" title="Jupyter notebooky" href="notebooks.html" />
+    <link rel="prev" title="Testovací prostředí" href="getting_started.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="poskytovane-moduly">
+<h1>Poskytované moduly<a class="headerlink" href="#poskytovane-moduly" title="Permalink to this heading">¶</a></h1>
+<dl class="simple">
+<dt>Knihovna poskytuje rozhraní ve formě modulů pro tyto WSDP služby:</dt><dd><ul class="simple">
+<li><p>ctiOS - zjištění osobních údajů opravněných subjektů z VFK souboru</p></li>
+<li><p>generujCernoveUdajeDleKu - vytvoření sestavy pro generování cenových údajů podle katastrálního území</p></li>
+<li><p>seznamSestav, vratSestavu, smazSestavu - spravování sestav</p></li>
+</ul>
+</dd>
+</dl>
+<p>Jednotlivé moduly budou na dalších řádcích podrobněji popsány.
+Konkrétní obsah výstupních dat WSDP je možné dohledat na stránkách ČÚZK -
+<a class="reference external" href="https://www.cuzk.cz/Katastr-nemovitosti/Poskytovani-udaju-z-KN/Dalkovy-pristup/Webove-sluzby-dalkoveho-pristupu.aspx">https://www.cuzk.cz/Katastr-nemovitosti/Poskytovani-udaju-z-KN/Dalkovy-pristup/Webove-sluzby-dalkoveho-pristupu.aspx</a> .</p>
+<section id="ctios">
+<h2>ČtiOS<a class="headerlink" href="#ctios" title="Permalink to this heading">¶</a></h2>
+<p>Rozhraní umožňuje získat a uložit v různých formátech osobní údaje k oprávněným subjektům (OS), které byly pseudonymizovány ve VFK souboru v souvislosti s nařízením GDPR.
+Dešifrování pseudonymizovaných identifikatorů oprávněných subjektů (tzv. POSIdentů) a zjišťování jejich osobních údajů není programovou součástí této knihovny.
+Knihovna přistupuje k WSDP službě ctiOS, která se stará o tuto „špinavou práci“. Na straně ČÚZK je přístup ke službě ctiOS monitorován ukládáním záznamů o všech vyhledaných OS.</p>
+<p>Modul ČtiOS získává výstup ze serveru ve formě slovníků, které dále připraví pro uložení do souborů vybraných formátů.
+Při uložení úspěšně zpracovaných identifikátorů do souboru o vybraném výstupním formátu se automaticky ve stejné složce vytvoří JSON soubor obsahující neúspěšně zpracované
+identifikátory a odůvodnění.</p>
+<dl class="simple">
+<dt>Důvody neúspěšného zpracování POSIdentů vychází z nastavení služby ctiOS a jsou následující:</dt><dd><ul class="simple">
+<li><p>NEPLATNY_IDENTIFIKATOR - každý POSIdent, který nebylo možné rozšifrovat</p></li>
+<li><p>EXPIROVANY_IDENTIFIKATOR - POSIdent, kterému vypršela časová platnost</p></li>
+<li><p>OPRAVNENY_SUBJEKT_NEEXISTUJE - POSIdent bylo možné rozšifrovat, ale oprávněný subjekt k němu neexistuje</p></li>
+</ul>
+</dd>
+</dl>
+<section id="vstupni-formaty">
+<h3>Vstupní formáty<a class="headerlink" href="#vstupni-formaty" title="Permalink to this heading">¶</a></h3>
+<p>Rozhraní umožňuje načítat data z SQLite databáze či JSON souboru. Dále umožňuje vstupní POSIdenty zadat i přímo jako slovník do volání služby.</p>
+<p>Pokud chceme pracovat s daty z VFK souboru, je pro nás určeno načítání vstupních dat z SQLite databáze.
+Tuto databázi musíme nejprve z VFK souboru vytvořit pomocí nástroje <strong>ogrinfo</strong>, který je součástí knihovny GDAL:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ogrinfo</span> <span class="n">exportvse</span><span class="o">.</span><span class="n">vfk</span>
+</pre></div>
+</div>
+<p>Tento driver vytvoří SQLite databázi ve stejném adresáři jako VFK soubor s příponou .db. To lze ověřit například pomocí aplikace SQLite Database Browser.</p>
+</section>
+<section id="vystupni-formaty">
+<h3>Výstupní formáty<a class="headerlink" href="#vystupni-formaty" title="Permalink to this heading">¶</a></h3>
+<p>Získaná data oprávněných subjektů je možné uložit do tří formátů - JSON, CSV a SQlite databáze.
+V případě SQLite databáze je nutné mít i vstupní data ve formě SQLite databáze.
+Na základě vstupní databáze modul vytvoří ve zvolené cestě novou databázi s updatovanými atributy oprávněných subjektů.</p>
+</section>
+</section>
+<section id="sestavy">
+<h2>Sestavy<a class="headerlink" href="#sestavy" title="Permalink to this heading">¶</a></h2>
+<section id="generujcenoveudajedleku">
+<h3>GenerujCenoveUdajeDleKu<a class="headerlink" href="#generujcenoveudajedleku" title="Permalink to this heading">¶</a></h3>
+<p>Rozhraní umožňuje práci se sestavou na generování údajů o dosažených cenách nemovitostí podle zadaného kódu k.ú. pro dané časové období.
+Po dotazu na server modul vytvoří sestavu, se kterou je poté možné přes rozhraní dále pracovat - vypsat údaje o sestavě (cena, stav sestavy apod.), zaúčtovat sestavu a smazat sestavu.</p>
+<p>Můžeme načítat vstupní data ze souboru JSON nebo je zadat přímo jako slovník do volání služby.</p>
+<p>Výstupní ZIP soubor obsahuje XML soubory s cenovými údaji pro dané časové období.
+Po zaúčtování je možné zašifrovaný ZIP dokument pomocí modulu dešifrovat a uložit na disk.</p>
+</section>
+</section>
+<section id="spravovani-sestav">
+<h2>Spravování sestav<a class="headerlink" href="#spravovani-sestav" title="Permalink to this heading">¶</a></h2>
+<p>Jedná se o specifické moduly, které je možné využívat v rámci API sestav.
+Kromě toho knihovna PyWSDP nabízí i samostatné moduly pro tyto specifické služby.
+Pokud znáte číslo sestavy, je možné nad takovou sestavou i samostatně zavolat požadovaný modul.</p>
+<p>SeznamSestav vrací údaje o sestavě - typu sestavy, ceně, stavu sestavy
+a informace o tom, zda je sestava opatřena el. značkou.</p>
+<p>VratSestavu zaúčtuje sestavu (pokud ještě nebyla zaúčtována) a vrátí vygenerovanou sestavu jako součást odpovědi.
+Dále vrátí informace o typu sestavy, ceně, stavu sestavy a informaci o tom, zda je
+sestava opatřena el. značkou.</p>
+<p>SmazSestavu smaže požadovanou sestavu, tzn. k sestavě již nebude možné přistupovat.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><a href="index.html">
+    <img class="logo" src="_static\pywsdp-logo.png">
+</a>
+
+<p>PyWSDP knihovna</p>
+
+<h3>Odkazy</h3>
+<ul>
+  <li><a href="https://github.com/ctu-geoforall-lab/pywsdp">PyWSDP @ GitHub</a></li>
+  <li><a href="https://pypi.org/project/pywsdp/">PyWSDP @ PyPI</a></li>
+</ul>
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Testovací prostředí</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Poskytované moduly</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ctios">ČtiOS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sestavy">Sestavy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spravovani-sestav">Spravování sestav</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks.html">Jupyter notebooky</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Veřejné API</a></li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>Tato stránka</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/moduly.rst.txt"
+            rel="nofollow">Ukázat zdroj</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Rychlé vyhledávání</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="OK" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Linda Kladivova.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/moduly.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/ctu-geoforall-lab/pywsdp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
