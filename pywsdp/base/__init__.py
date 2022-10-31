@@ -20,7 +20,7 @@ from pywsdp.base.logger import WSDPLogger
 from pywsdp.base.exceptions import WSDPError
 
 
-__version__ = "1.1"
+__version__ = "2.0"
 
 
 class WSDPBase:
@@ -106,9 +106,7 @@ class WSDPBase:
             return not hasattr(main, "__file__")
 
         if is_run_by_jupyter():
-            module_dir = os.path.abspath(
-                os.path.join("../../", "pywsdp", "modules", self.nazev_sluzby)
-            )
+            module_dir = os.path.abspath(os.path.join("../../"))
         else:
             module_dir = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "..", "..")

@@ -19,7 +19,7 @@ class WSDPLogger(logging.getLoggerClass()):
     General WSDP class for logging
     """
 
-    def __init__(self, name: str, level=logging.DEBUG):
+    def __init__(self, name: str, level=logging.ERROR):
         """
         Contructor of WSDPLogger class, format console handler
         :param name: service name (str)
