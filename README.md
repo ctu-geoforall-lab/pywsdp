@@ -1,39 +1,35 @@
-[![PyWSDP Logo](https://raw.githubusercontent.com/ctu-geoforall-lab/pywsdp/docs/_static/pywsdp-logo.png)](https://ctu-geoforall-lab.github.io/pywsdp/)
-
-# PyWSDP
+# PyWSDP - Python knihovna zpřístupňující webové služby dálkového přístupu do KN
 
 [![pytest](https://github.com/ctu-geoforall-lab/pywsdp/actions/workflows/pytest.yml/badge.svg?branch=master)](https://github.com/ctu-geoforall-lab/pywsdp/actions/workflows/pytest.yml)
-[![pypi](https://pypi.org/project/pywsdp/)](https://img.shields.io/pypi/v/pywsdp)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/pywsdp.svg)](https://pypi.org/project/pywsdp/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Python CUZK WSDP Library
+## O co se jedná?
+**PyWSDP** nabízí rozhraní pro komunikaci s webovými službami dálkového přístupu do KN (WSDP).
+V poslední verzi nabízí podporu dvou služeb - ČtiOS a Generování cenových údaje podle katastrálního území.
+Kromě intuitivního dotazování nabízí možnosti čtení a zápisu do několika formátů.
 
-Library for communication with WSDP CUZK services.
-
-## Installing PyWSDP
-
-PyWSDP is available on PyPI:
+## Instalace PyWSDP
+PyWSDP je k dispozici ke stažení na PyPI:
 
 ```console
 $ python -m pip install pywsdp
 ```
 
-## Documentation
+## Dokumentace
+Podrobná dokumentace s ukázkovými příklady použití je zde:
 
 https://ctu-geoforall-lab.github.io/pywsdp/
 
 ## Docker
-
-Build a docker image using the downloaded source code (run this in the directory
-containing the source code):
+Sestavte si Docker image ze staženého zdrojového kodu (sestavení je třeba spustit v kořenovém adresáři knihovny):
 
 ```
 docker build -t pywsdp .
 ```
 
-A test run
+Sestavený image můžeme otestovat vytvořením testovacího kontejneru:
 
 ```
-# launching in tests from tests/ directory:
 docker run -it --rm --volume $(pwd)/tests:/tests pywsdp python3 -m pytest /tests/test.py
 ```
