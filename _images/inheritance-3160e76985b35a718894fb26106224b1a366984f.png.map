@@ -1,0 +1,9 @@
+<map id="inheritance6cfdee0461" name="inheritance6cfdee0461">
+<area shape="rect" id="node1" href="#pywsdp.modules.CtiOS" target="_top" title="Trida definujici rozhrani pro praci se sluzbou ctiOS." alt="" coords="170,5,242,31"/>
+<area shape="rect" id="node2" href="#pywsdp.base.WSDPBase" target="_top" title="Trida vytvarejici spolecne API pro WSDP sluzby." alt="" coords="5,104,99,129"/>
+<area shape="rect" id="node4" href="#pywsdp.base.SestavyBase" target="_top" title="Trida definujici spolecne API pro moduly pracujici se sestavami." alt="" coords="153,55,259,80"/>
+<area shape="rect" id="node5" href="#pywsdp.modules.SeznamSestav" target="_top" title="Trida definujici rozhrani pro praci se sluzbou seznamSestav." alt="" coords="147,104,265,129"/>
+<area shape="rect" id="node6" href="#pywsdp.modules.SmazSestavu" target="_top" title="Trida definujici rozhrani pro praci se sluzbou smazSestavu." alt="" coords="151,153,261,179"/>
+<area shape="rect" id="node7" href="#pywsdp.modules.VratSestavu" target="_top" title="Trida definujici rozhrani pro praci se sluzbou vratSestavu." alt="" coords="155,203,257,228"/>
+<area shape="rect" id="node3" href="#pywsdp.modules.GenerujCenoveUdajeDleKu" target="_top" title="Trida definujici rozhrani pro praci se sluzbou Generuj cenove udaje dle katastralnich uzemi." alt="" coords="313,55,512,80"/>
+</map>
