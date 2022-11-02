@@ -20,7 +20,7 @@ from pywsdp.base.logger import WSDPLogger
 from pywsdp.base.exceptions import WSDPError
 
 
-__version__ = "2.0"
+__version__ = "2.0.0"
 
 
 class WSDPBase:
