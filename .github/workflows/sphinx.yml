@@ -18,6 +18,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt install --yes pandoc
+        sudo apt install --yes graphviz
 
     - name: Build and Commit
       uses: sphinx-notes/pages@2.1
