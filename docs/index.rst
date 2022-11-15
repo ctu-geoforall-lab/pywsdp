@@ -17,7 +17,7 @@ Příklad použití ukázaný na modulu ČtiOS:
     
     ucet = ["uzivatel", "heslo"] # platne pristupove udaje k WSDP uctu
 
-    ctios = CtiOS(creds_test) # pripojeni ke sluzbe CtiOS
+    ctios = CtiOS(ucet) # pripojeni ke sluzbe CtiOS
     
     # pseudonymizovane opravnene subjekty
     identifikatory = ["4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyBI",
