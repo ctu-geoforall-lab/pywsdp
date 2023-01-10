@@ -88,7 +88,8 @@ class CtiOS(WSDPBase):
         vysledek ulozi do slovniku. Zaroven vypocte zaloguje statistiku procesu.
 
         :param slovnik: vstupni parametry specificke pro danou sluzbu.
-        :return: objekt zeep knihovny prevedeny na slovnik a upraveny pro vystup
+        :return: tuple (slovnik - uspesne vracene pseudoidentifikatory s osobnimi udaji,
+                        slovnik - chybne pseudoidentifikatory s popisem chyby)
         """
         response, response_errors = self.client.send_request(slovnik_identifikatoru)
         self.client.log_statistics()
@@ -99,19 +100,17 @@ class CtiOS(WSDPBase):
         vysledny_slovnik: dict,
         vystupni_adresar: str,
         format_souboru: OutputFormat,
-        slovnik_chybnych_identifikatoru: dict = None,
     ):
         """Konvertuje osobni udaje typu slovnik ziskane ze sluzby ctiOS do souboru o definovanem
         formatu a soubor ulozi do definovaneho vystupniho adresare. Pokud adresar neexistuje, vytvori ho.
+        U databaze nejprve prekopiruje vstupni soubor do pozadovaneho adresare a pak databazi updatuje o osobni udaje.
 
         :param vysledny_slovnik: slovnik vraceny pro uspesne zpracovane identifikatory
         :param vystupni_adresar: cesta k vystupnimu adresari
         :param format_souboru: format typu OutputFormat.GdalDb, OutputFormat.Json nebo OutputFormat.Csv
-        :param slovnik_chybnych_identifikatoru: slovnik vraceny pro neuspesne zpracovane identifikatory
         :return: cesta k vystupnimu souboru
         """
         cas = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
-        vystupni_cesta_chybnych = None
 
         # kontrola existence vystupniho souboru
         if os.path.exists(vystupni_adresar) == False:
@@ -165,19 +164,50 @@ class CtiOS(WSDPBase):
             )
         # logovani ulozeni vystupu
         self.logger.info("Vystup byl ulozen zde: {}".format(vystupni_cesta))
+        return vystupni_cesta
 
+    def uloz_vystup_aktualizuj_db(
+        self,
+        vysledny_slovnik: dict,
+    ):
+        """Updatuje vstupni databazi o osobni udaje ziskane ze sluzby ctiOS.
+
+        :param vysledny_slovnik: slovnik vraceny pro uspesne zpracovane identifikatory
+        :return: cesta k updatovane databazi
+        """
+        db = DbManager(self._input_db, self.logger)
+        db.add_column_to_db("OS_ID", "text")
+        input_db_columns = db.get_columns_names()
+        db_dictionary = AttributeConverter(
+            _XML2DB_mapping, vysledny_slovnik, input_db_columns, self.logger
+        ).convert_attributes()
+        db.update_rows_in_db(db_dictionary)
+        db.close_connection()
+        self.logger.info("Databaze v ceste {} byla aktualizovana".format(self._input_db))
+        return self._input_db
+
+    def uloz_vystup_chybnych(
+        self, slovnik_chybnych_identifikatoru: dict, vystupni_adresar: str
+    ):
+        """Ulozi slovnik chybnych identifikatoru vraceny metodou posli_pozadavek do json souboru.
+
+        :param slovnik_chybnych_identifikatoru: slovnik vraceny pro neuspesne zpracovane identifikatory
+        :param vystupni_adresar: cesta k vystupnimu adresari
+        """
         # zapsani chybnych identifikatoru do json souboru
         if slovnik_chybnych_identifikatoru:
+            cas = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
             vystupni_soubor = "".join(["ctios_errors_", cas, ".json"])
-            vystupni_cesta_chybnych = os.path.join(vystupni_adresar, vystupni_soubor)
-            with open(vystupni_cesta_chybnych, "w", newline="", encoding="utf-8") as f:
+            vystupni_cesta = os.path.join(vystupni_adresar, vystupni_soubor)
+            with open(vystupni_cesta, "w", newline="", encoding="utf-8") as f:
                 json.dump(slovnik_chybnych_identifikatoru, f, ensure_ascii=False)
                 self.logger.info(
                     "Zaznam o nezpracovanych identifikatorech byl ulozen zde: {}".format(
-                        vystupni_cesta_chybnych
+                        vystupni_cesta
                     )
                 )
-        return vystupni_cesta, vystupni_cesta_chybnych
+            return vystupni_cesta
+        return None
 
     def vypis_statistiku(self):
         """Vytiskne statistiku zpracovanych pseudonymizovanych identifikatoru (POSIdentu).
