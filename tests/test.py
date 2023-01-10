@@ -222,7 +222,7 @@ class TestOutputs:
         ctios = CtiOS(creds_test, trial=True)
         slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_dict)
         vystup = ctios.uloz_vystup(
-            slovnik, vystupni_adresar, OutputFormat.Json
+            slovnik, vystupni_adresar, OutputFormat.Json, slovnik_chybnych
         )
         vystup_chybnych = ctios.uloz_vystup_chybnych(slovnik_chybnych, vystupni_adresar)
         assert os.path.exists(vystup) == True
@@ -249,7 +249,7 @@ class TestOutputs:
         ctios = CtiOS(creds_test, trial=True)
         slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_dict)
         vystup = ctios.uloz_vystup(
-            slovnik, vystupni_adresar, OutputFormat.Csv
+            slovnik, vystupni_adresar, OutputFormat.Csv, slovnik_chybnych
         )
         assert os.path.exists(vystup) == True
 
@@ -265,7 +265,7 @@ class TestOutputs:
         "Check the module output to SQLite DB"
         ctios = CtiOS(creds_test, trial=True)
         parametry_ctiOS_db = ctios.nacti_identifikatory_z_db(db_path)
-        slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_db)
+        slovnik = ctios.posli_pozadavek(parametry_ctiOS_db)
         vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.GdalDb)
         assert os.path.exists(vystup) == True
 
@@ -280,7 +280,7 @@ class TestOutputs:
         "Check the update of SQLite DB"
         ctios = CtiOS(creds_test, trial=True)
         parametry_ctiOS_db = ctios.nacti_identifikatory_z_db(db_path)
-        slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_db)
+        slovnik = ctios.posli_pozadavek(parametry_ctiOS_db)
         vystup = ctios.uloz_vystup_aktualizuj_db(slovnik)
         assert os.path.exists(vystup) == True
 
