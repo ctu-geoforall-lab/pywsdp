@@ -224,9 +224,7 @@ class TestOutputs:
         vystup = ctios.uloz_vystup(
             slovnik, vystupni_adresar, OutputFormat.Json, slovnik_chybnych
         )
-        vystup_chybnych = ctios.uloz_vystup_chybnych(
-            slovnik_chybnych, vystupni_adresar
-        )
+        vystup_chybnych = ctios.uloz_vystup_chybnych(slovnik_chybnych, vystupni_adresar)
         assert os.path.exists(vystup) == True
         assert os.path.exists(vystup_chybnych) == True
 
@@ -268,9 +266,7 @@ class TestOutputs:
         ctios = CtiOS(creds_test, trial=True)
         parametry_ctiOS_db = ctios.nacti_identifikatory_z_db(db_path)
         slovnik = ctios.posli_pozadavek(parametry_ctiOS_db)
-        vystup = ctios.uloz_vystup(
-            slovnik, vystupni_adresar, OutputFormat.GdalDb
-        )
+        vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.GdalDb)
         assert os.path.exists(vystup) == True
 
         con = sqlite3.connect(vystup)

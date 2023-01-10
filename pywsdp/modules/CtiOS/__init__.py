@@ -183,7 +183,9 @@ class CtiOS(WSDPBase):
         ).convert_attributes()
         db.update_rows_in_db(db_dictionary)
         db.close_connection()
-        self.logger.info("Databaze v ceste {} byla aktualizovana".format(self._input_db))
+        self.logger.info(
+            "Databaze v ceste {} byla aktualizovana".format(self._input_db)
+        )
         return self._input_db
 
     def uloz_vystup_chybnych(
