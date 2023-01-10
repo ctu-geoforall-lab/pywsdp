@@ -221,7 +221,9 @@ class TestOutputs:
         "Check the module output to json"
         ctios = CtiOS(creds_test, trial=True)
         slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_dict)
-        vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Json)
+        vystup = ctios.uloz_vystup(
+            slovnik, vystupni_adresar, OutputFormat.Json
+        )
         vystup_chybnych = ctios.uloz_vystup_chybnych(slovnik_chybnych, vystupni_adresar)
         assert os.path.exists(vystup) == True
         assert os.path.exists(vystup_chybnych) == True
@@ -246,7 +248,9 @@ class TestOutputs:
         "Check the module output to csv"
         ctios = CtiOS(creds_test, trial=True)
         slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_dict)
-        vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Csv)
+        vystup = ctios.uloz_vystup(
+            slovnik, vystupni_adresar, OutputFormat.Csv
+        )
         assert os.path.exists(vystup) == True
 
         with open(vystup, mode="r") as csv_file:
