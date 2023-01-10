@@ -61,7 +61,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 3,
+   "execution_count": 4,
    "id": "654c8be8",
    "metadata": {},
    "outputs": [],
@@ -82,7 +82,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 4,
+   "execution_count": 5,
    "id": "2719c63b",
    "metadata": {
     "scrolled": true
@@ -136,7 +136,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 5,
+   "execution_count": 6,
    "id": "77c1d9fc",
    "metadata": {},
    "outputs": [],
@@ -156,7 +156,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 6,
+   "execution_count": 7,
    "id": "b8c5dc93",
    "metadata": {},
    "outputs": [
@@ -164,14 +164,13 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_10_46_54_29_10_2022.csv\n",
-      "ctiOS        - INFO     - Zaznam o nezpracovanych identifikatorech byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_errors_10_46_54_29_10_2022.json\n"
+      "ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_21_12_56_10_01_2023.csv\n"
      ]
     }
    ],
    "source": [
-    "vystup, vystup_chybnych = ctios.uloz_vystup(\n",
-    "    slovnik, vystupni_adresar, OutputFormat.Csv, slovnik_chybnych\n",
+    "vystup = ctios.uloz_vystup(\n",
+    "    slovnik, vystupni_adresar, OutputFormat.Csv\n",
     ")"
    ]
   },
@@ -185,7 +184,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 7,
+   "execution_count": 9,
    "id": "1476f1f8",
    "metadata": {},
    "outputs": [
@@ -193,16 +192,51 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_10_46_54_29_10_2022.json\n",
-      "ctiOS        - INFO     - Zaznam o nezpracovanych identifikatorech byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_errors_10_46_54_29_10_2022.json\n"
+      "ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_21_16_05_10_01_2023.json\n"
      ]
     }
    ],
    "source": [
-    "vystup, vystup_chybnych = ctios.uloz_vystup(\n",
-    "    slovnik, vystupni_adresar, OutputFormat.Json, slovnik_chybnych\n",
+    "vystup = ctios.uloz_vystup(\n",
+    "    slovnik, vystupni_adresar, OutputFormat.Json\n",
     ")"
    ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b4dd20fc",
+   "metadata": {},
+   "source": [
+    "Pokud chceme vypsat, které identifikátory nebyly kvůli chybě zpracovány a k jaké chybě došlo, můžeme si uložit výstup neúspěšně zpracovaných identifikátorů do json souboru."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "fd0f3d9f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "ctiOS        - INFO     - Zaznam o nezpracovanych identifikatorech byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_errors_21_16_08_10_01_2023.json\n"
+     ]
+    }
+   ],
+   "source": [
+    "vystup_chybnych = ctios.uloz_vystup_chybnych(\n",
+    "    slovnik_chybnych, vystupni_adresar\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "801c0461",
+   "metadata": {},
+   "outputs": [],
+   "source": []
   }
  ],
  "metadata": {
