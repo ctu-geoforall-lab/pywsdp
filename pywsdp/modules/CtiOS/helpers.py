@@ -127,7 +127,7 @@ class DbManager:
             raise WSDPError(self.logger, exc) from exc
 
         # Control if not empty
-        if len(ids) <= 1:
+        if len(ids) < 1:
             msg = "Query has an empty result!"
             raise WSDPError(self.logger, msg)
 
