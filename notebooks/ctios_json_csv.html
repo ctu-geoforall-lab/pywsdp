@@ -314,7 +314,7 @@ ctios = CtiOS(creds_test, trial=True)
 </div>
 <p>Načteme identifikátory z JSON souboru.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>json_path_ctios = os.path.abspath(
@@ -326,7 +326,7 @@ parametry_ctiOS_json = ctios.nacti_identifikatory_z_json_souboru(json_path_ctios
 </div>
 <p>Pošleme požadavek na službu ctiOS.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_json)
@@ -362,7 +362,7 @@ ctiOS        - INFO     - Pocet identifikatoru k neexistujicim OS: 0
 <p>Z logu zjistíme, že 2 identifikátory nebyly kvůli chybě NEPLATNY IDENTIFIKATOR zpracovány.</p>
 <p>Určíme si výstupní adresář. Pokud neexistuje, knihovna si ho sama při zápisu vytvoří.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vystupni_adresar = os.path.abspath(
@@ -373,11 +373,11 @@ ctiOS        - INFO     - Pocet identifikatoru k neexistujicim OS: 0
 </div>
 <p>Úspěšně zpracované identifikátory vypíšeme do souboru Csv. Pokud některé identifikátory byly označeny jako chybné, výstup bude doplněn o JSON soubor se seznamem těchto identifikátorů a chyb, ke kterým došlo.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vystup = ctios.uloz_vystup(
-    slovnik, vystupni_adresar, OutputFormat.Csv
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vystup, vystup_chybnych = ctios.uloz_vystup(
+    slovnik, vystupni_adresar, OutputFormat.Csv, slovnik_chybnych
 )
 </pre></div>
 </div>
@@ -387,16 +387,17 @@ ctiOS        - INFO     - Pocet identifikatoru k neexistujicim OS: 0
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_21_12_56_10_01_2023.csv
+ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_10_46_54_29_10_2022.csv
+ctiOS        - INFO     - Zaznam o nezpracovanych identifikatorech byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_errors_10_46_54_29_10_2022.json
 </pre></div></div>
 </div>
 <p>Modul dále umožňuje uložení úspešně zpracovaných identifikátorů do JSON souboru.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vystup = ctios.uloz_vystup(
-    slovnik, vystupni_adresar, OutputFormat.Json
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vystup, vystup_chybnych = ctios.uloz_vystup(
+    slovnik, vystupni_adresar, OutputFormat.Json, slovnik_chybnych
 )
 </pre></div>
 </div>
@@ -406,35 +407,9 @@ ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/dat
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_21_16_05_10_01_2023.json
+ctiOS        - INFO     - Vystup byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_10_46_54_29_10_2022.json
+ctiOS        - INFO     - Zaznam o nezpracovanych identifikatorech byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_errors_10_46_54_29_10_2022.json
 </pre></div></div>
-</div>
-<p>Pokud chceme vypsat, které identifikátory nebyly kvůli chybě zpracovány a k jaké chybě došlo, můžeme si uložit výstup neúspěšně zpracovaných identifikátorů do json souboru.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vystup_chybnych = ctios.uloz_vystup_chybnych(
-    slovnik_chybnych, vystupni_adresar
-)
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-ctiOS        - INFO     - Zaznam o nezpracovanych identifikatorech byl ulozen zde: /home/linduska/pywsdp/tests/data/output/ctios_errors_21_16_08_10_01_2023.json
-</pre></div></div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
 </div>
 </section>
 

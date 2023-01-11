@@ -274,56 +274,27 @@ vysledek ulozi do slovniku. Zaroven vypocte zaloguje statistiku procesu.</p>
 <dd class="field-odd"><p><strong>slovnik</strong> – vstupni parametry specificke pro danou sluzbu.</p>
 </dd>
 <dt class="field-even">Vrací<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple (slovnik - uspesne vracene pseudoidentifikatory s osobnimi udaji,
-slovnik - chybne pseudoidentifikatory s popisem chyby)</p>
+<dd class="field-even"><p>objekt zeep knihovny prevedeny na slovnik a upraveny pro vystup</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS.uloz_vystup">
-<span class="sig-name descname"><span class="pre">uloz_vystup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vysledny_slovnik</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_souboru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OutputFormat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">uloz_vystup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vysledny_slovnik</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_souboru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OutputFormat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slovnik_chybnych_identifikatoru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup" title="Trvalý odkaz na tuto definici">¶</a></dt>
 <dd><p>Konvertuje osobni udaje typu slovnik ziskane ze sluzby ctiOS do souboru o definovanem
-formatu a soubor ulozi do definovaneho vystupniho adresare. Pokud adresar neexistuje, vytvori ho.
-U databaze nejprve prekopiruje vstupni soubor do pozadovaneho adresare a pak databazi updatuje o osobni udaje.</p>
+formatu a soubor ulozi do definovaneho vystupniho adresare. Pokud adresar neexistuje, vytvori ho.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parametry<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>vysledny_slovnik</strong> – slovnik vraceny pro uspesne zpracovane identifikatory</p></li>
 <li><p><strong>vystupni_adresar</strong> – cesta k vystupnimu adresari</p></li>
 <li><p><strong>format_souboru</strong> – format typu OutputFormat.GdalDb, OutputFormat.Json nebo OutputFormat.Csv</p></li>
+<li><p><strong>slovnik_chybnych_identifikatoru</strong> – slovnik vraceny pro neuspesne zpracovane identifikatory</p></li>
 </ul>
 </dd>
 <dt class="field-even">Vrací<span class="colon">:</span></dt>
 <dd class="field-even"><p>cesta k vystupnimu souboru</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pywsdp.modules.CtiOS.uloz_vystup_aktualizuj_db">
-<span class="sig-name descname"><span class="pre">uloz_vystup_aktualizuj_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vysledny_slovnik</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup_aktualizuj_db" title="Trvalý odkaz na tuto definici">¶</a></dt>
-<dd><p>Updatuje vstupni databazi o osobni udaje ziskane ze sluzby ctiOS.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parametry<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>vysledny_slovnik</strong> – slovnik vraceny pro uspesne zpracovane identifikatory</p>
-</dd>
-<dt class="field-even">Vrací<span class="colon">:</span></dt>
-<dd class="field-even"><p>cesta k updatovane databazi</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pywsdp.modules.CtiOS.uloz_vystup_chybnych">
-<span class="sig-name descname"><span class="pre">uloz_vystup_chybnych</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slovnik_chybnych_identifikatoru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup_chybnych" title="Trvalý odkaz na tuto definici">¶</a></dt>
-<dd><p>Ulozi slovnik chybnych identifikatoru vraceny metodou posli_pozadavek do json souboru.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parametry<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>slovnik_chybnych_identifikatoru</strong> – slovnik vraceny pro neuspesne zpracovane identifikatory</p></li>
-<li><p><strong>vystupni_adresar</strong> – cesta k vystupnimu adresari</p></li>
-</ul>
 </dd>
 </dl>
 </dd></dl>
