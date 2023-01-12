@@ -221,9 +221,8 @@ class TestOutputs:
         "Check the module output to json"
         ctios = CtiOS(creds_test, trial=True)
         slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_dict)
-        vystup, vystup_chybnych = ctios.uloz_vystup(
-            slovnik, vystupni_adresar, OutputFormat.Json, slovnik_chybnych
-        )
+        vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Json)
+        vystup_chybnych = ctios.uloz_vystup_chybnych(slovnik_chybnych, vystupni_adresar)
         assert os.path.exists(vystup) == True
         assert os.path.exists(vystup_chybnych) == True
 
@@ -242,16 +241,12 @@ class TestOutputs:
                 "im+o3Qoxrit4ZwyJIPjx3X788EOgtJieiZYw/eqwxTPERjsqLramxBhGoAaAnooYAliQoVBYy7Q7fN2cVAxsAoUoPFaReqsfYWOZJjMBj/6Q",
                 "4m3Yuf1esDMzbgNGYW7kvzjlaZALZ3v3D7cXmxgCcFp0RerVtxqo8yb87oI0FBCtp49AycQ5NNI3vl+b+SEa+8SfmGU4sqBPH2pX/76wyB",
             ]
-        if vystup_chybnych:
-            os.remove(vystup_chybnych)
 
     def test_02b_ctiOS_csv(self):
         "Check the module output to csv"
         ctios = CtiOS(creds_test, trial=True)
         slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_dict)
-        vystup, vystup_chybnych = ctios.uloz_vystup(
-            slovnik, vystupni_adresar, OutputFormat.Csv, slovnik_chybnych
-        )
+        vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.Csv)
         assert os.path.exists(vystup) == True
 
         with open(vystup, mode="r") as csv_file:
@@ -260,19 +255,14 @@ class TestOutputs:
                 if line[0] == parametry_ctiOS_dict["pOSIdent"][3]:
                     boolean = 1
         assert boolean == 1
-
         os.remove(vystup)
-        if vystup_chybnych:
-            os.remove(vystup_chybnych)
 
-    def test_02c_ctiOS_db(self):
+    def test_02c_ctiOS_uloz_vystup_db(self):
         "Check the module output to SQLite DB"
         ctios = CtiOS(creds_test, trial=True)
         parametry_ctiOS_db = ctios.nacti_identifikatory_z_db(db_path)
         slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_db)
-        vystup, vystup_chybnych = ctios.uloz_vystup(
-            slovnik, vystupni_adresar, OutputFormat.GdalDb, slovnik_chybnych
-        )
+        vystup = ctios.uloz_vystup(slovnik, vystupni_adresar, OutputFormat.GdalDb)
         assert os.path.exists(vystup) == True
 
         con = sqlite3.connect(vystup)
@@ -280,10 +270,21 @@ class TestOutputs:
         for row in cur.execute("SELECT count(*) FROM OPSUB"):
             assert row == (108,)
         con.close()
-
         os.remove(vystup)
-        if vystup_chybnych:
-            os.remove(vystup_chybnych)
+
+    def test_02d_ctiOS_aktualizuj_db(self):
+        "Check the update of SQLite DB"
+        ctios = CtiOS(creds_test, trial=True)
+        parametry_ctiOS_db = ctios.nacti_identifikatory_z_db(db_path)
+        slovnik, slovnik_chybnych = ctios.posli_pozadavek(parametry_ctiOS_db)
+        vystup = ctios.uloz_vystup_aktualizuj_db(slovnik)
+        assert os.path.exists(vystup) == True
+
+        con = sqlite3.connect(vystup)
+        cur = con.cursor()
+        for row in cur.execute("SELECT count(*) FROM OPSUB"):
+            assert row == (108,)
+        con.close()
 
     def test_02a_generujCenoveUdajeDleKu(self):
         "Check the module output to zip"
