@@ -13,6 +13,7 @@ This library is free under the MIT License.
 
 import os
 import json
+import tempfile
 from pathlib import Path
 
 from pywsdp.clients.factory import pywsdp
@@ -99,21 +100,11 @@ class WSDPBase:
     def _set_default_log_dir(self) -> str:
         """Privatni metoda pro nasteveni logovaciho adresare."""
 
-        def is_run_by_jupyter():
-            import __main__ as main
-
-            return not hasattr(main, "__file__")
-
-        if is_run_by_jupyter():
-            module_dir = os.path.abspath(os.path.join("../../"))
-        else:
-            module_dir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..")
-            )
-        log_dir = os.path.join(module_dir, "logs")
+        log_dir = tempfile.TemporaryDirectory().name
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         self.logger.set_directory(log_dir)
+        self.logger.info("Logovaci zpravy ulozeny v adresari: {}".format(log_dir))
         return log_dir
 
 
