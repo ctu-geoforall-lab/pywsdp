@@ -64,7 +64,8 @@ class WSDPBase:
 
     @property
     def log_adresar(self) -> str:
-        """Vypise cestu k adresari, ve kterem se budou vytvaret log soubory."""
+        """Vypise cestu k adresari, ve kterem se budou vytvaret log soubory.
+        Zaroven funguje i jako setter pro nastaveni vlastniho logovaciho adresare."""
         return self._log_adresar
 
     @log_adresar.setter
@@ -78,6 +79,7 @@ class WSDPBase:
             os.makedirs(log_adresar)
         self.logger.set_directory(log_adresar)
         self._log_adresar = log_adresar
+        self.logger.info("Logovaci adresar nastaven na cestu: {}".format(log_adresar))
 
     @property
     def testovaci_mod(self) -> bool:
