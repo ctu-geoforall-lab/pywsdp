@@ -69,7 +69,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 3,
+   "execution_count": 5,
    "id": "d330f440",
    "metadata": {},
    "outputs": [],
@@ -85,7 +85,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "cf9a5ae9",
+   "id": "0cf876bf",
    "metadata": {},
    "source": [
     "Pokud chceme změnit cestu k logovacímu adresáři, uděláme to následovně:"
@@ -93,20 +93,20 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 4,
-   "id": "c1f0fac3",
+   "execution_count": 6,
+   "id": "b1f71745",
    "metadata": {},
    "outputs": [
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "ctiOS        - INFO     - Logovaci adresar nastaven na cestu: /home/linduska/logovani_pywsdp\n"
+      "ctiOS        - INFO     - Logovaci adresar nastaven na cestu: /home/linduska/pywsdp/logs\n"
      ]
     }
    ],
    "source": [
-    "ctios.log_adresar = \"/home/linduska/logovani_pywsdp\""
+    "ctios.log_adresar = \"/home/linduska/pywsdp/logs\""
    ]
   },
   {

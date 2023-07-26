@@ -321,7 +321,7 @@ ctiOS        - INFO     - Logovaci zpravy ulozeny v adresari: /tmp/tmpnkbc9w5u
 </div>
 <p>Definujeme cesty k vstupní databázi a k výstupnímu adresáři, kam budeme chtít updatovanou databázi uložit.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>db_path = os.path.abspath(
@@ -336,10 +336,10 @@ vystupni_adresar = os.path.abspath(
 </div>
 <p>Pokud chceme změnit cestu k logovacímu adresáři, uděláme to následovně:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ctios.log_adresar = &quot;/home/linduska/logovani_pywsdp&quot;
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ctios.log_adresar = &quot;/home/linduska/pywsdp/logs&quot;
 </pre></div>
 </div>
 </div>
@@ -348,7 +348,7 @@ vystupni_adresar = os.path.abspath(
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-ctiOS        - INFO     - Logovaci adresar nastaven na cestu: /home/linduska/logovani_pywsdp
+ctiOS        - INFO     - Logovaci adresar nastaven na cestu: /home/linduska/pywsdp/logs
 </pre></div></div>
 </div>
 <p>Načteme identifikátory z databáze (pro účely ukázky omezíme počet načtených identifikátorů na 5).</p>
