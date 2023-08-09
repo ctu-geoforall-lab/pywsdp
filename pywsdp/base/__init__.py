@@ -102,7 +102,7 @@ class WSDPBase:
     def _set_default_log_dir(self) -> str:
         """Privatni metoda pro nasteveni logovaciho adresare."""
 
-        log_dir = os.path.join(tempfile.gettempdir(), self.nazev_sluzby)        
+        log_dir = os.path.join(tempfile.gettempdir(), self.nazev_sluzby)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         self.logger.set_directory(log_dir)
