@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="cs">
+<html lang="cs" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,9 +9,9 @@
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
     <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b07ad813"></script>
+    <script src="_static/documentation_options.js?v=92000e5b"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/translations.js?v=0275affc"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Rejstřík" href="genindex.html" />
@@ -34,10 +34,10 @@
           <div class="body" role="main">
             
   <section id="module-pywsdp">
-<span id="verejne-api"></span><h1>Veřejné API<a class="headerlink" href="#module-pywsdp" title="Permalink to this heading">¶</a></h1>
+<span id="verejne-api"></span><h1>Veřejné API<a class="headerlink" href="#module-pywsdp" title="Link to this heading">¶</a></h1>
 <p>Veřejné API knihovny tvoří moduly.
 Ty umožňují intuitivní dotazování vybraných WSDP služeb a ukládání odpovědí do různých formátů.</p>
-<span class="target" id="module-pywsdp.modules"></span><p>pywsdp.modules</p>
+<p id="module-pywsdp.modules">pywsdp.modules</p>
 <div class="graphviz"><img src="_images/inheritance-3160e76985b35a718894fb26106224b1a366984f.png" alt="Inheritance diagram of pywsdp.base.WSDPBase, pywsdp.base.SestavyBase, pywsdp.modules.CtiOS, pywsdp.modules.GenerujCenoveUdajeDleKu, pywsdp.modules.SeznamSestav, pywsdp.modules.VratSestavu, pywsdp.modules.SmazSestavu" usemap="#inheritance6cfdee0461" class="inheritance graphviz" /></div>
 <map id="inheritance6cfdee0461" name="inheritance6cfdee0461">
 <area shape="rect" id="node1" href="#pywsdp.modules.CtiOS" target="_top" title="Trida definujici rozhrani pro praci se sluzbou ctiOS." alt="" coords="170,5,242,31"/>
@@ -48,10 +48,10 @@ Ty umožňují intuitivní dotazování vybraných WSDP služeb a ukládání od
 <area shape="rect" id="node7" href="#pywsdp.modules.VratSestavu" target="_top" title="Trida definujici rozhrani pro praci se sluzbou vratSestavu." alt="" coords="155,203,257,228"/>
 <area shape="rect" id="node3" href="#pywsdp.modules.GenerujCenoveUdajeDleKu" target="_top" title="Trida definujici rozhrani pro praci se sluzbou Generuj cenove udaje dle katastralnich uzemi." alt="" coords="313,55,512,80"/>
 </map><section id="spolecne-api-pro-vsechny-moduly">
-<h2>Společné API pro všechny moduly<a class="headerlink" href="#spolecne-api-pro-vsechny-moduly" title="Permalink to this heading">¶</a></h2>
+<h2>Společné API pro všechny moduly<a class="headerlink" href="#spolecne-api-pro-vsechny-moduly" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywsdp.base.WSDPBase">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WSDPBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.base.WSDPBase" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WSDPBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.base.WSDPBase" title="Link to this definition">¶</a></dt>
 <dd><p>Trida vytvarejici spolecne API pro WSDP sluzby.
 Odvozene tridy musi mit nastavit skupinu sluzeb a nazev sluzby.</p>
 <dl class="field-list simple">
@@ -64,41 +64,41 @@ Odvozene tridy musi mit nastavit skupinu sluzeb a nazev sluzby.</p>
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="pywsdp.base.WSDPBase.skupina_sluzeb">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">skupina_sluzeb</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.skupina_sluzeb" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">skupina_sluzeb</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.skupina_sluzeb" title="Link to this definition">¶</a></dt>
 <dd><p>Nazev typu skupiny sluzeb - ctiOS, sestavy, vyhledat, ciselniky atd.
 Nazev musi korespondovat se slovnikem WSDL endpointu - musi byt malymi pismeny.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywsdp.base.WSDPBase.nazev_sluzby">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nazev_sluzby</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.nazev_sluzby" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nazev_sluzby</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.nazev_sluzby" title="Link to this definition">¶</a></dt>
 <dd><p>Nazev sluzby, napr. ctiOS, generujCenoveUdajeDleKu.
 Nazev sluzby/metody uveden v Popisu webovych sluzeb pro uzivatele.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywsdp.base.WSDPBase.pristupove_udaje">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pristupove_udaje</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.pristupove_udaje" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pristupove_udaje</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.pristupove_udaje" title="Link to this definition">¶</a></dt>
 <dd><p>Vraci pristupove udaje pod kterymi doslo k pripojeni ke sluzbe.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywsdp.base.WSDPBase.log_adresar">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_adresar</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.log_adresar" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_adresar</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.log_adresar" title="Link to this definition">¶</a></dt>
 <dd><p>Vypise cestu k adresari, ve kterem se budou vytvaret log soubory.
 Zaroven funguje i jako setter pro nastaveni vlastniho logovaciho adresare.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywsdp.base.WSDPBase.testovaci_mod">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">testovaci_mod</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.testovaci_mod" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">testovaci_mod</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pywsdp.base.WSDPBase.testovaci_mod" title="Link to this definition">¶</a></dt>
 <dd><p>Vraci boolean hodnotu podle toho zda uzivatel pristupuje k ostrym sluzbam (False)
 nebo ke sluzbam na zkousku (True)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.base.WSDPBase.posli_pozadavek">
-<span class="sig-name descname"><span class="pre">posli_pozadavek</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slovnik_identifikatoru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.WSDPBase.posli_pozadavek" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">posli_pozadavek</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slovnik_identifikatoru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.WSDPBase.posli_pozadavek" title="Link to this definition">¶</a></dt>
 <dd><p>Zpracuje vstupni parametry pomoci nektere ze sluzeb a
 vysledek ulozi do slovniku.</p>
 <dl class="field-list simple">
@@ -115,10 +115,10 @@ vysledek ulozi do slovniku.</p>
 
 </section>
 <section id="spolecne-api-pro-hlavni-moduly-typu-sestava">
-<h2>Společné API pro hlavní moduly typu sestava<a class="headerlink" href="#spolecne-api-pro-hlavni-moduly-typu-sestava" title="Permalink to this heading">¶</a></h2>
+<h2>Společné API pro hlavní moduly typu sestava<a class="headerlink" href="#spolecne-api-pro-hlavni-moduly-typu-sestava" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywsdp.base.SestavyBase">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SestavyBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.base.SestavyBase" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SestavyBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.base.SestavyBase" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywsdp.base.WSDPBase" title="pywsdp.base.WSDPBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">WSDPBase</span></code></a></p>
 <p>Trida definujici spolecne API pro moduly pracujici se sestavami.
 Z teto tridy nededi specificke sestavy, ktere slouzi pro praci s
@@ -133,7 +133,7 @@ jinymi sestavami, jako napriklad SeznamSestav.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.base.SestavyBase.nacti_identifikatory_z_json_souboru">
-<span class="sig-name descname"><span class="pre">nacti_identifikatory_z_json_souboru</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.SestavyBase.nacti_identifikatory_z_json_souboru" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">nacti_identifikatory_z_json_souboru</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.SestavyBase.nacti_identifikatory_z_json_souboru" title="Link to this definition">¶</a></dt>
 <dd><p>Pripravi identifikatory z JSON souboru pro vstup do zavolani
 sluzby ze skupiny WSDP sestavy.</p>
 <dl class="field-list simple">
@@ -148,7 +148,7 @@ sluzby ze skupiny WSDP sestavy.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.base.SestavyBase.vypis_info_o_sestave">
-<span class="sig-name descname"><span class="pre">vypis_info_o_sestave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sestava</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.SestavyBase.vypis_info_o_sestave" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">vypis_info_o_sestave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sestava</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.SestavyBase.vypis_info_o_sestave" title="Link to this definition">¶</a></dt>
 <dd><p>S parametrem id sestavy zavola sluzbu SeznamSestav, ktera vypise info o sestave.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parametry<span class="colon">:</span></dt>
@@ -173,7 +173,7 @@ sluzby ze skupiny WSDP sestavy.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.base.SestavyBase.zauctuj_sestavu">
-<span class="sig-name descname"><span class="pre">zauctuj_sestavu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sestava</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.SestavyBase.zauctuj_sestavu" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">zauctuj_sestavu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sestava</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.SestavyBase.zauctuj_sestavu" title="Link to this definition">¶</a></dt>
 <dd><p>Vezme id sestavy z vytvorene sestavy a zavola sluzbu VratSestavu,
 ktera danou sestavu zauctuje.</p>
 <dl class="field-list simple">
@@ -200,7 +200,7 @@ ktera danou sestavu zauctuje.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.base.SestavyBase.vymaz_sestavu">
-<span class="sig-name descname"><span class="pre">vymaz_sestavu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sestava</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.SestavyBase.vymaz_sestavu" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">vymaz_sestavu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sestava</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.base.SestavyBase.vymaz_sestavu" title="Link to this definition">¶</a></dt>
 <dd><p>Vezme id sestavy z vytvorene sestavy a zavola sluzbu SmazSestavu,
 ktera danou sestavu z uctu smaze.</p>
 <dl class="field-list simple">
@@ -217,12 +217,12 @@ ktera danou sestavu z uctu smaze.</p>
 
 </section>
 <section id="api-k-hlavnim-modulum">
-<h2>API k hlavním modulům<a class="headerlink" href="#api-k-hlavnim-modulum" title="Permalink to this heading">¶</a></h2>
+<h2>API k hlavním modulům<a class="headerlink" href="#api-k-hlavnim-modulum" title="Link to this heading">¶</a></h2>
 <section id="cti-os">
-<h3>Čti OS<a class="headerlink" href="#cti-os" title="Permalink to this heading">¶</a></h3>
+<h3>Čti OS<a class="headerlink" href="#cti-os" title="Link to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CtiOS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CtiOS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywsdp.base.WSDPBase" title="pywsdp.base.WSDPBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">WSDPBase</span></code></a></p>
 <p>Trida definujici rozhrani pro praci se sluzbou ctiOS.</p>
 <dl class="field-list simple">
@@ -235,7 +235,7 @@ ktera danou sestavu z uctu smaze.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS.nacti_identifikatory_z_db">
-<span class="sig-name descname"><span class="pre">nacti_identifikatory_z_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sql_dotaz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.modules.CtiOS.nacti_identifikatory_z_db" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">nacti_identifikatory_z_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sql_dotaz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.modules.CtiOS.nacti_identifikatory_z_db" title="Link to this definition">¶</a></dt>
 <dd><p>Pripravi identifikatory z SQLITE databaze pro vstup do zavolani sluzby ctiOS.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parametry<span class="colon">:</span></dt>
@@ -252,7 +252,7 @@ ktera danou sestavu z uctu smaze.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS.nacti_identifikatory_z_json_souboru">
-<span class="sig-name descname"><span class="pre">nacti_identifikatory_z_json_souboru</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.modules.CtiOS.nacti_identifikatory_z_json_souboru" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">nacti_identifikatory_z_json_souboru</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.modules.CtiOS.nacti_identifikatory_z_json_souboru" title="Link to this definition">¶</a></dt>
 <dd><p>Pripravi identifikatory z JSON souboru pro vstup do zavolani sluzby ctiOS.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parametry<span class="colon">:</span></dt>
@@ -266,7 +266,7 @@ ktera danou sestavu z uctu smaze.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS.posli_pozadavek">
-<span class="sig-name descname"><span class="pre">posli_pozadavek</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slovnik_identifikatoru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.modules.CtiOS.posli_pozadavek" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">posli_pozadavek</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slovnik_identifikatoru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pywsdp.modules.CtiOS.posli_pozadavek" title="Link to this definition">¶</a></dt>
 <dd><p>Zpracuje vstupni parametry pomoci nektere ze sluzeb a
 vysledek ulozi do slovniku. Zaroven vypocte zaloguje statistiku procesu.</p>
 <dl class="field-list simple">
@@ -282,7 +282,7 @@ slovnik - chybne pseudoidentifikatory s popisem chyby)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS.uloz_vystup">
-<span class="sig-name descname"><span class="pre">uloz_vystup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vysledny_slovnik</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_souboru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OutputFormat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">uloz_vystup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vysledny_slovnik</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_souboru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OutputFormat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup" title="Link to this definition">¶</a></dt>
 <dd><p>Konvertuje osobni udaje typu slovnik ziskane ze sluzby ctiOS do souboru o definovanem
 formatu a soubor ulozi do definovaneho vystupniho adresare. Pokud adresar neexistuje, vytvori ho.
 U databaze nejprve prekopiruje vstupni soubor do pozadovaneho adresare a pak databazi updatuje o osobni udaje.</p>
@@ -302,7 +302,7 @@ U databaze nejprve prekopiruje vstupni soubor do pozadovaneho adresare a pak dat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS.uloz_vystup_aktualizuj_db">
-<span class="sig-name descname"><span class="pre">uloz_vystup_aktualizuj_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vysledny_slovnik</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup_aktualizuj_db" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">uloz_vystup_aktualizuj_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vysledny_slovnik</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup_aktualizuj_db" title="Link to this definition">¶</a></dt>
 <dd><p>Updatuje vstupni databazi o osobni udaje ziskane ze sluzby ctiOS.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parametry<span class="colon">:</span></dt>
@@ -316,7 +316,7 @@ U databaze nejprve prekopiruje vstupni soubor do pozadovaneho adresare a pak dat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS.uloz_vystup_chybnych">
-<span class="sig-name descname"><span class="pre">uloz_vystup_chybnych</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slovnik_chybnych_identifikatoru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup_chybnych" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">uloz_vystup_chybnych</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slovnik_chybnych_identifikatoru</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.uloz_vystup_chybnych" title="Link to this definition">¶</a></dt>
 <dd><p>Ulozi slovnik chybnych identifikatoru vraceny metodou posli_pozadavek do json souboru.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parametry<span class="colon">:</span></dt>
@@ -330,7 +330,7 @@ U databaze nejprve prekopiruje vstupni soubor do pozadovaneho adresare a pak dat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.CtiOS.vypis_statistiku">
-<span class="sig-name descname"><span class="pre">vypis_statistiku</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.vypis_statistiku" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">vypis_statistiku</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.CtiOS.vypis_statistiku" title="Link to this definition">¶</a></dt>
 <dd><p>Vytiskne statistiku zpracovanych pseudonymizovanych identifikatoru (POSIdentu).
 Pocet neplatnych identifikatoru = pocet POSIdentu, ktere nebylo mozne rozsifrovat;
 Pocet expirovanych identifikatoru = pocet POSIdentu, kterym vyprsela casova platnost;
@@ -344,10 +344,10 @@ Pocet dotazu na server = pocet samostatnych dotazu, do kterych byl pozadavek roz
 
 </section>
 <section id="generuj-cenove-udaje-dle-katastralnich-uzemi">
-<h3>Generuj cenové údaje dle katastrálních území<a class="headerlink" href="#generuj-cenove-udaje-dle-katastralnich-uzemi" title="Permalink to this heading">¶</a></h3>
+<h3>Generuj cenové údaje dle katastrálních území<a class="headerlink" href="#generuj-cenove-udaje-dle-katastralnich-uzemi" title="Link to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywsdp.modules.GenerujCenoveUdajeDleKu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GenerujCenoveUdajeDleKu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.GenerujCenoveUdajeDleKu" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GenerujCenoveUdajeDleKu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.GenerujCenoveUdajeDleKu" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywsdp.base.SestavyBase" title="pywsdp.base.SestavyBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SestavyBase</span></code></a></p>
 <p>Trida definujici rozhrani pro praci se sluzbou Generuj cenove udaje dle katastralnich uzemi.</p>
 <dl class="field-list simple">
@@ -360,7 +360,7 @@ Pocet dotazu na server = pocet samostatnych dotazu, do kterych byl pozadavek roz
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywsdp.modules.GenerujCenoveUdajeDleKu.uloz_vystup">
-<span class="sig-name descname"><span class="pre">uloz_vystup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zauctovana_sestava</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pywsdp.modules.GenerujCenoveUdajeDleKu.uloz_vystup" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<span class="sig-name descname"><span class="pre">uloz_vystup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zauctovana_sestava</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vystupni_adresar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pywsdp.modules.GenerujCenoveUdajeDleKu.uloz_vystup" title="Link to this definition">¶</a></dt>
 <dd><p>Rozkoduje soubor z vystupnich hodnot sluzby VratSestavu a ulozi ho na disk.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parametry<span class="colon">:</span></dt>
@@ -377,12 +377,12 @@ Pocet dotazu na server = pocet samostatnych dotazu, do kterych byl pozadavek roz
 </section>
 </section>
 <section id="api-k-modulum-na-spravu-sestav">
-<h2>API k modulům na správu sestav<a class="headerlink" href="#api-k-modulum-na-spravu-sestav" title="Permalink to this heading">¶</a></h2>
+<h2>API k modulům na správu sestav<a class="headerlink" href="#api-k-modulum-na-spravu-sestav" title="Link to this heading">¶</a></h2>
 <section id="seznam-sestav">
-<h3>Seznam Sestav<a class="headerlink" href="#seznam-sestav" title="Permalink to this heading">¶</a></h3>
+<h3>Seznam Sestav<a class="headerlink" href="#seznam-sestav" title="Link to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywsdp.modules.SeznamSestav">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SeznamSestav</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.SeznamSestav" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SeznamSestav</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.SeznamSestav" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywsdp.base.WSDPBase" title="pywsdp.base.WSDPBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">WSDPBase</span></code></a></p>
 <p>Trida definujici rozhrani pro praci se sluzbou seznamSestav.
 Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.</p>
@@ -398,10 +398,10 @@ Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.</p
 
 </section>
 <section id="vraceni-sestavy">
-<h3>Vrácení sestavy<a class="headerlink" href="#vraceni-sestavy" title="Permalink to this heading">¶</a></h3>
+<h3>Vrácení sestavy<a class="headerlink" href="#vraceni-sestavy" title="Link to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywsdp.modules.VratSestavu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VratSestavu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.VratSestavu" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VratSestavu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.VratSestavu" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywsdp.base.WSDPBase" title="pywsdp.base.WSDPBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">WSDPBase</span></code></a></p>
 <p>Trida definujici rozhrani pro praci se sluzbou vratSestavu.
 Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.</p>
@@ -417,10 +417,10 @@ Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.</p
 
 </section>
 <section id="smazani-sestavy">
-<h3>Smazání sestavy<a class="headerlink" href="#smazani-sestavy" title="Permalink to this heading">¶</a></h3>
+<h3>Smazání sestavy<a class="headerlink" href="#smazani-sestavy" title="Link to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywsdp.modules.SmazSestavu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SmazSestavu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.SmazSestavu" title="Trvalý odkaz na tuto definici">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SmazSestavu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywsdp.modules.SmazSestavu" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywsdp.base.WSDPBase" title="pywsdp.base.WSDPBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">WSDPBase</span></code></a></p>
 <p>Trida definujici rozhrani pro praci se sluzbou smazSestavu.
 Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.</p>
@@ -498,7 +498,7 @@ Pouzije se v pripade, kdy znam sestavu a chci tuto sluzbu zavolat samostatne.</p
       &copy;2022, Linda Kladivova.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
