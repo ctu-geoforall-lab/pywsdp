@@ -13,13 +13,14 @@ This library is free under the MIT License.
 
 import os
 import json
+import tempfile
 from pathlib import Path
 
 from pywsdp.clients.factory import pywsdp
 from pywsdp.base.logger import WSDPLogger
 from pywsdp.base.exceptions import WSDPError
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 
 class WSDPBase:
@@ -63,7 +64,8 @@ class WSDPBase:
 
     @property
     def log_adresar(self) -> str:
-        """Vypise cestu k adresari, ve kterem se budou vytvaret log soubory."""
+        """Vypise cestu k adresari, ve kterem se budou vytvaret log soubory.
+        Zaroven funguje i jako setter pro nastaveni vlastniho logovaciho adresare."""
         return self._log_adresar
 
     @log_adresar.setter
@@ -77,6 +79,7 @@ class WSDPBase:
             os.makedirs(log_adresar)
         self.logger.set_directory(log_adresar)
         self._log_adresar = log_adresar
+        self.logger.info("Logovaci adresar nastaven na cestu: {}".format(log_adresar))
 
     @property
     def testovaci_mod(self) -> bool:
@@ -99,21 +102,11 @@ class WSDPBase:
     def _set_default_log_dir(self) -> str:
         """Privatni metoda pro nasteveni logovaciho adresare."""
 
-        def is_run_by_jupyter():
-            import __main__ as main
-
-            return not hasattr(main, "__file__")
-
-        if is_run_by_jupyter():
-            module_dir = os.path.abspath(os.path.join("../../"))
-        else:
-            module_dir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..")
-            )
-        log_dir = os.path.join(module_dir, "logs")
+        log_dir = os.path.join(tempfile.gettempdir(), self.nazev_sluzby)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         self.logger.set_directory(log_dir)
+        self.logger.info("Logovaci zpravy ulozeny v adresari: {}".format(log_dir))
         return log_dir
 
 
